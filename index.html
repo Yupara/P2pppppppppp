@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green P2P Exchange</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #1a2b27;
+            color: #e6e6e6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2ecc71;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        .form-container, .offers-container {
+            background: #223c37;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #e6e6e6;
+            font-weight: 500;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid #2ecc71;
+            border-radius: 6px;
+            background: #1a2b27;
+            color: #e6e6e6;
+            font-size: 16px;
+        }
+        button {
+            background: #2ecc71;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #27ae60;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #223c37;
+        }
+        th, td {
+            border: 1px solid #2ecc71;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #27ae60;
+            color: #fff;
+        }
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .filters select, .filters input {
+            width: auto;
+            flex: 1;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        button {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Green P2P Exchange</h1>
+        <div class="form-container">
+            <h2>Создать заявку</h2>
+            <form id="exchangeForm">
+                <label>Продаю:</label>
+                <select name="sellCurrency">
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                    <option value="RUB">RUB</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <label>Сумма:</label>
+                <input type="number" name="sellAmount" placeholder="Введите сумму" required>
+                <label>Покупаю:</label>
+                <select name="buyCurrency">
+                    <option value="RUB">RUB</option>
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <label>Метод оплаты:</label>
+                <select name="paymentMethod">
+                    <option value="Bank">Банковская карта</option>
+                    <option value="Payeer">Payeer</option>
+                    <option value="AdvCash">AdvCash</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Wise">Wise</option>
+                    <option value="Revolut">Revolut</option>
+                </select>
+                <label>Контакт (Telegram, email):</label>
+                <input type="text" name="contact" placeholder="Ваш контакт" required>
+                <button type="submit">Создать заявку</button>
+            </form>
+        </div>
+        <div class="form-container">
+            <h2>Фильтры</h2>
+            <div class="filters">
+                <select id="filterCurrency">
+                    <option value="">Все валюты</option>
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                    <option value="RUB">RUB</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <select id="filterPayment">
+                    <option value="">Все методы</option>
+                    <option value="Bank">Банковская карта</option>
+                    <option value="Payeer">Payeer</option>
+                    <option value="AdvCash">AdvCash</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Wise">Wise</option>
+                    <option value="Revolut">Revolut</option>
+                </select>
+                <input type="number" id="filterAmount" placeholder="Мин. сумма">
+                <button onclick="applyFilters()">Применить</button>
+            </div>
+        </div>
+        <div class="offers-container">
+            <h2>Текущие заявки</h2>
+            <table id="offersTable">
+                <thead>
+                    <tr>
+                        <th>Продаю</th>
+                        <th>Сумма</th>
+                        <th>Покупаю</th>
+                        <th>Метод</th>
+                        <th>Контакт</th>
+                    </tr>
+                </thead>
+                <tbody id="offersBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        let offers = JSON.parse(localStorage.getItem('offers')) || [];
+
+        function saveOffers() {
+            localStorage.setItem('offers', JSON.stringify(offers));
+            displayOffers();
+        }
+
+        function displayOffers() {
+            const offersBody = document.getElementById('offersBody');
+            offersBody.innerHTML = '';
+            offers.forEach(offer => {
+                offersBody.innerHTML += `
+                    <tr>
+                        <td>${offer.sellCurrency}</td>
+                        <td>${offer.sellAmount}</td>
+                        <td>${offer.buyCurrency}</td>
+                        <td>${offer.paymentMethod}</td>
+                        <td>${offer.contact}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('exchangeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const offer = {
+                sellCurrency: formData.get('sellCurrency'),
+                sellAmount: formData.get('sellAmount'),
+                buyCurrency: formData.get('buyCurrency'),
+                paymentMethod: formData.get('paymentMethod'),
+                contact: formData.get('contact')
+            };
+            const commission = (offer.sellAmount * 0.005).toFixed(2);
+            offers.push(offer);
+            saveOffers();
+            this.reset();
+            alert(`Заявка создана! Комиссия 0.5%: ${commission} ${offer.sellCurrency}`);
+        });
+
+        function applyFilters() {
+            const currency = document.getElementById('filterCurrency').value;
+            const payment = document.getElementById('filterPayment').value;
+            const amount = document.getElementById('filterAmount').value;
+            let filteredOffers = JSON.parse(localStorage.getItem('offers')) || [];
+
+            if (currency) filteredOffers = filteredOffers.filter(o => o.sellCurrency === currency);
+            if (payment) filteredOffers = filteredOffers.filter(o => o.paymentMethod === payment);
+            if (amount) filteredOffers = filteredOffers.filter(o => o.sellAmount >= amount);
+
+            offers = filteredOffers;
+            displayOffers();
+        }
+
+        displayOffers();
+    </script>
+</body>
+</html>
