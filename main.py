@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from passlib.context import CryptContext
@@ -12,7 +11,8 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+# Временно убрали Jinja2Templates, так как шаблон index.html отсутствует
+# templates = Jinja2Templates(directory="templates")
 
 # Настройка базы данных SQLite
 DATABASE_URL = "sqlite:///p2p_exchange.db"
@@ -102,9 +102,9 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/")
+async def read_root():
+    return JSONResponse(content={"message": "Welcome to P2P Exchange!"})
 
 @app.post("/register")
 async def register(email: str = Form(...), phone: str = Form(...), password: str = Form(...), referral_code: str = Form(None)):
@@ -119,7 +119,7 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
     db.add(user)
     db.commit()
 
-    # Обновлённая отправка email
+    # Отправка email
     message = f"Subject: Код подтверждения\n\nВаш код подтверждения: {verification_code}"
     async with email_sender as server:
         await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
