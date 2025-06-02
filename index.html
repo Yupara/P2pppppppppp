@@ -51,10 +51,11 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            transition: background 0.3s;
+            transition: transform 0.3s ease, background 0.3s;
         }
         button:hover {
             background: #27ae60;
+            transform: scale(1.03);
         }
         table {
             width: 100%;
@@ -87,6 +88,14 @@
         }
         .clear-button:hover {
             background: #cc0000;
+            transform: scale(1.03);
+        }
+        .export-button {
+            background: #3498db;
+        }
+        .export-button:hover {
+            background: #2980b9;
+            transform: scale(1.03);
         }
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -177,6 +186,7 @@
                 <tbody id="offersBody"></tbody>
             </table>
             <button class="clear-button" onclick="clearOffers()">Очистить заявки</button>
+            <button class="export-button" onclick="exportOffers()">Экспорт в CSV</button>
         </div>
         <div class="support-container">
             <h2>Поддержка</h2>
@@ -247,6 +257,25 @@
                 offers = [];
                 saveOffers();
             }
+        }
+
+        function exportOffers() {
+            if (offers.length === 0) {
+                alert('Нет заявок для экспорта!');
+                return;
+            }
+            const csv = ['Продаю,Сумма,Покупаю,Метод,Контакт'];
+            offers.forEach(offer => {
+                csv.push(`${offer.sellCurrency},${offer.sellAmount},${offer.buyCurrency},${offer.paymentMethod},${offer.contact}`);
+            });
+            const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+            const downloadLink = document.createElement('a');
+            downloadLink.download = 'offers.csv';
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
         }
 
         document.getElementById('supportForm').addEventListener('submit', function(e) {
