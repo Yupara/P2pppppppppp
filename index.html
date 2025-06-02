@@ -23,7 +23,7 @@
             font-size: 28px;
             margin-bottom: 20px;
         }
-        .form-container, .offers-container, .support-container {
+        .form-container, .offers-container, .support-container, .chat-container, .admin-container {
             background: #223c37;
             padding: 20px;
             border-radius: 12px;
@@ -80,22 +80,44 @@
             width: auto;
             flex: 1;
         }
-        .support-container input {
+        .support-container input, .chat-container input {
             background: #1a2b27;
         }
-        .clear-button {
-            background: #ff4444;
+        .delete-button {
+            background: #ff7733;
+            padding: 8px;
+            width: auto;
+            display: inline-block;
         }
-        .clear-button:hover {
+        .delete-button:hover {
+            background: #ff5500;
+            transform: scale(1.03);
+        }
+        .dispute-button {
+            background: #ff4444;
+            padding: 8px;
+            width: auto;
+            display: inline-block;
+        }
+        .dispute-button:hover {
             background: #cc0000;
             transform: scale(1.03);
         }
-        .export-button {
-            background: #3498db;
+        .chat-messages {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #1a2b27;
+            border-radius: 6px;
+            margin-bottom: 10px;
         }
-        .export-button:hover {
-            background: #2980b9;
-            transform: scale(1.03);
+        .offer-row {
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -110,7 +132,24 @@
 <body>
     <div class="container">
         <h1>Green P2P Exchange</h1>
-        <div class="form-container">
+        <div class="form-container" id="authSection">
+            <h2 id="authTitle">Регистрация</h2>
+            <form id="authForm">
+                <label>Email:</label>
+                <input type="email" id="email" required>
+                <label>Телефон:</label>
+                <input type="tel" id="phone" required>
+                <label>Пароль:</label>
+                <input type="password" id="password" required>
+                <label>Паспорт (URL изображения):</label>
+                <input type="text" id="passport" placeholder="Ссылка на фото паспорта" required>
+                <label>Реферальный код (опционально):</label>
+                <input type="text" id="referralCode">
+                <button type="submit" id="authButton">Зарегистрироваться</button>
+                <button type="button" onclick="toggleAuth()">Уже есть аккаунт? Войти</button>
+            </form>
+        </div>
+        <div class="form-container" id="offerSection" style="display: none;">
             <h2>Создать заявку</h2>
             <form id="exchangeForm">
                 <label>Продаю:</label>
@@ -121,6 +160,11 @@
                     <option value="RUB">RUB</option>
                     <option value="USD">USD</option>
                     <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="CNY">CNY</option>
+                    <option value="JPY">JPY</option>
+                    <option value="KZT">KZT</option>
+                    <option value="UAH">UAH</option>
                 </select>
                 <label>Сумма:</label>
                 <input type="number" name="sellAmount" placeholder="Введите сумму" required>
@@ -131,6 +175,11 @@
                     <option value="BTC">BTC</option>
                     <option value="USD">USD</option>
                     <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="CNY">CNY</option>
+                    <option value="JPY">JPY</option>
+                    <option value="KZT">KZT</option>
+                    <option value="UAH">UAH</option>
                 </select>
                 <label>Метод оплаты:</label>
                 <select name="paymentMethod">
@@ -140,13 +189,22 @@
                     <option value="PayPal">PayPal</option>
                     <option value="Wise">Wise</option>
                     <option value="Revolut">Revolut</option>
+                    <option value="Skrill">Skrill</option>
+                    <option value="Neteller">Neteller</option>
+                    <option value="WebMoney">WebMoney</option>
+                    <option value="Qiwi">Qiwi</option>
+                    <option value="YandexMoney">ЮMoney</option>
+                    <option value="PerfectMoney">Perfect Money</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="Venmo">Venmo</option>
+                    <option value="CashApp">CashApp</option>
                 </select>
                 <label>Контакт (Telegram, email):</label>
                 <input type="text" name="contact" placeholder="Ваш контакт" required>
                 <button type="submit">Создать заявку</button>
             </form>
         </div>
-        <div class="form-container">
+        <div class="form-container" id="filterSection" style="display: none;">
             <h2>Фильтры</h2>
             <div class="filters">
                 <select id="filterCurrency">
@@ -157,6 +215,11 @@
                     <option value="RUB">RUB</option>
                     <option value="USD">USD</option>
                     <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="CNY">CNY</option>
+                    <option value="JPY">JPY</option>
+                    <option value="KZT">KZT</option>
+                    <option value="UAH">UAH</option>
                 </select>
                 <select id="filterPayment">
                     <option value="">Все методы</option>
@@ -166,12 +229,21 @@
                     <option value="PayPal">PayPal</option>
                     <option value="Wise">Wise</option>
                     <option value="Revolut">Revolut</option>
+                    <option value="Skrill">Skrill</option>
+                    <option value="Neteller">Neteller</option>
+                    <option value="WebMoney">WebMoney</option>
+                    <option value="Qiwi">Qiwi</option>
+                    <option value="YandexMoney">ЮMoney</option>
+                    <option value="PerfectMoney">Perfect Money</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="Venmo">Venmo</option>
+                    <option value="CashApp">CashApp</option>
                 </select>
                 <input type="number" id="filterAmount" placeholder="Мин. сумма">
                 <button onclick="applyFilters()">Применить</button>
             </div>
         </div>
-        <div class="offers-container">
+        <div class="offers-container" id="offersSection" style="display: none;">
             <h2>Текущие заявки</h2>
             <table id="offersTable">
                 <thead>
@@ -181,14 +253,22 @@
                         <th>Покупаю</th>
                         <th>Метод</th>
                         <th>Контакт</th>
+                        <th>Статус</th>
+                        <th>Действие</th>
                     </tr>
                 </thead>
                 <tbody id="offersBody"></tbody>
             </table>
-            <button class="clear-button" onclick="clearOffers()">Очистить заявки</button>
-            <button class="export-button" onclick="exportOffers()">Экспорт в CSV</button>
         </div>
-        <div class="support-container">
+        <div class="chat-container" id="chatSection" style="display: none;">
+            <h2>Чат</h2>
+            <div class="chat-messages" id="chatMessages"></div>
+            <form id="chatForm">
+                <input type="text" id="chatMessage" placeholder="Введите сообщение" required>
+                <button type="submit">Отправить</button>
+            </form>
+        </div>
+        <div class="support-container" id="supportSection" style="display: none;">
             <h2>Поддержка</h2>
             <form id="supportForm">
                 <label>Сообщение:</label>
@@ -196,101 +276,481 @@
                 <button type="submit">Отправить</button>
             </form>
         </div>
+        <div class="admin-container" id="adminSection" style="display: none;">
+            <h2>Админ-панель</h2>
+            <h3>Комиссии: <span id="totalCommission">0 USDT</span></h3>
+            <button onclick="withdrawCommission()">Вывести</button>
+            <h3>Споры</h3>
+            <table id="disputesTable">
+                <thead>
+                    <tr>
+                        <th>Заявка</th>
+                        <th>Скриншот</th>
+                        <th>Видео</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="disputesBody"></tbody>
+            </table>
+            <h3>Верификация пользователей</h3>
+            <table id="verificationsTable">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Паспорт</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="verificationsBody"></tbody>
+            </table>
+        </div>
+        <button onclick="logout()" id="logoutButton" style="display: none;">Выйти</button>
     </div>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions.js"></script>
     <script>
-        let offers = JSON.parse(localStorage.getItem('offers')) || [];
+        // Firebase конфигурация
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        function saveOffers() {
-            localStorage.setItem('offers', JSON.stringify(offers));
-            displayOffers();
+        const ADMIN_EMAIL = "your-admin-email@example.com"; // Твой email
+        let currentUser = null;
+        let currentOfferId = null;
+
+        // Аутентификация
+        function toggleAuth() {
+            const title = document.getElementById('authTitle');
+            const button = document.getElementById('authButton');
+            const toggleButton = document.querySelector('#authForm button[type="button"]');
+            if (title.textContent === 'Регистрация') {
+                title.textContent = 'Вход';
+                button.textContent = 'Войти';
+                toggleButton.textContent = 'Нет аккаунта? Зарегистрироваться';
+                document.getElementById('phone').style.display = 'none';
+                document.getElementById('passport').style.display = 'none';
+                document.getElementById('referralCode').style.display = 'none';
+            } else {
+                title.textContent = 'Регистрация';
+                button.textContent = 'Зарегистрироваться';
+                toggleButton.textContent = 'Уже есть аккаунт? Войти';
+                document.getElementById('phone').style.display = 'block';
+                document.getElementById('passport').style.display = 'block';
+                document.getElementById('referralCode').style.display = 'block';
+            }
         }
 
-        function displayOffers() {
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const phone = document.getElementById('phone').value;
+            const passport = document.getElementById('passport').value;
+            const referralCode = document.getElementById('referralCode').value;
+
+            try {
+                if (document.getElementById('authTitle').textContent === 'Регистрация') {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        email,
+                        phone,
+                        passport,
+                        referralCode: referralCode || null,
+                        tradesCompleted: 0,
+                        usdtWallet: '',
+                        verified: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    if (referralCode) {
+                        const referrer = await db.collection('users').where('referralCode', '==', referralCode).get();
+                        if (!referrer.empty) {
+                            await db.collection('referrals').add({
+                                referrerId: referrer.docs[0].id,
+                                referredId: userCredential.user.uid,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    }
+                    alert('Регистрация успешна! Ожидайте верификации.');
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                const userData = userDoc.data();
+                if (!userData.verified) {
+                    alert('Ваш аккаунт ожидает верификации.');
+                    return;
+                }
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('offerSection').style.display = 'block';
+                document.getElementById('filterSection').style.display = 'block';
+                document.getElementById('offersSection').style.display = 'block';
+                document.getElementById('supportSection').style.display = 'block';
+                document.getElementById('logoutButton').style.display = 'block';
+                if (user.email === ADMIN_EMAIL) {
+                    document.getElementById('adminSection').style.display = 'block';
+                    loadAdminData();
+                }
+                loadOffers();
+            } else {
+                currentUser = null;
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('offerSection').style.display = 'none';
+                document.getElementById('filterSection').style.display = 'none';
+                document.getElementById('offersSection').style.display = 'none';
+                document.getElementById('supportSection').style.display = 'none';
+                document.getElementById('adminSection').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'none';
+            }
+        });
+
+        // Создание заявки
+        document.getElementById('exchangeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const offer = {
+                userId: currentUser.uid,
+                sellCurrency: formData.get('sellCurrency'),
+                sellAmount: parseFloat(formData.get('sellAmount')),
+                buyCurrency: formData.get('buyCurrency'),
+                paymentMethod: formData.get('paymentMethod'),
+                contact: formData.get('contact'),
+                status: 'active',
+                buyerId: null,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('offers').add(offer);
+            e.target.reset();
+            alert('Заявка создана!');
+        });
+
+        // Загрузка заявок
+        async function loadOffers() {
             const offersBody = document.getElementById('offersBody');
             offersBody.innerHTML = '';
-            offers.forEach(offer => {
-                offersBody.innerHTML += `
-                    <tr>
-                        <td>${offer.sellCurrency}</td>
-                        <td>${offer.sellAmount}</td>
-                        <td>${offer.buyCurrency}</td>
-                        <td>${offer.paymentMethod}</td>
-                        <td>${offer.contact}</td>
-                    </tr>
+            let query = db.collection('offers').where('status', 'in', ['active', 'in-progress', 'disputed']);
+            const snapshot = await query.get();
+            snapshot.forEach(doc => {
+                const offer = doc.data();
+                const row = document.createElement('tr');
+                row.className = 'offer-row';
+                row.innerHTML = `
+                    <td>${offer.sellCurrency}</td>
+                    <td>${offer.sellAmount}</td>
+                    <td>${offer.buyCurrency}</td>
+                    <td>${offer.paymentMethod}</td>
+                    <td>${offer.contact}</td>
+                    <td>${offer.status}</td>
+                    <td>
+                        ${offer.userId === currentUser.uid ? 
+                            `<button class="delete-button" onclick="deleteOffer('${doc.id}')">Удалить</button>` : 
+                            (offer.buyerId ? 
+                                `<button onclick="openChat('${doc.id}')">Чат</button>` : 
+                                `<button onclick="buyOffer('${doc.id}', ${offer.sellAmount}, '${offer.sellCurrency}')">Купить</button>`)}
+                        ${offer.buyerId === currentUser.uid ? 
+                            `<button onclick="confirmPayment('${doc.id}')">Оплатил</button>` : ''}
+                        ${offer.userId === currentUser.uid && offer.buyerId ? 
+                            `<button onclick="confirmReceived('${doc.id}')">Получил</button>` : ''}
+                        ${offer.status === 'in-progress' ? 
+                            `<button class="dispute-button" onclick="openDispute('${doc.id}')">Спор</button>` : ''}
+                    </td>
                 `;
+                offersBody.appendChild(row);
             });
         }
 
-        document.getElementById('exchangeForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const offer = {
-                sellCurrency: formData.get('sellCurrency'),
-                sellAmount: formData.get('sellAmount'),
-                buyCurrency: formData.get('buyCurrency'),
-                paymentMethod: formData.get('paymentMethod'),
-                contact: formData.get('contact')
-            };
-            const commission = (offer.sellAmount * 0.005).toFixed(2);
-            offers.push(offer);
-            saveOffers();
-            this.reset();
-            alert(`Заявка создана! Комиссия 0.5%: ${commission} ${offer.sellCurrency}`);
-        });
+        async function deleteOffer(offerId) {
+            if (confirm('Вы уверены, что хотите удалить эту заявку?')) {
+                await db.collection('offers').doc(offerId).delete();
+                loadOffers();
+            }
+        }
 
-        function applyFilters() {
+        async function buyOffer(offerId, amount, currency) {
+            const offerRef = db.collection('offers').doc(offerId);
+            const offer = (await offerRef.get()).data();
+            if (offer.status !== 'active') {
+                alert('Заявка уже занята!');
+                return;
+            }
+            await offerRef.update({
+                buyerId: currentUser.uid,
+                status: 'in-progress'
+            });
+            setTimeout(async () => {
+                const updatedOffer = (await offerRef.get()).data();
+                if (updatedOffer.status === 'in-progress') {
+                    await offerRef.update({ status: 'active', buyerId: null });
+                    alert('Сделка отменена из-за отсутствия ответа.');
+                }
+            }, 15 * 60 * 1000); // 15 минут
+            loadOffers();
+        }
+
+        async function confirmPayment(offerId) {
+            const offerRef = db.collection('offers').doc(offerId);
+            await offerRef.update({ buyerConfirmed: true });
+            alert('Оплата подтверждена. Ожидайте подтверждения продавца.');
+        }
+
+        async function confirmReceived(offerId) {
+            const offerRef = db.collection('offers').doc(offerId);
+            const offer = (await offerRef.get()).data();
+            if (!offer.buyerConfirmed) {
+                alert('Покупатель ещё не подтвердил оплату.');
+                return;
+            }
+
+            let commissionRate = 0.005; // 0.5%
+            const seller = await db.collection('users').doc(offer.userId).get();
+            const buyer = await db.collection('users').doc(offer.buyerId).get();
+            const sellerData = seller.data();
+            const buyerData = buyer.data();
+
+            if (sellerData.tradesCompleted >= 50) commissionRate = 0.0025;
+            let commission = offer.sellAmount * commissionRate * 2; // 0.5% от покупателя и продавца
+
+            if (offer.sellCurrency !== 'USDT') {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether&vs_currencies=usd');
+                const prices = await response.json();
+                if (offer.sellCurrency === 'BTC') commission = commission / prices.bitcoin.usd;
+                if (offer.sellCurrency === 'ETH') commission = commission / prices.ethereum.usd;
+            }
+
+            await db.collection('users').doc(offer.userId).update({
+                tradesCompleted: sellerData.tradesCompleted + 1
+            });
+            await db.collection('users').doc(offer.buyerId).update({
+                tradesCompleted: buyerData.tradesCompleted + 1
+            });
+
+            await db.collection('transactions').add({
+                offerId,
+                commission,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            const referrals = await db.collection('referrals').where('referredId', 'in', [offer.userId, offer.buyerId]).get();
+            referrals.forEach(async (ref) => {
+                const refData = ref.data();
+                const referralBonus = commission * 0.2; // 20% реферальный бонус
+                await db.collection('transactions').add({
+                    userId: refData.referrerId,
+                    amount: referralBonus,
+                    type: 'referral',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            await offerRef.update({ status: 'completed' });
+            alert(`Сделка завершена! Комиссия: ${commission.toFixed(2)} USDT`);
+            loadOffers();
+        }
+
+        async function openDispute(offerId) {
+            const screenshot = prompt('Введите URL скриншота:');
+            const video = prompt('Введите URL видео (опционально):');
+            await db.collection('disputes').add({
+                offerId,
+                screenshot,
+                video: video || '',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            await db.collection('offers').doc(offerId).update({ status: 'disputed' });
+            alert('Спор открыт! Средства заморожены.');
+            loadOffers();
+        }
+
+        // Фильтры
+        async function applyFilters() {
             const currency = document.getElementById('filterCurrency').value;
             const payment = document.getElementById('filterPayment').value;
             const amount = document.getElementById('filterAmount').value;
-            let filteredOffers = JSON.parse(localStorage.getItem('offers')) || [];
-
-            if (currency) filteredOffers = filteredOffers.filter(o => o.sellCurrency === currency);
-            if (payment) filteredOffers = filteredOffers.filter(o => o.paymentMethod === payment);
-            if (amount) filteredOffers = filteredOffers.filter(o => o.sellAmount >= amount);
-
-            offers = filteredOffers;
-            displayOffers();
-        }
-
-        function clearOffers() {
-            if (confirm('Вы уверены, что хотите очистить все заявки?')) {
-                offers = [];
-                saveOffers();
-            }
-        }
-
-        function exportOffers() {
-            if (offers.length === 0) {
-                alert('Нет заявок для экспорта!');
-                return;
-            }
-            const csv = ['Продаю,Сумма,Покупаю,Метод,Контакт'];
-            offers.forEach(offer => {
-                csv.push(`${offer.sellCurrency},${offer.sellAmount},${offer.buyCurrency},${offer.paymentMethod},${offer.contact}`);
+            let query = db.collection('offers').where('status', 'in', ['active', 'in-progress', 'disputed']);
+            if (currency) query = query.where('sellCurrency', '==', currency);
+            if (payment) query = query.where('paymentMethod', '==', payment);
+            if (amount) query = query.where('sellAmount', '>=', parseFloat(amount));
+            const snapshot = await query.get();
+            const offersBody = document.getElementById('offersBody');
+            offersBody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const offer = doc.data();
+                const row = document.createElement('tr');
+                row.className = 'offer-row';
+                row.innerHTML = `
+                    <td>${offer.sellCurrency}</td>
+                    <td>${offer.sellAmount}</td>
+                    <td>${offer.buyCurrency}</td>
+                    <td>${offer.paymentMethod}</td>
+                    <td>${offer.contact}</td>
+                    <td>${offer.status}</td>
+                    <td>
+                        ${offer.userId === currentUser.uid ? 
+                            `<button class="delete-button" onclick="deleteOffer('${doc.id}')">Удалить</button>` : 
+                            (offer.buyerId ? 
+                                `<button onclick="openChat('${doc.id}')">Чат</button>` : 
+                                `<button onclick="buyOffer('${doc.id}', ${offer.sellAmount}, '${offer.sellCurrency}')">Купить</button>`)}
+                        ${offer.buyerId === currentUser.uid ? 
+                            `<button onclick="confirmPayment('${doc.id}')">Оплатил</button>` : ''}
+                        ${offer.userId === currentUser.uid && offer.buyerId ? 
+                            `<button onclick="confirmReceived('${doc.id}')">Получил</button>` : ''}
+                        ${offer.status === 'in-progress' ? 
+                            `<button class="dispute-button" onclick="openDispute('${doc.id}')">Спор</button>` : ''}
+                    </td>
+                `;
+                offersBody.appendChild(row);
             });
-            const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
-            const downloadLink = document.createElement('a');
-            downloadLink.download = 'offers.csv';
-            downloadLink.href = window.URL.createObjectURL(csvFile);
-            downloadLink.style.display = 'none';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
         }
 
-        document.getElementById('supportForm').addEventListener('submit', function(e) {
+        // Чат
+        async function openChat(offerId) {
+            currentOfferId = offerId;
+            document.getElementById('chatSection').style.display = 'block';
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            const snapshot = await db.collection('messages')
+                .where('offerId', '==', currentOfferId)
+                .orderBy('createdAt')
+                .get();
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                chatMessages.innerHTML += `<p><strong>${msg.userId === currentUser.uid ? 'Вы' : 'Другой пользователь'}:</strong> ${msg.text}</p>`;
+            });
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(this);
+            const message = document.getElementById('chatMessage').value;
+            await db.collection('messages').add({
+                offerId: currentOfferId,
+                userId: currentUser.uid,
+                text: message,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            document.getElementById('chatMessage').value = '';
+            loadMessages();
+        });
+
+        // Поддержка
+        document.getElementById('supportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
             const message = formData.get('message');
             if (message.toLowerCase().includes('оператор')) {
+                await db.collection('support').add({
+                    userId: currentUser.uid,
+                    message,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
                 alert('Оператор уведомлён! Скоро с вами свяжутся.');
             } else {
                 alert('Сообщение отправлено! Ответ: "Опишите проблему подробнее."');
             }
-            this.reset();
+            e.target.reset();
         });
 
-        displayOffers();
+        // Админ-панель
+        async function loadAdminData() {
+            // Комиссии
+            let totalCommission = 0;
+            const transactions = await db.collection('transactions').get();
+            transactions.forEach(doc => {
+                const tx = doc.data();
+                if (tx.commission) totalCommission += tx.commission;
+                if (tx.type === 'referral') totalCommission += tx.amount;
+            });
+            document.getElementById('totalCommission').textContent = `${totalCommission.toFixed(2)} USDT`;
+
+            // Споры
+            const disputesBody = document.getElementById('disputesBody');
+            disputesBody.innerHTML = '';
+            const disputes = await db.collection('disputes').get();
+            disputes.forEach(async (doc) => {
+                const dispute = doc.data();
+                const offer = (await db.collection('offers').doc(dispute.offerId).get()).data();
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${dispute.offerId}</td>
+                    <td><a href="${dispute.screenshot}" target="_blank">Скриншот</a></td>
+                    <td>${dispute.video ? `<a href="${dispute.video}" target="_blank">Видео</a>` : 'Нет'}</td>
+                    <td>
+                        <button onclick="resolveDispute('${doc.id}', '${dispute.offerId}', 'seller')">Продавец</button>
+                        <button onclick="resolveDispute('${doc.id}', '${dispute.offerId}', 'buyer')">Покупатель</button>
+                    </td>
+                `;
+                disputesBody.appendChild(row);
+            });
+
+            // Верификация
+            const verificationsBody = document.getElementById('verificationsBody');
+            verificationsBody.innerHTML = '';
+            const users = await db.collection('users').where('verified', '==', false).get();
+            users.forEach(doc => {
+                const user = doc.data();
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.email}</td>
+                    <td>${user.phone}</td>
+                    <td><a href="${user.passport}" target="_blank">Паспорт</a></td>
+                    <td><button onclick="verifyUser('${doc.id}')">Одобрить</button></td>
+                `;
+                verificationsBody.appendChild(row);
+            });
+        }
+
+        async function verifyUser(userId) {
+            await db.collection('users').doc(userId).update({ verified: true });
+            loadAdminData();
+        }
+
+        async function resolveDispute(disputeId, offerId, winner) {
+            const offerRef = db.collection('offers').doc(offerId);
+            await offerRef.update({ status: 'completed', disputeWinner: winner });
+            await db.collection('disputes').doc(disputeId).delete();
+            loadAdminData();
+            loadOffers();
+        }
+
+        async function withdrawCommission() {
+            const usdtWallet = prompt('Введите ваш USDT кошелёк:');
+            if (usdtWallet) {
+                alert(`Комиссия выведена на ${usdtWallet}`);
+                await db.collection('transactions').add({
+                    userId: ADMIN_EMAIL,
+                    amount: parseFloat(document.getElementById('totalCommission').textContent),
+                    type: 'withdrawal',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                loadAdminData();
+            }
+        }
+
+        function logout() {
+            auth.signOut();
+        }
     </script>
 </body>
 </html>
