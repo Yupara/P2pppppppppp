@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from passlib.context import CryptContext
 from twilio.rest import Client
-from aiosmtplib import SMTP  # Заменили aiomail на aiosmtplib
+from aiosmtplib import SMTP  # Используем aiosmtplib вместо aiomail
 from datetime import datetime, timedelta
 import jwt
 import os
@@ -20,8 +20,7 @@ DATABASE_URL = "sqlite:///p2p_exchange.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Модели (оставьте как есть)
-
+# Модели (без изменений)
 Base = declarative_base()
 
 class User(Base):
