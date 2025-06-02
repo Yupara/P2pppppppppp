@@ -23,7 +23,7 @@
             font-size: 28px;
             margin-bottom: 20px;
         }
-        .form-container, .offers-container {
+        .form-container, .offers-container, .support-container {
             background: #223c37;
             padding: 20px;
             border-radius: 12px;
@@ -78,6 +78,15 @@
         .filters select, .filters input {
             width: auto;
             flex: 1;
+        }
+        .support-container input {
+            background: #1a2b27;
+        }
+        .clear-button {
+            background: #ff4444;
+        }
+        .clear-button:hover {
+            background: #cc0000;
         }
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -167,6 +176,15 @@
                 </thead>
                 <tbody id="offersBody"></tbody>
             </table>
+            <button class="clear-button" onclick="clearOffers()">Очистить заявки</button>
+        </div>
+        <div class="support-container">
+            <h2>Поддержка</h2>
+            <form id="supportForm">
+                <label>Сообщение:</label>
+                <input type="text" name="message" placeholder="Введите сообщение" required>
+                <button type="submit">Отправить</button>
+            </form>
         </div>
     </div>
     <script>
@@ -223,6 +241,25 @@
             offers = filteredOffers;
             displayOffers();
         }
+
+        function clearOffers() {
+            if (confirm('Вы уверены, что хотите очистить все заявки?')) {
+                offers = [];
+                saveOffers();
+            }
+        }
+
+        document.getElementById('supportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const message = formData.get('message');
+            if (message.toLowerCase().includes('оператор')) {
+                alert('Оператор уведомлён! Скоро с вами свяжутся.');
+            } else {
+                alert('Сообщение отправлено! Ответ: "Опишите проблему подробнее."');
+            }
+            this.reset();
+        });
 
         displayOffers();
     </script>
