@@ -6,7 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from passlib.context import CryptContext
 from twilio.rest import Client
-from aiomail import EmailSender
+from aiosmtplib import SMTP  # Заменили aiomail на aiosmtplib
 from datetime import datetime, timedelta
 import jwt
 import os
@@ -16,11 +16,12 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # Настройка базы данных SQLite
-DATABASE_URL = "sqlite:///p2p_exchange.db"  # Файл базы данных будет создан локально
+DATABASE_URL = "sqlite:///p2p_exchange.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Модели
+# Модели (оставьте как есть)
+
 Base = declarative_base()
 
 class User(Base):
@@ -79,14 +80,9 @@ class Transaction(Base):
 # Хэширование паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Настройка email и SMS (для теста можно временно отключить)
-email_sender = EmailSender(
-    host="smtp.gmail.com",
-    port=587,
-    username=os.getenv("EMAIL_USER", "test@example.com"),
-    password=os.getenv("EMAIL_PASS", "testpass"),
-    tls=True
-)
+# Настройка email с aiosmtplib
+email_sender = SMTP(hostname="smtp.gmail.com", port=587, use_tls=False, start_tls=True, username=os.getenv("EMAIL_USER", "test@example.com"), password=os.getenv("EMAIL_PASS", "testpass"))
+
 twilio_client = Client(os.getenv("TWILIO_SID", "test_sid"), os.getenv("TWILIO_AUTH_TOKEN", "test_token"))
 
 # CORS
@@ -124,6 +120,17 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
     user.verification_code = verification_code
     db.add(user)
     db.commit()
+
+    # Обновлённая отправка email
+    message = f"Subject: Код подтверждения\n\nВаш код подтверждения: {verification_code}"
+    async with email_sender as server:
+        await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
+
+    twilio_client.messages.create(
+        body=f"Ваш код подтверждения: {verification_code}",
+        from_=os.getenv("TWILIO_PHONE", "+1234567890"),
+        to=phone
+    )
     return {"message": "Код отправлен", "verification_code": verification_code}
 
 @app.post("/verify")
