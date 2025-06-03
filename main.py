@@ -312,7 +312,8 @@ async def get_my_offers(user_id: int, token: str):
             "contact": o.contact,
             "status": o.status,
             "created_at": o.created_at,
-            "buyer_id": o.buyer_id
+            "buyer_id": o.buyer_id,
+            "frozen_amount": o.frozen_amount
         } for o in offers]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -528,8 +529,8 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
     db = next(get_db())
     try:
         offer = db.query(Offer).filter(Offer.id == offer_id).first()
-        if not offer or (offer.user_id != user_id and offer.buyer_id != user_id) or offer.status != "pending":
-            raise HTTPException(status_code=403, detail="You are not part of this trade or offer is not pending")
+        if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
+            raise HTTPException(status_code=403, detail="You are not part of this trade")
         if offer.frozen_amount <= 0:
             raise HTTPException(status_code=400, detail="No funds frozen for this offer")
         screenshot_path = None
@@ -620,11 +621,11 @@ async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(..
         dispute.status = "resolved"
         dispute.resolution = resolution
         db.commit()
-        # Уведомления участникам
+        # Уведомление участников
         async with email_sender as server:
             message = f"Subject: Dispute Resolved\n\nDispute #{dispute_id} for offer #{offer.id} has been resolved. Action: {action}. Resolution: {resolution}"
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
             await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
         return {"message": "Dispute resolved", "action": action}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -644,7 +645,36 @@ async def admin_stats(token: str):
         total_earnings_today = sum(t.commission for t in transactions)
         total_earnings = sum(t.commission for t in db.query(Transaction).all())
         active_users = db.query(User).filter(User.verified == True, User.blocked_until == None).count()
-        return {"earnings_today": total_earnings_today, "earnings_total": total_earnings, "active_users": active_users}
+        large_trades = db.query(Offer).filter(Offer.fiat_amount * convert_to_usdt(Offer.currency, 1) >= 10000, Offer.status == "completed").all()
+        return {
+            "earnings_today": total_earnings_today,
+            "earnings_total": total_earnings,
+            "active_users": active_users,
+            "large_trades": [{"id": t.id, "fiat_amount": t.fiat_amount, "fiat": t.fiat, "created_at": t.created_at} for t in large_trades]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/admin-users")
+async def admin_users(token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if not payload.get("is_admin", False):
+            raise HTTPException(status_code=403, detail="Admin access required")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = next(get_db())
+    try:
+        users = db.query(User).all()
+        return [{
+            "id": u.id,
+            "email": u.email,
+            "trades_completed": u.trades_completed,
+            "balance": u.balance,
+            "cancellations": u.cancellations,
+            "blocked_until": u.blocked_until,
+            "verified": u.verified
+        } for u in users]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
