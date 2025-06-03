@@ -3,24 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Exchange</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            color: #333;
-        }
-        p {
-            color: #666;
-        }
-    </style>
+    <title>Green P2P Exchange</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <h1>Welcome to P2P Exchange!</h1>
-    <p>Create and manage your cryptocurrency offers securely.</p>
+    <div class="container">
+        <h1>Green P2P Exchange</h1>
+        
+        <!-- Секция авторизации -->
+        <div id="auth-section">
+            <h2>Регистрация</h2>
+            <input type="email" id="reg-email" placeholder="Email">
+            <input type="text" id="reg-phone" placeholder="Phone">
+            <input type="password" id="reg-password" placeholder="Password">
+            <button onclick="register()">Зарегистрироваться</button>
+            <p class="error" id="reg-error"></p>
+            <p class="success" id="reg-success"></p>
+
+            <h2>Верификация</h2>
+            <input type="email" id="verify-email" placeholder="Email">
+            <input type="text" id="verify-code" placeholder="Verification Code">
+            <button onclick="verify()">Верифицировать</button>
+            <p class="error" id="verify-error"></p>
+            <p class="success" id="verify-success"></p>
+
+            <h2>Вход</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Войти</button>
+            <p class="error" id="login-error"></p>
+            <p class="success" id="login-success"></p>
+        </div>
+
+        <!-- Секция пользователя (скрыта по умолчанию) -->
+        <div id="user-section" style="display: none;">
+            <h2>Добро пожаловать, <span id="user-email"></span></h2>
+            <p>Ваш баланс: <span id="user-balance">0</span></p>
+            <button onclick="logout()">Выйти</button>
+
+            <h3>Пополнить баланс</h3>
+            <input type="number" id="deposit-amount" placeholder="Amount">
+            <button onclick="deposit()">Пополнить</button>
+            <p class="error" id="deposit-error"></p>
+            <p class="success" id="deposit-success"></p>
+
+            <h3>Создать заявку</h3>
+            <input type="text" id="sell-currency" placeholder="Sell Currency (e.g., USD)">
+            <input type="number" id="sell-amount" placeholder="Sell Amount">
+            <input type="text" id="buy-currency" placeholder="Buy Currency (e.g., BTC)">
+            <input type="text" id="payment-method" placeholder="Payment Method">
+            <input type="text" id="contact" placeholder="Contact (e.g., Telegram)">
+            <button onclick="createOffer()">Создать заявку</button>
+            <p class="error" id="create-offer-error"></p>
+            <p class="success" id="create-offer-success"></p>
+
+            <h3>Доступные заявки</h3>
+            <div id="offers-list"></div>
+        </div>
+    </div>
+    <script src="/static/js/script.js"></script>
 </body>
 </html>
