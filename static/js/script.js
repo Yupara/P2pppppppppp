@@ -168,7 +168,7 @@ async function createOffer() {
     const currency = document.getElementById("offer-currency").value;
     const amount = document.getElementById("offer-amount").value;
     const fiat = document.getElementById("offer-fiat").value;
-    const fiatAmount = amount * (currency === "USDT" ? 1 : currency === "BTC" ? 70000 : 3500); // Примерный курс
+    const fiatAmount = amount * (currency === "USDT" ? 1 : currency === "BTC" ? 70000 : 3500);
     const paymentMethod = document.getElementById("offer-payment-method").value;
     const contact = document.getElementById("offer-contact").value;
     try {
@@ -469,6 +469,28 @@ function renderWeeklyStatsChart(labels, data) {
             }
         }
     });
+}
+
+async function withdrawEarnings() {
+    const amount = prompt(language === "ru" ? "Введите сумму для вывода (USDT):" : "Enter amount to withdraw (USDT):");
+    const walletAddress = prompt(language === "ru" ? "Введите адрес кошелька:" : "Enter wallet address:");
+    if (!amount || !walletAddress) return;
+    try {
+        const response = await fetch(`${API_URL}/withdraw-earnings`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `amount=${amount}&wallet_address=${walletAddress}&token=${token}`
+        });
+        const data = await response.json();
+        if (response.ok) {
+            alert(language === "ru" ? "Запрос на вывод отправлен" : "Withdrawal request sent");
+            fetchAdminStats();
+        } else {
+            alert(data.detail);
+        }
+    } catch (error) {
+        alert(language === "ru" ? `Ошибка: ${error.message}` : `Error: ${error.message}`);
+    }
 }
 
 async function fetchDisputes() {
