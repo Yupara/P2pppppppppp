@@ -120,18 +120,20 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
         db.add(user)
         db.commit()
 
-        # Отправка email
-        message = f"Subject: Код подтверждения\n\nВаш код подтверждения: {verification_code}"
-        async with email_sender as server:
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
+        # Отправка email (временно отключено)
+        # async with email_sender as server:
+        #     message = f"Subject: Код подтверждения\n\nВаш код подтверждения: {verification_code}"
+        #     await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
 
-        # Отправка SMS через Twilio
-        twilio_client.messages.create(
-            body=f"Ваш код подтверждения: {verification_code}",
-            from_=os.getenv("TWILIO_PHONE", "+1234567890"),
-            to=phone
-        )
+        # Отправка SMS через Twilio (временно отключено)
+        # twilio_client.messages.create(
+        #     body=f"Ваш код подтверждения: {verification_code}",
+        #     from_=os.getenv("TWILIO_PHONE", "+1234567890"),
+        #     to=phone
+        # )
         return {"message": "Код отправлен", "verification_code": verification_code}
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
         print(f"Error in /register: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
