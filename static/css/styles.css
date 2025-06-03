@@ -1,49 +1,112 @@
 body {
     font-family: Arial, sans-serif;
     margin: 0;
-    padding: 20px;
-    background-color: #1a2b2e; /* Темно-зеленый фон */
-    color: #ffffff;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
 }
+
+.header {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header a {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+.header a:hover {
+    text-decoration: underline;
+}
+
 .container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: #223d3f; /* Зеленоватый контейнер */
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
 }
-h1, h2, h3 {
-    color: #00cc66; /* Светло-зеленый заголовок */
-}
-input, button {
-    padding: 10px;
-    margin: 5px 0;
+
+input, select, button {
+    display: block;
     width: 100%;
-    box-sizing: border-box;
-    border: 1px solid #00cc66;
-    background: #2a4d4f;
-    color: #ffffff;
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
+
 button {
-    background-color: #00cc66;
+    background-color: #28a745;
     color: white;
     border: none;
     cursor: pointer;
 }
+
 button:hover {
-    background-color: #00b359;
+    background-color: #218838;
 }
+
 .error {
-    color: #ff4444;
+    color: red;
 }
+
 .success {
-    color: #00cc66;
+    color: green;
 }
-.offer {
-    border: 1px solid #00cc66;
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.tabs button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #e9ecef;
+    cursor: pointer;
+}
+
+.tabs button.active {
+    background-color: #28a745;
+    color: white;
+}
+
+.offer, .dispute {
+    border: 1px solid #ddd;
     padding: 10px;
     margin: 10px 0;
-    border-radius: 5px;
-    background: #2a4d4f;
+    border-radius: 4px;
+}
+
+.chat {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: white;
+}
+
+.chat-message {
+    margin: 5px 0;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.chat-message.sent {
+    background-color: #e9ecef;
+}
+
+.chat-message.received {
+    background-color: #f8f9fa;
+}
+
+#weekly-stats-chart {
+    margin: 20px 0;
 }
