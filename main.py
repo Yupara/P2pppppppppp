@@ -206,7 +206,7 @@ async def get_offers(sell_currency: str = None, buy_currency: str = None, paymen
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/buy-offer")
-async def buy_offer(offer_id: int, buyer_id: int, token: str = Form(...)):
+async def buy_offer(offer_id: int = Form(...), buyer_id: int = Form(...), token: str = Form(...)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
         if payload["user_id"] != buyer_id:
