@@ -183,10 +183,19 @@ async def create_offer(user_id: int = Form(...), sell_currency: str = Form(...),
         raise HTTPException(status_code=401, detail="Недействительный токен")
     db = next(get_db())
     try:
+        # Проверяем баланс продавца
+        seller = db.query(User).filter(User.id == user_id).first()
+        if not seller:
+            raise HTTPException(status_code=400, detail="Пользователь не найден")
+        if seller.balance < sell_amount:
+            raise HTTPException(status_code=400, detail="Недостаточно средств на балансе")
+        
+        # Резервируем сумму на балансе продавца
+        seller.balance -= sell_amount
         offer = Offer(user_id=user_id, sell_currency=sell_currency, sell_amount=sell_amount, buy_currency=buy_currency, payment_method=payment_method, contact=contact)
         db.add(offer)
         db.commit()
-        return {"message": "Заявка создана"}
+        return {"message": "Заявка создана", "seller_balance": seller.balance}
     except Exception as e:
         print(f"Error in /create-offer: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -246,18 +255,30 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
             raise HTTPException(status_code=400, detail="Заявка не найдена или не в процессе")
         if offer.user_id != user_id and offer.buyer_id != user_id:
             raise HTTPException(status_code=403, detail="Вы не участвуете в этой сделке")
+        
+        # Переводим деньги покупателю, вычитая комиссию
+        commission_rate = 0.01  # 1% комиссии
+        commission = offer.sell_amount * commission_rate
+        amount_to_buyer = offer.sell_amount - commission
+        
+        buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+        if not buyer:
+            raise HTTPException(status_code=400, detail="Покупатель не найден")
+        
+        buyer.balance += amount_to_buyer
         offer.status = "completed"
+        
         # Обновляем статистику пользователей
         seller = db.query(User).filter(User.id == offer.user_id).first()
-        buyer = db.query(User).filter(User.id == offer.buyer_id).first()
         seller.trades_completed += 1
         buyer.trades_completed += 1
-        # Здесь можно добавить комиссию в таблицу transactions
-        commission = offer.sell_amount * 0.01  # Например, 1% комиссии
+        
+        # Сохраняем комиссию в таблице transactions
         transaction = Transaction(offer_id=offer_id, commission=commission)
         db.add(transaction)
         db.commit()
-        return {"message": "Сделка завершена"}
+        
+        return {"message": "Сделка завершена", "buyer_balance": buyer.balance}
     except Exception as e:
         print(f"Error in /confirm-offer: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -277,13 +298,18 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
             raise HTTPException(status_code=400, detail="Заявка не найдена или не в процессе")
         if offer.user_id != user_id and offer.buyer_id != user_id:
             raise HTTPException(status_code=403, detail="Вы не участвуете в этой сделке")
+        
+        # Возвращаем зарезервированные средства продавцу
+        seller = db.query(User).filter(User.id == offer.user_id).first()
+        seller.balance += offer.sell_amount
+        
         offer.status = "active"
         offer.buyer_id = None
         # Увеличиваем счётчик отмен
         user = db.query(User).filter(User.id == user_id).first()
         user.cancellations += 1
         db.commit()
-        return {"message": "Сделка отменена"}
+        return {"message": "Сделка отменена", "seller_balance": seller.balance}
     except Exception as e:
         print(f"Error in /cancel-offer: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -418,23 +444,35 @@ async def resolve_dispute(dispute_id: int = Form(...), admin_id: int = Form(...)
         dispute.resolution = resolution
         db.commit()
 
-        # Обновляем статус сделки в зависимости от решения
+        seller = db.query(User).filter(User.id == offer.user_id).first()
+        buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+        if not seller or not buyer:
+            raise HTTPException(status_code=400, detail="Продавец или покупатель не найден")
+
+        # Обновляем баланс в зависимости от решения
+        commission_rate = 0.01  # 1% комиссии
+        commission = offer.sell_amount * commission_rate
+        amount_to_buyer = offer.sell_amount - commission
+
         if action == "resolve":
             offer.status = "completed"
+            # Переводим деньги покупателю
+            buyer.balance += amount_to_buyer
+            # Сохраняем комиссию
+            transaction = Transaction(offer_id=offer.id, commission=commission)
+            db.add(transaction)
         elif action == "cancel":
             offer.status = "active"
             offer.buyer_id = None  # Сбрасываем покупателя
+            # Возвращаем деньги продавцу
+            seller.balance += offer.sell_amount
             # Увеличиваем счётчик отмен у покупателя
-            buyer = db.query(User).filter(User.id == offer.buyer_id).first()
-            if buyer:
-                buyer.cancellations += 1
+            buyer.cancellations += 1
         else:
             raise HTTPException(status_code=400, detail="Недопустимое действие. Используйте 'resolve' или 'cancel'")
         db.commit()
 
         # Отправка email уведомления продавцу, покупателю и администратору
-        seller = db.query(User).filter(User.id == offer.user_id).first()
-        buyer = db.query(User).filter(User.id == offer.buyer_id).first()
         admin = db.query(User).filter(User.id == admin_id).first()
         if seller and buyer and admin:
             async with email_sender as server:
@@ -452,7 +490,7 @@ async def resolve_dispute(dispute_id: int = Form(...), admin_id: int = Form(...)
                 to=seller.phone
             )
 
-        return {"message": "Спор разрешён", "resolution": resolution}
+        return {"message": "Спор разрешён", "resolution": resolution, "seller_balance": seller.balance, "buyer_balance": buyer.balance}
     except Exception as e:
         print(f"Error in /resolve-dispute: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -470,6 +508,28 @@ async def reset_db():
         return {"message": "База данных очищена"}
     except Exception as e:
         print(f"Error in /reset-db: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/deposit")
+async def deposit(user_id: int = Form(...), amount: float = Form(...), token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="Пользователь не найден")
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Сумма должна быть больше 0")
+        user.balance += amount
+        db.commit()
+        return {"message": "Баланс пополнен", "new_balance": user.balance}
+    except Exception as e:
+        print(f"Error in /deposit: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 if __name__ == "__main__":
