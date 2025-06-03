@@ -1,4 +1,4 @@
-const API_URL = "https://green-p2p-exchange.up.railway.app";
+const API_URL = "https://p2pppppppppp-production.up.railway.app";
 let token = localStorage.getItem("token");
 let userId = localStorage.getItem("userId");
 
@@ -12,13 +12,15 @@ async function register() {
     const email = document.getElementById("reg-email").value;
     const phone = document.getElementById("reg-phone").value;
     const password = document.getElementById("reg-password").value;
+    console.log("Sending registration:", { email, phone, password }); // Отладка
     try {
         const response = await fetch(`${API_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `email=${email}&phone=${phone}&password=${password}`
+            body: `email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&password=${encodeURIComponent(password)}`
         });
         const data = await response.json();
+        console.log("Response:", data); // Отладка
         if (response.ok) {
             document.getElementById("reg-success").textContent = `Код отправлен: ${data.verification_code}`;
             document.getElementById("reg-error").textContent = "";
@@ -27,6 +29,7 @@ async function register() {
             document.getElementById("reg-success").textContent = "";
         }
     } catch (error) {
+        console.error("Error:", error); // Отладка
         document.getElementById("reg-error").textContent = "Ошибка: " + error.message;
     }
 }
@@ -38,9 +41,10 @@ async function verify() {
         const response = await fetch(`${API_URL}/verify`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `email=${email}&code=${code}`
+            body: `email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`
         });
         const data = await response.json();
+        console.log("Response:", data); // Отладка
         if (response.ok) {
             document.getElementById("verify-success").textContent = "Верификация успешна";
             document.getElementById("verify-error").textContent = "";
@@ -49,6 +53,7 @@ async function verify() {
             document.getElementById("verify-success").textContent = "";
         }
     } catch (error) {
+        console.error("Error:", error); // Отладка
         document.getElementById("verify-error").textContent = "Ошибка: " + error.message;
     }
 }
@@ -60,9 +65,10 @@ async function login() {
         const response = await fetch(`${API_URL}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `email=${email}&password=${password}`
+            body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
         });
         const data = await response.json();
+        console.log("Response:", data); // Отладка
         if (response.ok) {
             token = data.token;
             userId = data.user_id;
@@ -79,6 +85,7 @@ async function login() {
             document.getElementById("login-success").textContent = "";
         }
     } catch (error) {
+        console.error("Error:", error); // Отладка
         document.getElementById("login-error").textContent = "Ошибка: " + error.message;
     }
 }
@@ -98,9 +105,10 @@ async function deposit() {
         const response = await fetch(`${API_URL}/deposit`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `user_id=${userId}&amount=${amount}&token=${token}`
+            body: `user_id=${userId}&amount=${encodeURIComponent(amount)}&token=${encodeURIComponent(token)}`
         });
         const data = await response.json();
+        console.log("Response:", data); // Отладка
         if (response.ok) {
             document.getElementById("deposit-success").textContent = `Баланс пополнен: ${data.new_balance}`;
             document.getElementById("deposit-error").textContent = "";
@@ -110,6 +118,7 @@ async function deposit() {
             document.getElementById("deposit-success").textContent = "";
         }
     } catch (error) {
+        console.error("Error:", error); // Отладка
         document.getElementById("deposit-error").textContent = "Ошибка: " + error.message;
     }
 }
@@ -124,9 +133,10 @@ async function createOffer() {
         const response = await fetch(`${API_URL}/create-offer`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `user_id=${userId}&sell_currency=${sellCurrency}&sell_amount=${sellAmount}&buy_currency=${buyCurrency}&payment_method=${paymentMethod}&contact=${contact}&token=${token}`
+            body: `user_id=${userId}&sell_currency=${encodeURIComponent(sellCurrency)}&sell_amount=${encodeURIComponent(sellAmount)}&buy_currency=${encodeURIComponent(buyCurrency)}&payment_method=${encodeURIComponent(paymentMethod)}&contact=${encodeURIComponent(contact)}&token=${encodeURIComponent(token)}`
         });
         const data = await response.json();
+        console.log("Response:", data); // Отладка
         if (response.ok) {
             document.getElementById("create-offer-success").textContent = "Заявка создана";
             document.getElementById("create-offer-error").textContent = "";
@@ -137,6 +147,7 @@ async function createOffer() {
             document.getElementById("create-offer-success").textContent = "";
         }
     } catch (error) {
+        console.error("Error:", error); // Отладка
         document.getElementById("create-offer-error").textContent = "Ошибка: " + error.message;
     }
 }
@@ -145,6 +156,7 @@ async function fetchOffers() {
     try {
         const response = await fetch(`${API_URL}/offers`);
         const offers = await response.json();
+        console.log("Offers:", offers); // Отладка
         const offersList = document.getElementById("offers-list");
         offersList.innerHTML = "";
         offers.forEach(offer => {
@@ -152,27 +164,28 @@ async function fetchOffers() {
             offerDiv.className = "offer";
             offerDiv.innerHTML = `
                 <p>ID: ${offer.id}</p>
-                <p>Продаёт: ${offer.sell_amount} ${offer.sell_currency}</p>
-                <p>Покупает: ${offer.buy_currency}</p>
+                <p>Продажа: ${offer.sell_amount} ${offer.sell_currency}</p>
+                <p>Покупка: ${offer.buy_currency}</p>
                 <p>Метод оплаты: ${offer.payment_method}</p>
                 <p>Контакт: ${offer.contact}</p>
-                <button onclick="buyOffer(${offer.id})">Купить</button>
+                <button onclick="dealOffer(${offer.id})">Купить</button>
             `;
             offersList.appendChild(offerDiv);
         });
     } catch (error) {
-        console.error("Ошибка при загрузке заявок:", error);
+        console.error("Error:", error); // Отладка
     }
 }
 
-async function buyOffer(offerId) {
+async function dealOffer(offerId) {
     try {
         const response = await fetch(`${API_URL}/buy-offer`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `offer_id=${offerId}&buyer_id=${userId}&token=${token}`
+            body: `offer_id=${encodeURIComponent(offerId)}&buyer_id=${encodeURIComponent(userId)}&token=${encodeURIComponent(token)}`
         });
         const data = await response.json();
+        console.log("Response:", data); // Отладка
         if (response.ok) {
             alert("Заявка куплена");
             fetchOffers();
@@ -180,6 +193,7 @@ async function buyOffer(offerId) {
             alert("Ошибка: " + data.detail);
         }
     } catch (error) {
+        console.error("Error:", error); // Отладка
         alert("Ошибка: " + error.message);
     }
 }
