@@ -528,8 +528,10 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
     db = next(get_db())
     try:
         offer = db.query(Offer).filter(Offer.id == offer_id).first()
-        if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
-            raise HTTPException(status_code=403, detail="You are not part of this trade")
+        if not offer or (offer.user_id != user_id and offer.buyer_id != user_id) or offer.status != "pending":
+            raise HTTPException(status_code=403, detail="You are not part of this trade or offer is not pending")
+        if offer.frozen_amount <= 0:
+            raise HTTPException(status_code=400, detail="No funds frozen for this offer")
         screenshot_path = None
         video_path = None
         if screenshot:
@@ -543,7 +545,6 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
         dispute = Dispute(offer_id=offer_id, user_id=user_id, screenshot=screenshot_path, video=video_path)
         db.add(dispute)
         offer.status = "disputed"
-        offer.frozen_amount = offer.amount
         db.commit()
         # Уведомление админу
         async with email_sender as server:
@@ -619,6 +620,11 @@ async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(..
         dispute.status = "resolved"
         dispute.resolution = resolution
         db.commit()
+        # Уведомления участникам
+        async with email_sender as server:
+            message = f"Subject: Dispute Resolved\n\nDispute #{dispute_id} for offer #{offer.id} has been resolved. Action: {action}. Resolution: {resolution}"
+            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, message)
         return {"message": "Dispute resolved", "action": action}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
