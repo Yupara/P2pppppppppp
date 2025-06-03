@@ -67,6 +67,8 @@ class Dispute(Base):
     offer_id = Column(Integer, ForeignKey("offers.id"))
     screenshot = Column(String)
     video = Column(String)
+    status = Column(String, default="open")
+    resolution = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Transaction(Base):
@@ -348,6 +350,24 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
         dispute = Dispute(offer_id=offer_id, screenshot=screenshot, video=video)
         db.add(dispute)
         db.commit()
+
+        # Отправка email уведомления продавцу и покупателю
+        seller = db.query(User).filter(User.id == offer.user_id).first()
+        buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+        if seller and buyer:
+            async with email_sender as server:
+                seller_message = f"Subject: Новый спор\n\nСпор создан для вашей заявки #{offer_id}. Пожалуйста, проверьте детали."
+                buyer_message = f"Subject: Новый спор\n\nВы создали спор для заявки #{offer_id}. Ожидайте решения."
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, seller_message)
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, buyer_message)
+
+            # Отправка SMS уведомления (временно только продавцу)
+            twilio_client.messages.create(
+                body=f"Новый спор для заявки #{offer_id}. Проверьте email.",
+                from_=os.getenv("TWILIO_PHONE", "+1234567890"),
+                to=seller.phone
+            )
+
         return {"message": "Спор создан"}
     except Exception as e:
         print(f"Error in /create-dispute: {str(e)}")
@@ -368,9 +388,73 @@ async def get_disputes(user_id: int, token: str):
         offer_ids = [offer.id for offer in offers]
         # Находим все споры для этих сделок
         disputes = db.query(Dispute).filter(Dispute.offer_id.in_(offer_ids)).all()
-        return [{"id": d.id, "offer_id": d.offer_id, "screenshot": d.screenshot, "video": d.video, "created_at": d.created_at} for d in disputes]
+        return [{"id": d.id, "offer_id": d.offer_id, "screenshot": d.screenshot, "video": d.video, "status": d.status, "resolution": d.resolution, "created_at": d.created_at} for d in disputes]
     except Exception as e:
         print(f"Error in /get-disputes: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/resolve-dispute")
+async def resolve_dispute(dispute_id: int = Form(...), admin_id: int = Form(...), resolution: str = Form(...), action: str = Form(...), token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != admin_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    db = next(get_db())
+    try:
+        # Проверяем, что спор существует и ещё открыт
+        dispute = db.query(Dispute).filter(Dispute.id == dispute_id, Dispute.status == "open").first()
+        if not dispute:
+            raise HTTPException(status_code=400, detail="Спор не найден или уже разрешён")
+        
+        # Находим связанную сделку
+        offer = db.query(Offer).filter(Offer.id == dispute.offer_id).first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Заявка не найдена")
+
+        # Обновляем статус спора и добавляем решение
+        dispute.status = "resolved" if action == "resolve" else "cancelled"
+        dispute.resolution = resolution
+        db.commit()
+
+        # Обновляем статус сделки в зависимости от решения
+        if action == "resolve":
+            offer.status = "completed"
+        elif action == "cancel":
+            offer.status = "active"
+            offer.buyer_id = None  # Сбрасываем покупателя
+            # Увеличиваем счётчик отмен у покупателя
+            buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+            if buyer:
+                buyer.cancellations += 1
+        else:
+            raise HTTPException(status_code=400, detail="Недопустимое действие. Используйте 'resolve' или 'cancel'")
+        db.commit()
+
+        # Отправка email уведомления продавцу, покупателю и администратору
+        seller = db.query(User).filter(User.id == offer.user_id).first()
+        buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+        admin = db.query(User).filter(User.id == admin_id).first()
+        if seller and buyer and admin:
+            async with email_sender as server:
+                seller_message = f"Subject: Спор разрешён\n\nСпор для заявки #{offer.id} разрешён. Решение: {resolution}"
+                buyer_message = f"Subject: Спор разрешён\n\nСпор для заявки #{offer.id} разрешён. Решение: {resolution}"
+                admin_message = f"Subject: Спор разрешён\n\nВы решили спор для заявки #{offer.id}. Решение: {resolution}"
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, seller_message)
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, buyer_message)
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), admin.email, admin_message)
+
+            # Отправка SMS уведомления (временно только продавцу)
+            twilio_client.messages.create(
+                body=f"Спор для заявки #{offer.id} разрешён. Решение: {resolution}",
+                from_=os.getenv("TWILIO_PHONE", "+1234567890"),
+                to=seller.phone
+            )
+
+        return {"message": "Спор разрешён", "resolution": resolution}
+    except Exception as e:
+        print(f"Error in /resolve-dispute: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/reset-db")
