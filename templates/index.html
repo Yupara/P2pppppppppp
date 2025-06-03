@@ -163,6 +163,15 @@
                 <input type="text" id="chat-input" placeholder="Сообщение / Message">
                 <button onclick="sendMessage()">Отправить / Send</button>
             </div>
+
+            <div id="dispute-section" style="display: none;">
+                <h3 data-lang="dispute">Открыть спор / Open Dispute</h3>
+                <input type="file" id="dispute-screenshot" accept="image/*" placeholder="Screenshot">
+                <input type="file" id="dispute-video" accept="video/*" placeholder="Video">
+                <button onclick="createDispute(currentOfferId)">Открыть спор / Open Dispute</button>
+                <p class="error" id="dispute-error"></p>
+                <p class="success" id="dispute-success"></p>
+            </div>
         </div>
 
         <!-- Админский кабинет -->
