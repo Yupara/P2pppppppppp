@@ -110,37 +110,27 @@ async def read_root(request: Request):
 async def register(email: str = Form(...), phone: str = Form(...), password: str = Form(...), referral_code: str = Form(None)):
     db = next(get_db())
     try:
-        print(f"Checking user with email: {email}")
         if db.query(User).filter(User.email == email).first():
-            print(f"User with email {email} already exists")
             raise HTTPException(status_code=400, detail="Пользователь уже существует")
         verification_code = str(hash(email + phone) % 1000000).zfill(6)
-        print(f"Generated verification code: {verification_code}")
         hashed_password = pwd_context.hash(password)
-        print(f"Hashed password: {hashed_password}")
         new_referral_code = str(hash(email) % 1000000).zfill(6)
         user = User(email=email, phone=phone, password=hashed_password, referral_code=new_referral_code, verified=False)
         user.verification_code = verification_code
-        print(f"Adding user: {user.email}, {user.phone}")
         db.add(user)
         db.commit()
-        print("User committed to database")
 
         # Отправка email
         message = f"Subject: Код подтверждения\n\nВаш код подтверждения: {verification_code}"
-        print(f"Sending email to {email}")
         async with email_sender as server:
             await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
-        print("Email sent")
 
         # Отправка SMS через Twilio
-        print(f"Sending SMS to {phone}")
         twilio_client.messages.create(
             body=f"Ваш код подтверждения: {verification_code}",
             from_=os.getenv("TWILIO_PHONE", "+1234567890"),
             to=phone
         )
-        print("SMS sent")
         return {"message": "Код отправлен", "verification_code": verification_code}
     except Exception as e:
         print(f"Error in /register: {str(e)}")
@@ -169,7 +159,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
         if not user or not pwd_context.verify(password, user.password) or not user.verified:
             raise HTTPException(status_code=400, detail="Неверные данные или не верифицирован")
         token = jwt.encode({"user_id": user.id}, os.getenv("SECRET_KEY", "your-secret-key"), algorithm="HS256")
-        return {"token": token, "user_id": user.id"}
+        return {"token": token, "user_id": user.id}
     except Exception as e:
         print(f"Error in /login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -245,6 +235,16 @@ async def reset_db():
         return {"message": "База данных очищена"}
     except Exception as e:
         print(f"Error in /reset-db: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/users")
+async def get_users():
+    db = next(get_db())
+    try:
+        users = db.query(User).all()
+        return [{"id": u.id, "email": u.email, "phone": u.phone, "verified": u.verified} for u in users]
+    except Exception as e:
+        print(f"Error in /users: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 if __name__ == "__main__":
