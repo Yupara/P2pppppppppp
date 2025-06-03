@@ -15,6 +15,8 @@ if (token && userId) {
     if (isAdmin) {
         document.getElementById("admin-section").style.display = "block";
         fetchAdminStats();
+        fetchUsers();
+        fetchLargeTrades();
     }
     fetchOffers();
     fetchMyOffers();
@@ -109,6 +111,8 @@ async function login() {
             if (isAdmin) {
                 document.getElementById("admin-section").style.display = "block";
                 fetchAdminStats();
+                fetchUsers();
+                fetchLargeTrades();
             }
             fetchOffers();
             fetchMyOffers();
@@ -241,6 +245,7 @@ async function fetchMyOffers() {
                     <p>${language === "ru" ? "Фиат" : "Fiat"}: ${offer.fiat} (${offer.fiat_amount})</p>
                     <p>${language === "ru" ? "Метод оплаты" : "Payment Method"}: ${offer.payment_method}</p>
                     <p>${language === "ru" ? "Статус" : "Status"}: ${offer.status}</p>
+                    <p>${language === "ru" ? "Заморожено" : "Frozen"}: ${offer.frozen_amount || 0} ${offer.currency}</p>
                 </div>
                 <div>
                     ${offer.status === "pending" ? `<button onclick="confirmOffer(${offer.id})">${language === "ru" ? "Подтвердить" : "Confirm"}</button>` : ""}
@@ -320,6 +325,7 @@ async function cancelOffer(offerId) {
 async function openChat(offerId) {
     currentOfferId = offerId;
     document.getElementById("chat-section").style.display = "block";
+    document.getElementById("dispute-section").style.display = "block";
     fetchMessages();
     if (chatInterval) clearInterval(chatInterval);
     chatInterval = setInterval(fetchMessages, 5000);
@@ -398,8 +404,8 @@ async function fetchAdminStats() {
         const response = await fetch(`${API_URL}/admin-stats?token=${token}`);
         const data = await response.json();
         if (response.ok) {
-            document.getElementById("admin-earnings-today").textContent = data.earnings_today;
-            document.getElementById("admin-earnings-total").textContent = data.earnings_total;
+            document.getElementById("admin-earnings-today").textContent = data.earnings_today.toFixed(2);
+            document.getElementById("admin-earnings-total").textContent = data.earnings_total.toFixed(2);
             document.getElementById("active-users").textContent = data.active_users;
         }
     } catch (error) {
@@ -407,8 +413,37 @@ async function fetchAdminStats() {
     }
 }
 
+async function fetchUsers() {
+    try {
+        const response = await fetch(`${API_URL}/admin-users?token=${token}`);
+        const users = await response.json();
+        const userManagement = document.getElementById("user-management");
+        userManagement.innerHTML = "";
+        users.forEach(user => {
+            const userDiv = document.createElement("div");
+            userDiv.className = "user";
+            userDiv.innerHTML = `
+                <p>Email: ${user.email}</p>
+                <p>Trades: ${user.trades_completed}</p>
+                <p>Balance: ${user.balance} USDT</p>
+                <p>Cancellations: ${user.cancellations}</p>
+                <p>Blocked Until: ${user.blocked_until ? new Date(user.blocked_until).toLocaleString() : "N/A"}</p>
+                <p>Verified: ${user.verified ? "Yes" : "No"}</p>
+                <button onclick="blockUser(${user.id}, ${!user.blocked_until})">${user.blocked_until ? "Unblock" : "Block"}</button>
+            `;
+            userManagement.appendChild(userDiv);
+        });
+    } catch (error) {
+        console.error("Error fetching users:", error);
+    }
+}
+
+async function blockUser(userId, block) {
+    // Здесь можно добавить эндпоинт для блокировки/разблокировки
+    alert(`User ${userId} ${block ? "blocked" : "unblocked"} - functionality to be implemented`);
+}
+
 async function fetchDisputes() {
-    if (!isAdmin) return;
     try {
         const response = await fetch(`${API_URL}/get-disputes?user_id=${userId}&token=${token}`);
         const disputes = await response.json();
@@ -418,13 +453,16 @@ async function fetchDisputes() {
             const disputeDiv = document.createElement("div");
             disputeDiv.className = "dispute";
             disputeDiv.innerHTML = `
-                <p>ID: ${dispute.id}, Offer ID: ${dispute.offer_id}, Status: ${dispute.status}</p>
-                <input type="text" id="resolution-${dispute.id}" placeholder="${language === 'ru' ? 'Решение' : 'Resolution'}">
+                <p>ID: ${dispute.id}</p>
+                <p>Offer ID: ${dispute.offer_id}</p>
+                <p>Status: ${dispute.status}</p>
+                <p>Created: ${new Date(dispute.created_at).toLocaleString()}</p>
+                ${dispute.status === "open" ? `<input type="text" id="resolution-${dispute.id}" placeholder="${language === "ru" ? "Резолюция" : "Resolution"}">
                 <select id="action-${dispute.id}">
-                    <option value="resolve">${language === 'ru' ? 'Разрешить' : 'Resolve'}</option>
-                    <option value="cancel">${language === 'ru' ? 'Отменить' : 'Cancel'}</option>
+                    <option value="resolve">${language === "ru" ? "Разрешить" : "Resolve"}</option>
+                    <option value="cancel">${language === "ru" ? "Отменить" : "Cancel"}</option>
                 </select>
-                <button onclick="resolveDispute(${dispute.id})">${language === 'ru' ? 'Разрешить спор' : 'Resolve Dispute'}</button>
+                <button onclick="resolveDispute(${dispute.id})">${language === "ru" ? "Разрешить спор" : "Resolve Dispute"}</button>` : ""}
             `;
             disputesList.appendChild(disputeDiv);
         });
@@ -446,11 +484,33 @@ async function resolveDispute(disputeId) {
         if (response.ok) {
             alert(language === "ru" ? "Спор разрешён" : "Dispute resolved");
             fetchDisputes();
+            fetchMyOffers();
         } else {
             alert(data.detail);
         }
     } catch (error) {
         alert(language === "ru" ? `Ошибка: ${error.message}` : `Error: ${error.message}`);
+    }
+}
+
+async function fetchLargeTrades() {
+    try {
+        const response = await fetch(`${API_URL}/admin-stats?token=${token}`);
+        const data = await response.json();
+        const largeTrades = document.getElementById("large-trades");
+        largeTrades.innerHTML = "";
+        data.large_trades.forEach(trade => {
+            const tradeDiv = document.createElement("div");
+            tradeDiv.className = "trade";
+            tradeDiv.innerHTML = `
+                <p>ID: ${trade.id}</p>
+                <p>Amount: ${trade.fiat_amount} ${trade.fiat}</p>
+                <p>Date: ${new Date(trade.created_at).toLocaleString()}</p>
+            `;
+            largeTrades.appendChild(tradeDiv);
+        });
+    } catch (error) {
+        console.error("Error fetching large trades:", error);
     }
 }
 
@@ -485,7 +545,8 @@ function changeLanguage() {
             "create-offer": { "ru": "Создать заявку", "en": "Create Offer" },
             "my-offers": { "ru": "Мои заявки", "en": "My Offers" },
             "chat": { "ru": "Чат", "en": "Chat" },
-            "admin-panel": { "ru": "Админский кабинет", "en": "Admin Panel" }
+            "admin-panel": { "ru": "Админский кабинет", "en": "Admin Panel" },
+            "dispute": { "ru": "Открыть спор", "en": "Open Dispute" }
         };
         el.textContent = translations[key][language] + (el.id === "user-email" ? ` ${document.getElementById("user-email").textContent}` : "");
     });
