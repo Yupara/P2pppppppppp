@@ -484,3 +484,55 @@ async def reset_db():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/my-offers")
+async def get_my_offers(user_id: int, token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = next(get_db())
+    try:
+        offers = db.query(Offer).filter((Offer.user_id == user_id) | (Offer.buyer_id == user_id)).all()
+        return [{"id": o.id, "sell_currency": o.sell_currency, "sell_amount": o.sell_amount, "buy_currency": o.buy_currency, "payment_method": o.payment_method, "contact": o.contact, "status": o.status} for o in offers]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/user-data")
+async def get_user_data(user_id: int, token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found")
+        return {"balance": user.balance, "trades_completed": user.trades_completed}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/support")
+async def send_support(user_id: int = Form(...), message: str = Form(...), token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found")
+        # Уведомление админу
+        async with email_sender as server:
+            admin_message = f"Subject: Support Request\n\nUser ID: {user_id}\nMessage: {message}\nEmail: {user.email}"
+            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), "admin@example.com", admin_message)
+        return {"message": "Support request sent, admin will respond if needed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
