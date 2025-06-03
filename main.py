@@ -56,7 +56,7 @@ class Offer(Base):
 class Message(Base):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, index=True)
-    offer_id = Column(Integer, ForeignKey("users.id"))
+    offer_id = Column(Integer, ForeignKey("offers.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
     text = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -80,12 +80,7 @@ class Transaction(Base):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Настройка email с aiosmtplib
-email_sender = SMTP(hostname="smtp.gmail.com", 
-                    port=587, 
-                    use_tls=False, 
-                    start_tls=True, 
-                    username=os.getenv("EMAIL_USER", "test@example.com"), 
-                    password=os.getenv("EMAIL_PASS", "testpass"))
+email_sender = SMTP(hostname="smtp.gmail.com", port=587, use_tls=False, start_tls=True, username=os.getenv("EMAIL_USER", "test@example.com"), password=os.getenv("EMAIL_PASS", "testpass"))
 
 twilio_client = Client(os.getenv("TWILIO_SID", "test_sid"), os.getenv("TWILIO_AUTH_TOKEN", "test_token"))
 
@@ -118,7 +113,7 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
     db = next(get_db())
     try:
         if db.query(User).filter(User.email == email).first():
-            raise HTTPException(status_code=400, detail="Пользователь уже создан")
+            raise HTTPException(status_code=400, detail="Пользователь уже существует")
         verification_code = str(hash(email + phone) % 1000000).zfill(6)
         hashed_password = pwd_context.hash(password)
         new_referral_code = str(hash(email) % 1000000).zfill(6)
@@ -129,12 +124,12 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
 
         # Отправка email (временно отключено)
         # async with email_sender as server:
-        #     message = f"Subject: Код верификации\n\nВаш код верификации: {verification_code}"
+        #     message = f"Subject: Код подтверждения\n\nВаш код подтверждения: {verification_code}"
         #     await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
 
         # Отправка SMS через Twilio (временно отключено)
-        # twilio_client.messages.create_offer(
-        #     body=f"Verification code: {verification_code}",
+        # twilio_client.messages.create(
+        #     body=f"Ваш код подтверждения: {verification_code}",
         #     from_=os.getenv("TWILIO_PHONE", "+1234567890"),
         #     to=phone
         # )
@@ -155,7 +150,7 @@ async def verify(email: str = Form(...), code: str = Form(...)):
         user.verified = True
         user.verification_code = None
         db.commit()
-        return {"message": "Верификация прошла успешно"}
+        return {"message": "Верификация успешна"}
     except Exception as e:
         print(f"Error in /verify: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -166,7 +161,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
     try:
         user = db.query(User).filter(User.email == email).first()
         if not user or not pwd_context.verify(password, user.password) or not user.verified:
-            raise HTTPException(status_code=400, detail="Неверные данные или пользователь не верифицирован")
+            raise HTTPException(status_code=400, detail="Неверные данные или не верифицирован")
         # Добавляем срок действия токена (1 час)
         expire = datetime.utcnow() + timedelta(hours=1)
         token_payload = {"user_id": user.id, "exp": expire}
@@ -255,8 +250,8 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
         buyer = db.query(User).filter(User.id == offer.buyer_id).first()
         seller.trades_completed += 1
         buyer.trades_completed += 1
-        # Добавляем комиссию в таблицу transactions
-        commission = offer.sell_amount * 0.01  # 1% комиссии
+        # Здесь можно добавить комиссию в таблицу transactions
+        commission = offer.sell_amount * 0.01  # Например, 1% комиссии
         transaction = Transaction(offer_id=offer_id, commission=commission)
         db.add(transaction)
         db.commit()
@@ -289,6 +284,50 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
         return {"message": "Сделка отменена"}
     except Exception as e:
         print(f"Error in /cancel-offer: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/send-message")
+async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text: str = Form(...), token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Заявка не найдена")
+        if offer.user_id != user_id and offer.buyer_id != user_id:
+            raise HTTPException(status_code=403, detail="Вы не участвуете в этой сделке")
+        message = Message(offer_id=offer_id, user_id=user_id, text=text)
+        db.add(message)
+        db.commit()
+        return {"message": "Сообщение отправлено"}
+    except Exception as e:
+        print(f"Error in /send-message: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/get-messages")
+async def get_messages(offer_id: int, user_id: int, token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Заявка не найдена")
+        if offer.user_id != user_id and offer.buyer_id != user_id:
+            raise HTTPException(status_code=403, detail="Вы не участвуете в этой сделке")
+        messages = db.query(Message).filter(Message.offer_id == offer_id).all()
+        return [{"id": m.id, "user_id": m.user_id, "text": m.text, "created_at": m.created_at} for m in messages]
+    except Exception as e:
+        print(f"Error in /get-messages: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/reset-db")
