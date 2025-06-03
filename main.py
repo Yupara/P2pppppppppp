@@ -162,7 +162,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
         if not user or not pwd_context.verify(password, user.password) or not user.verified:
             raise HTTPException(status_code=400, detail="Неверные данные или не верифицирован")
         token = jwt.encode({"user_id": user.id}, os.getenv("SECRET_KEY", "your-secret-key"), algorithm="HS256")
-        return {"token": token, "user_id": user.id"}
+        return {"token": token, "user_id": user.id}
     except Exception as e:
         print(f"Error in /login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
