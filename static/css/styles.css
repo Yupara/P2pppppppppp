@@ -2,43 +2,48 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
-    background-color: #f4f4f9;
+    background-color: #1a2b2e; /* Темно-зеленый фон */
+    color: #ffffff;
 }
 .container {
     max-width: 800px;
     margin: 0 auto;
-    background: white;
+    background: #223d3f; /* Зеленоватый контейнер */
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
-h1, h2 {
-    color: #333;
+h1, h2, h3 {
+    color: #00cc66; /* Светло-зеленый заголовок */
 }
 input, button {
     padding: 10px;
     margin: 5px 0;
     width: 100%;
     box-sizing: border-box;
+    border: 1px solid #00cc66;
+    background: #2a4d4f;
+    color: #ffffff;
 }
 button {
-    background-color: #4CAF50;
+    background-color: #00cc66;
     color: white;
     border: none;
     cursor: pointer;
 }
 button:hover {
-    background-color: #45a049;
+    background-color: #00b359;
 }
 .error {
-    color: red;
+    color: #ff4444;
 }
 .success {
-    color: green;
+    color: #00cc66;
 }
 .offer {
-    border: 1px solid #ddd;
+    border: 1px solid #00cc66;
     padding: 10px;
     margin: 10px 0;
     border-radius: 5px;
+    background: #2a4d4f;
 }
