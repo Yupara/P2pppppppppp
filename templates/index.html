@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Green P2P Exchange</title>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="header">
@@ -180,6 +181,8 @@
             <p>Заработано за сегодня: <span id="admin-earnings-today">0</span> USDT</p>
             <p>Всего заработано: <span id="admin-earnings-total">0</span> USDT</p>
             <button onclick="withdrawEarnings()">Вывести / Withdraw</button>
+            <h3>Статистика за неделю / Weekly Stats</h3>
+            <canvas id="weekly-stats-chart" width="400" height="200"></canvas>
             <h3>Активные пользователи / Active Users</h3>
             <div id="active-users"></div>
             <h3>Споры / Disputes</h3>
