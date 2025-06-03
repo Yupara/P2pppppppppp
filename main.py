@@ -237,16 +237,6 @@ async def reset_db():
         print(f"Error in /reset-db: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@app.get("/users")
-async def get_users():
-    db = next(get_db())
-    try:
-        users = db.query(User).all()
-        return [{"id": u.id, "email": u.email, "phone": u.phone, "verified": u.verified} for u in users]
-    except Exception as e:
-        print(f"Error in /users: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
