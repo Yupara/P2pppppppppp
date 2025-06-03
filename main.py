@@ -310,7 +310,7 @@ async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.get("/get-messages")
-async def get_messages(offer_id: int, user_id: int, token: str = Form(...)):
+async def get_messages(offer_id: int, user_id: int, token: str):
     try:
         payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
@@ -328,6 +328,50 @@ async def get_messages(offer_id: int, user_id: int, token: str = Form(...)):
         return [{"id": m.id, "user_id": m.user_id, "text": m.text, "created_at": m.created_at} for m in messages]
     except Exception as e:
         print(f"Error in /get-messages: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/create-dispute")
+async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), screenshot: str = Form(None), video: str = Form(None), token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Заявка не найдена")
+        if offer.user_id != user_id and offer.buyer_id != user_id:
+            raise HTTPException(status_code=403, detail="Вы не участвуете в этой сделке")
+        dispute = Dispute(offer_id=offer_id, screenshot=screenshot, video=video)
+        db.add(dispute)
+        db.commit()
+        return {"message": "Спор создан", "dispute_id": dispute.id}
+    except Exception as e:
+        print(f"Error in /create-dispute: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/get-disputes")
+async def get_disputes(offer_id: int, user_id: int, token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Недействительный токен")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Недействительный токен")
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Заявка не найдена")
+        if offer.user_id != user_id and offer.buyer_id != user_id:
+            raise HTTPException(status_code=403, detail="Вы не участвуете в этой сделке")
+        disputes = db.query(Dispute).filter(Dispute.offer_id == offer_id).all()
+        return [{"id": d.id, "offer_id": d.offer_id, "screenshot": d.screenshot, "video": d.video, "created_at": d.created_at} for d in disputes]
+    except Exception as e:
+        print(f"Error in /get-disputes: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/reset-db")
