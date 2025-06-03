@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,183 +7,178 @@
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <div class="navbar">
+    <div class="header">
+        <h1>Green P2P Exchange</h1>
         <div>
-            <a href="/">Green P2P Exchange</a>
-            <a href="#" onclick="showSection('offers-section')">Объявления</a>
-            <a href="#" onclick="showSection('profile-section')">Профиль</a>
-            <a href="#" onclick="showSection('support-section')">Поддержка</a>
-        </div>
-        <div>
-            <button class="language-toggle" onclick="toggleLanguage()">EN/RU</button>
-            <button onclick="logout()" id="logout-btn" style="display: none;">Выйти</button>
+            <select id="language" onchange="changeLanguage()">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+            </select>
+            <a href="#" id="support-link" onclick="openSupport()">Support</a>
+            <a href="#" id="profile-link" style="display: none;" onclick="openProfile()">Profile</a>
+            <a href="#" id="logout-link" style="display: none;" onclick="logout()">Logout</a>
         </div>
     </div>
-
     <div class="container">
         <!-- Секция авторизации -->
         <div id="auth-section">
-            <h2>Регистрация</h2>
+            <h2 data-lang="register">Регистрация / Register</h2>
             <input type="email" id="reg-email" placeholder="Email">
-            <input type="text" id="reg-phone" placeholder="Телефон (+код)">
-            <input type="password" id="reg-password" placeholder="Пароль">
-            <button onclick="register()">Зарегистрироваться</button>
+            <input type="text" id="reg-phone" placeholder="Phone (+1234567890)">
+            <input type="password" id="reg-password" placeholder="Password">
+            <button onclick="register()">Зарегистрироваться / Register</button>
             <p class="error" id="reg-error"></p>
             <p class="success" id="reg-success"></p>
 
-            <h2>Верификация</h2>
+            <h2 data-lang="verify">Верификация / Verify</h2>
             <input type="email" id="verify-email" placeholder="Email">
-            <input type="text" id="verify-code" placeholder="Код">
-            <button onclick="verify()">Верифицировать</button>
+            <input type="text" id="verify-code" placeholder="Verification Code">
+            <input type="file" id="passport-upload" accept="image/*">
+            <button onclick="verify()">Верифицировать / Verify</button>
             <p class="error" id="verify-error"></p>
             <p class="success" id="verify-success"></p>
 
-            <h2>Вход</h2>
+            <h2 data-lang="login">Вход / Login</h2>
             <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Пароль">
-            <button onclick="login()">Войти</button>
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="login()">Войти / Login</button>
             <p class="error" id="login-error"></p>
             <p class="success" id="login-success"></p>
         </div>
 
-        <!-- Секция объявлений -->
-        <div id="offers-section" style="display: none;">
-            <h2>Объявления</h2>
-            <div class="filter-section">
-                <h3>Фильтры</h3>
-                <select id="filter-sell-currency">
-                    <option value="">Выберите валюту продажи</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="RUB">RUB</option>
-                    <option value="CNY">CNY</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                    <option value="USDT">USDT</option>
-                </select>
-                <select id="filter-buy-currency">
-                    <option value="">Выберите валюту покупки</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="RUB">RUB</option>
-                    <option value="CNY">CNY</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                    <option value="USDT">USDT</option>
-                </select>
-                <select id="filter-payment-method">
-                    <option value="">Выберите метод оплаты</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="PayPal">PayPal</option>
-                    <option value="Skrill">Skrill</option>
-                    <option value="WeChat">WeChat</option>
-                    <option value="Alipay">Alipay</option>
-                    <option value="Qiwi">Qiwi</option>
-                </select>
-                <input type="number" id="filter-min-amount" placeholder="Мин. сумма">
-                <input type="number" id="filter-max-amount" placeholder="Макс. сумма">
-                <button onclick="fetchOffers()">Применить фильтры</button>
-            </div>
-            <div id="offers-list"></div>
-        </div>
+        <!-- Секция пользователя -->
+        <div id="user-section" style="display: none;">
+            <h2 data-lang="welcome">Добро пожаловать, <span id="user-email"></span> / Welcome, <span id="user-email"></span></h2>
+            <p data-lang="balance">Ваш баланс: <span id="user-balance">0</span> USDT / Your balance: <span id="user-balance">0</span> USDT</p>
+            <p data-lang="trades">Сделок завершено: <span id="user-trades">0</span> / Trades completed: <span id="user-trades">0</span></p>
 
-        <!-- Секция профиля -->
-        <div id="profile-section" style="display: none;">
-            <h2>Профиль</h2>
-            <p>Email: <span id="user-email"></span></p>
-            <p>Баланс: <span id="user-balance">0</span> USDT</p>
-            <p>Сделок завершено: <span id="user-trades">0</span></p>
-            <p>Отмен сделок: <span id="user-cancellations">0</span></p>
-            <p>Реферальный код: <span id="user-referral-code"></span></p>
-            <p>Реферальный доход: <span id="user-referral-earnings">0</span> USDT</p>
-            <button onclick="withdrawReferralEarnings()">Вывести реферальный доход</button>
-
-            <h3>Верификация личности</h3>
-            <input type="file" id="passport-upload" accept="image/*">
-            <button onclick="uploadPassport()">Загрузить паспорт</button>
-            <p id="passport-status"></p>
-
-            <h3>Пополнить баланс</h3>
+            <h3 data-lang="deposit">Пополнить баланс / Deposit</h3>
             <select id="deposit-currency">
                 <option value="USDT">USDT</option>
                 <option value="BTC">BTC</option>
                 <option value="ETH">ETH</option>
             </select>
-            <select id="deposit-network">
+            <input type="number" id="deposit-amount" placeholder="Amount">
+            <select id="deposit-network" style="display: none;">
                 <option value="TRC20">TRC20</option>
                 <option value="ERC20">ERC20</option>
                 <option value="BEP20">BEP20</option>
             </select>
-            <input type="number" id="deposit-amount" placeholder="Сумма">
-            <button onclick="deposit()">Пополнить</button>
+            <button onclick="deposit()">Пополнить / Deposit</button>
             <p class="error" id="deposit-error"></p>
             <p class="success" id="deposit-success"></p>
 
-            <h3>Создать объявление</h3>
-            <select id="sell-currency">
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="RUB">RUB</option>
-                <option value="CNY">CNY</option>
-                <option value="BTC">BTC</option>
-                <option value="ETH">ETH</option>
-                <option value="USDT">USDT</option>
-            </select>
-            <input type="number" id="sell-amount" placeholder="Сумма продажи">
-            <select id="buy-currency">
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="RUB">RUB</option>
-                <option value="CNY">CNY</option>
-                <option value="BTC">BTC</option>
-                <option value="ETH">ETH</option>
-                <option value="USDT">USDT</option>
-            </select>
-            <select id="payment-method">
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="PayPal">PayPal</option>
-                <option value="Skrill">Skrill</option>
-                <option value="WeChat">WeChat</option>
-                <option value="Alipay">Alipay</option>
-                <option value="Qiwi">Qiwi</option>
-            </select>
-            <input type="text" id="contact" placeholder="Контакт (например, Telegram)">
-            <button onclick="createOffer()">Создать объявление</button>
-            <p class="error" id="create-offer-error"></p>
-            <p class="success" id="create-offer-success"></p>
+            <div class="tabs">
+                <button id="buy-tab" class="active" onclick="switchTab('buy')">Купить / Buy</button>
+                <button id="sell-tab" onclick="switchTab('sell')">Продать / Sell</button>
+                <button id="my-offers-tab" onclick="switchTab('my-offers')">Мои заявки / My Offers</button>
+            </div>
 
-            <h3>Мои объявления</h3>
-            <div id="my-offers-list"></div>
+            <div id="buy-section">
+                <h3 data-lang="buy-crypto">Купить криптовалюту / Buy Crypto</h3>
+                <select id="buy-currency">
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <select id="buy-fiat">
+                    <option value="USD">USD</option>
+                    <option value="RUB">RUB</option>
+                    <option value="EUR">EUR</option>
+                    <option value="CNY">CNY</option>
+                </select>
+                <select id="buy-payment-method">
+                    <option value="all">Все методы / All Methods</option>
+                    <option value="bank-transfer">Bank Transfer</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cash">Cash</option>
+                    <option value="qiwi">Qiwi</option>
+                </select>
+                <input type="number" id="buy-amount" placeholder="Сумма / Amount">
+                <button onclick="filterOffers('buy')">Фильтровать / Filter</button>
+                <div id="buy-offers-list"></div>
+            </div>
+
+            <div id="sell-section" style="display: none;">
+                <h3 data-lang="sell-crypto">Продать криптовалюту / Sell Crypto</h3>
+                <select id="sell-currency">
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <select id="sell-fiat">
+                    <option value="USD">USD</option>
+                    <option value="RUB">RUB</option>
+                    <option value="EUR">EUR</option>
+                    <option value="CNY">CNY</option>
+                </select>
+                <select id="sell-payment-method">
+                    <option value="all">Все методы / All Methods</option>
+                    <option value="bank-transfer">Bank Transfer</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cash">Cash</option>
+                    <option value="qiwi">Qiwi</option>
+                </select>
+                <input type="number" id="sell-amount" placeholder="Сумма / Amount">
+                <button onclick="filterOffers('sell')">Фильтровать / Filter</button>
+                <div id="sell-offers-list"></div>
+            </div>
+
+            <div id="my-offers-section" style="display: none;">
+                <h3 data-lang="create-offer">Создать заявку / Create Offer</h3>
+                <select id="offer-type">
+                    <option value="sell">Продажа / Sell</option>
+                    <option value="buy">Покупка / Buy</option>
+                </select>
+                <select id="offer-currency">
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <select id="offer-fiat">
+                    <option value="USD">USD</option>
+                    <option value="RUB">RUB</option>
+                    <option value="EUR">EUR</option>
+                    <option value="CNY">CNY</option>
+                </select>
+                <select id="offer-payment-method">
+                    <option value="bank-transfer">Bank Transfer</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="cash">Cash</option>
+                    <option value="qiwi">Qiwi</option>
+                </select>
+                <input type="number" id="offer-amount" placeholder="Сумма / Amount">
+                <input type="text" id="offer-contact" placeholder="Контакт / Contact (e.g., Telegram)">
+                <button onclick="createOffer()">Создать / Create</button>
+                <p class="error" id="create-offer-error"></p>
+                <p class="success" id="create-offer-success"></p>
+
+                <h3 data-lang="my-offers">Мои заявки / My Offers</h3>
+                <div id="my-offers-list"></div>
+            </div>
+
+            <div id="chat-section" style="display: none;">
+                <h3 data-lang="chat">Чат / Chat</h3>
+                <div id="chat-messages" class="chat"></div>
+                <input type="text" id="chat-input" placeholder="Сообщение / Message">
+                <button onclick="sendMessage()">Отправить / Send</button>
+            </div>
         </div>
 
-        <!-- Секция поддержки -->
-        <div id="support-section" style="display: none;">
-            <h2>Поддержка</h2>
-            <p>Напишите ваш запрос:</p>
-            <textarea id="support-message" placeholder="Сообщение"></textarea>
-            <button onclick="sendSupportMessage()">Отправить</button>
-            <p class="success" id="support-success"></p>
-            <p>Или свяжитесь через Telegram: <a href="https://t.me/p2pp2p_p2p">@p2pp2p_p2p</a></p>
-            <div id="support-chat"></div>
-        </div>
-
-        <!-- Секция администратора (скрытая) -->
+        <!-- Админский кабинет -->
         <div id="admin-section" style="display: none;">
-            <h2>Админ-панель</h2>
-            <h3>Доход от комиссий</h3>
-            <p>Общий доход: <span id="admin-total-earnings">0</span> USDT</p>
-            <button onclick="withdrawEarnings()">Вывести доход</button>
-
-            <h3>Активные пользователи</h3>
-            <div id="admin-users-list"></div>
-
-            <h3>Споры</h3>
-            <div id="admin-disputes-list"></div>
-
-            <h3>Управление пользователями</h3>
-            <input type="number" id="admin-user-id" placeholder="ID пользователя">
-            <button onclick="blockUser()">Заблокировать</button>
-            <button onclick="unblockUser()">Разблокировать</button>
+            <h2 data-lang="admin-panel">Админский кабинет / Admin Panel</h2>
+            <p>Заработано за сегодня: <span id="admin-earnings-today">0</span> USDT</p>
+            <p>Всего заработано: <span id="admin-earnings-total">0</span> USDT</p>
+            <button onclick="withdrawEarnings()">Вывести / Withdraw</button>
+            <h3>Активные пользователи / Active Users</h3>
+            <div id="active-users"></div>
+            <h3>Споры / Disputes</h3>
+            <div id="disputes-list"></div>
+            <h3>Крупные сделки / Large Trades</h3>
+            <div id="large-trades"></div>
+            <h3>Управление пользователями / User Management</h3>
+            <div id="user-management"></div>
         </div>
     </div>
     <script src="/static/js/script.js"></script>
