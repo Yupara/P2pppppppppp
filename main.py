@@ -11,11 +11,9 @@ from datetime import datetime, timedelta
 import jwt
 import os
 from fastapi.middleware.cors import CORSMiddleware
-import json
-from typing import List, Optional
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения
+# Загружаем переменные окружения из .env
 load_dotenv()
 
 app = FastAPI()
@@ -94,6 +92,12 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     offer_id = Column(Integer, ForeignKey("offers.id"))
     commission = Column(Float)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AdminWithdrawal(Base):
+    __tablename__ = "admin_withdrawals"
+    id = Column(Integer, primary_key=True, index=True)
+    amount = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 # Хэширование паролей
@@ -177,6 +181,7 @@ async def verify(email: str = Form(...), code: str = Form(...), passport: Upload
         user.verified = True
         if passport:
             contents = await passport.read()
+            # Сохранить паспорт (например, в файл или базу), пока только отметим
             user.passport_verified = False  # Требуется ручная проверка админом
         user.verification_code = None
         db.commit()
@@ -358,9 +363,11 @@ async def buy_offer(offer_id: int = Form(...), buyer_id: int = Form(...), token:
         elif offer.currency == "ETH":
             buyer.eth_balance -= offer.amount
         db.commit()
+        # Уведомление о начале сделки
+        seller = db.query(User).filter(User.id == offer.user_id).first()
         async with email_sender as server:
             message = f"Subject: New Trade Started\n\nYour offer #{offer.id} has been accepted by a buyer."
-            await server.sendmail(os.getenv("EMAIL_USER"), offer.user.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER"), seller.email, message)
         return {"message": "Offer bought, awaiting confirmation"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -388,32 +395,36 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
             seller = db.query(User).filter(User.id == offer.user_id).first()
             buyer = db.query(User).filter(User.id == offer.buyer_id).first()
             commission_rate = 0.005 if seller.trades_completed < 50 else 0.0025
-            commission = offer.fiat_amount * commission_rate * 2
+            commission = offer.fiat_amount * commission_rate * 2  # 0.5% от каждого
             usdt_commission = convert_to_usdt(offer.currency, commission)
             amount_to_buyer = offer.amount
             amount_to_seller = offer.fiat_amount - commission
+            # Начисление крипты покупателю
             if offer.currency == "USDT":
                 buyer.balance += amount_to_buyer
             elif offer.currency == "BTC":
                 buyer.btc_balance += amount_to_buyer
             elif offer.currency == "ETH":
                 buyer.eth_balance += amount_to_buyer
-            seller.balance += amount_to_seller
+            seller.balance += amount_to_seller  # Фиат продавцу
             offer.status = "completed"
             transaction = Transaction(offer_id=offer_id, commission=usdt_commission)
             db.add(transaction)
             offer.frozen_amount = 0
             buyer.trades_completed += 1
             seller.trades_completed += 1
+            # Referral earnings
             if seller.referral_code:
                 referrer = db.query(User).filter(User.referral_code == seller.referral_code).first()
                 if referrer:
                     referrer_earnings = usdt_commission * 0.20
                     referrer.referral_earnings += referrer_earnings
+            # Уведомление о завершении сделки
             async with email_sender as server:
                 message = f"Subject: Trade Completed\n\nYour trade #{offer_id} has been completed."
                 await server.sendmail(os.getenv("EMAIL_USER"), seller.email, message)
                 await server.sendmail(os.getenv("EMAIL_USER"), buyer.email, message)
+            # Проверка на крупную сделку
             if offer.fiat_amount * convert_to_usdt(offer.currency, 1) >= 10000:
                 async with email_sender as server:
                     message = f"Subject: Large Trade\n\nTrade #{offer_id} for {offer.fiat_amount} {offer.fiat} detected."
@@ -437,9 +448,9 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
     try:
         offer = db.query(Offer).filter(Offer.id == offer_id).first()
         if not offer or offer.status not in ["pending", "active"]:
-            raise HTTPException(status_code=400, detail="Offer not cancellable")
+            raise HTTPException(status_code=400, detail="Offer not found or not cancellable")
         if offer.user_id != user_id and offer.buyer_id != user_id:
-            raise HTTPException(status_code=403, detail="You are not part of this trade")
+            raise HTTPException(status_code=403, detail="Not authorized")
         user = db.query(User).filter(User.id == user_id).first()
         user.cancellations += 1
         if user.cancellations >= 10:
@@ -449,7 +460,7 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
                 await server.sendmail(os.getenv("EMAIL_USER"), user.email, message)
         if offer.frozen_amount > 0:
             if offer.user_id == user_id:
-                seller = db.query(User).filter(User.id == offer.user_id).first()
+                seller = user
                 if offer.currency == "USDT":
                     seller.balance += offer.frozen_amount
                 elif offer.currency == "BTC":
@@ -488,10 +499,11 @@ async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text
         message = Message(offer_id=offer_id, user_id=user_id, text=text)
         db.add(message)
         db.commit()
+        # Уведомление о новом сообщении
         recipient_id = offer.buyer_id if user_id == offer.user_id else offer.user_id
         recipient = db.query(User).filter(User.id == recipient_id).first()
         async with email_sender as server:
-            message = f"Subject: New Message\n\nYou have a new message for offer #{offer_id}: {text}"
+            message = f"Subject: New Message\n\nYou have a new message for offer #{offer.id}: {text}"
             await server.sendmail(os.getenv("EMAIL_USER"), recipient.email, message)
         return {"message": "Message sent"}
     except Exception as e:
@@ -509,7 +521,7 @@ async def get_messages(offer_id: int, user_id: int, token: str):
     try:
         offer = db.query(Offer).filter(Offer.id == offer_id).first()
         if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
-            raise HTTPException(status_code=403, detail="You are not part of this trade")
+            raise HTTPException(status_code=403, detail="Not authorized")
         messages = db.query(Message).filter(Message.offer_id == offer_id).all()
         return [{
             "id": m.id,
@@ -533,7 +545,7 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
     try:
         offer = db.query(Offer).filter(Offer.id == offer_id).first()
         if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
-            raise HTTPException(status_code=403, detail="You are not part of this trade")
+            raise HTTPException(status_code=403, detail="Not authorized")
         if offer.frozen_amount <= 0:
             raise HTTPException(status_code=400, detail="No funds frozen for this offer")
         screenshot_path = None
@@ -548,6 +560,7 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
         db.add(dispute)
         offer.status = "disputed"
         db.commit()
+        # Уведомление админу
         async with email_sender as server:
             message = f"Subject: New Dispute\n\nDispute created for offer #{offer_id}. Please review."
             await server.sendmail(os.getenv("EMAIL_USER"), "admin@example.com", message)
@@ -621,6 +634,7 @@ async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(..
         dispute.status = "resolved"
         dispute.resolution = resolution
         db.commit()
+        # Уведомление участников
         async with email_sender as server:
             message = f"Subject: Dispute Resolved\n\nDispute #{dispute_id} for offer #{offer.id} has been resolved. Action: {action}. Resolution: {resolution}"
             await server.sendmail(os.getenv("EMAIL_USER"), buyer.email, message)
@@ -643,7 +657,10 @@ async def admin_stats(token: str):
         transactions = db.query(Transaction).filter(Transaction.created_at >= today).all()
         total_earnings_today = sum(t.commission for t in transactions)
         total_earnings = sum(t.commission for t in db.query(Transaction).all())
+        withdrawals = sum(w.amount for w in db.query(AdminWithdrawal).all())
+        available_earnings = total_earnings - withdrawals
         active_users = db.query(User).filter(User.verified == True, User.blocked_until == None).all()
+        # Статистика сделок за неделю
         week_ago = datetime.utcnow() - timedelta(days=7)
         weekly_transactions = db.query(Transaction).filter(Transaction.created_at >= week_ago).all()
         daily_stats = {i: 0 for i in range(7)}
@@ -651,7 +668,8 @@ async def admin_stats(token: str):
             day_index = (datetime.utcnow() - t.created_at).days
             if day_index < 7:
                 daily_stats[day_index] += t.commission
-        weekly_stats = [daily_stats[i] for i in range(6, -1, -1)]
+        weekly_stats = [daily_stats[i] for i in range(6, -1, -1)]  # Сортировка от старого к новому
+        # Крупные сделки
         large_trades = db.query(Offer).filter(Offer.status == "completed").all()
         large_trades = [
             {"id": o.id, "fiat_amount": o.fiat_amount, "fiat": o.fiat, "created_at": o.created_at}
@@ -660,6 +678,7 @@ async def admin_stats(token: str):
         return {
             "earnings_today": total_earnings_today,
             "earnings_total": total_earnings,
+            "available_earnings": available_earnings,
             "active_users": [{"id": u.id, "email": u.email, "trades_completed": u.trades_completed} for u in active_users],
             "weekly_stats": weekly_stats,
             "large_trades": large_trades
@@ -668,7 +687,7 @@ async def admin_stats(token: str):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/withdraw-earnings")
-async def withdraw_earnings(amount: float = Form(...), wallet_address: str = Form(...), token: str = Form(...)):
+async def withdraw_earnings(token: str = Form(...)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if not payload.get("is_admin", False):
@@ -678,15 +697,18 @@ async def withdraw_earnings(amount: float = Form(...), wallet_address: str = For
     db = next(get_db())
     try:
         total_earnings = sum(t.commission for t in db.query(Transaction).all())
-        if amount > total_earnings:
-            raise HTTPException(status_code=400, detail="Insufficient earnings to withdraw")
-        if amount <= 0:
-            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
-        # Логика вывода (заглушка, нужно подключить реальный блокчейн API)
+        withdrawals = sum(w.amount for w in db.query(AdminWithdrawal).all())
+        available_earnings = total_earnings - withdrawals
+        if available_earnings <= 0:
+            raise HTTPException(status_code=400, detail="No earnings available to withdraw")
+        withdrawal = AdminWithdrawal(amount=available_earnings)
+        db.add(withdrawal)
+        db.commit()
+        # Уведомление админу
         async with email_sender as server:
-            message = f"Subject: Withdrawal Request\n\nAdmin requested withdrawal of {amount} USDT to {wallet_address}."
+            message = f"Subject: Earnings Withdrawn\n\n{available_earnings} USDT has been withdrawn."
             await server.sendmail(os.getenv("EMAIL_USER"), "admin@example.com", message)
-        return {"message": f"Withdrawal of {amount} USDT to {wallet_address} requested"}
+        return {"message": f"Withdrawn {available_earnings} USDT"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
@@ -694,6 +716,7 @@ async def withdraw_earnings(amount: float = Form(...), wallet_address: str = For
 async def reset_db():
     db = next(get_db())
     try:
+        db.query(AdminWithdrawal).delete()
         db.query(Transaction).delete()
         db.query(Dispute).delete()
         db.query(Message).delete()
