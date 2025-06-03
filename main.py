@@ -13,6 +13,10 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from typing import List, Optional
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения
+load_dotenv()
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -96,8 +100,15 @@ class Transaction(Base):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Настройка email и SMS
-email_sender = SMTP(hostname="smtp.gmail.com", port=587, use_tls=False, start_tls=True, username=os.getenv("EMAIL_USER", "test@example.com"), password=os.getenv("EMAIL_PASS", "testpass"))
-twilio_client = Client(os.getenv("TWILIO_SID", "test_sid"), os.getenv("TWILIO_AUTH_TOKEN", "test_token"))
+email_sender = SMTP(
+    hostname="smtp.gmail.com",
+    port=587,
+    use_tls=False,
+    start_tls=True,
+    username=os.getenv("EMAIL_USER"),
+    password=os.getenv("EMAIL_PASS")
+)
+twilio_client = Client(os.getenv("TWILIO_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 
 # CORS
 app.add_middleware(
@@ -148,7 +159,7 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
         # Отправка кода на email
         async with email_sender as server:
             message = f"Subject: Verification Code\n\nYour verification code: {verification_code}"
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
+            await server.sendmail(os.getenv("EMAIL_USER"), email, message)
 
         return {"message": "Code sent", "verification_code": verification_code}
     except HTTPException as http_exc:
@@ -166,7 +177,6 @@ async def verify(email: str = Form(...), code: str = Form(...), passport: Upload
         user.verified = True
         if passport:
             contents = await passport.read()
-            # Сохранить паспорт (например, в файл или базу), пока только отметим
             user.passport_verified = False  # Требуется ручная проверка админом
         user.verification_code = None
         db.commit()
@@ -183,7 +193,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
             raise HTTPException(status_code=400, detail="Invalid credentials or not verified")
         expire = datetime.utcnow() + timedelta(hours=1)
         token_payload = {"user_id": user.id, "exp": expire, "is_admin": email == "admin@example.com"}
-        token = jwt.encode(token_payload, os.getenv("SECRET_KEY", "your-secret-key"), algorithm="HS256")
+        token = jwt.encode(token_payload, os.getenv("SECRET_KEY"), algorithm="HS256")
         return {"token": token, "user_id": user.id, "is_admin": email == "admin@example.com", "trades_completed": user.trades_completed}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -191,7 +201,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
 @app.post("/deposit")
 async def deposit(user_id: int = Form(...), currency: str = Form(...), amount: float = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -217,7 +227,7 @@ async def deposit(user_id: int = Form(...), currency: str = Form(...), amount: f
 @app.post("/create-offer")
 async def create_offer(user_id: int = Form(...), offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -292,7 +302,7 @@ async def get_offers(offer_type: str = None, currency: str = None, fiat: str = N
 @app.get("/my-offers")
 async def get_my_offers(user_id: int, token: str):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -321,7 +331,7 @@ async def get_my_offers(user_id: int, token: str):
 @app.post("/buy-offer")
 async def buy_offer(offer_id: int = Form(...), buyer_id: int = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != buyer_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -348,11 +358,9 @@ async def buy_offer(offer_id: int = Form(...), buyer_id: int = Form(...), token:
         elif offer.currency == "ETH":
             buyer.eth_balance -= offer.amount
         db.commit()
-        # Уведомление о начале сделки
-        seller = db.query(User).filter(User.id == offer.user_id).first()
         async with email_sender as server:
             message = f"Subject: New Trade Started\n\nYour offer #{offer.id} has been accepted by a buyer."
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER"), offer.user.email, message)
         return {"message": "Offer bought, awaiting confirmation"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -360,7 +368,7 @@ async def buy_offer(offer_id: int = Form(...), buyer_id: int = Form(...), token:
 @app.post("/confirm-offer")
 async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -380,40 +388,36 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
             seller = db.query(User).filter(User.id == offer.user_id).first()
             buyer = db.query(User).filter(User.id == offer.buyer_id).first()
             commission_rate = 0.005 if seller.trades_completed < 50 else 0.0025
-            commission = offer.fiat_amount * commission_rate * 2  # 0.5% от каждого
+            commission = offer.fiat_amount * commission_rate * 2
             usdt_commission = convert_to_usdt(offer.currency, commission)
             amount_to_buyer = offer.amount
             amount_to_seller = offer.fiat_amount - commission
-            # Начисление крипты покупателю
             if offer.currency == "USDT":
                 buyer.balance += amount_to_buyer
             elif offer.currency == "BTC":
                 buyer.btc_balance += amount_to_buyer
             elif offer.currency == "ETH":
                 buyer.eth_balance += amount_to_buyer
-            seller.balance += amount_to_seller  # Фиат продавцу
+            seller.balance += amount_to_seller
             offer.status = "completed"
             transaction = Transaction(offer_id=offer_id, commission=usdt_commission)
             db.add(transaction)
             offer.frozen_amount = 0
             buyer.trades_completed += 1
             seller.trades_completed += 1
-            # Referral earnings
             if seller.referral_code:
                 referrer = db.query(User).filter(User.referral_code == seller.referral_code).first()
                 if referrer:
                     referrer_earnings = usdt_commission * 0.20
                     referrer.referral_earnings += referrer_earnings
-            # Уведомление о завершении сделки
             async with email_sender as server:
                 message = f"Subject: Trade Completed\n\nYour trade #{offer_id} has been completed."
-                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
-                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, message)
-            # Проверка на крупную сделку
+                await server.sendmail(os.getenv("EMAIL_USER"), seller.email, message)
+                await server.sendmail(os.getenv("EMAIL_USER"), buyer.email, message)
             if offer.fiat_amount * convert_to_usdt(offer.currency, 1) >= 10000:
                 async with email_sender as server:
                     message = f"Subject: Large Trade\n\nTrade #{offer_id} for {offer.fiat_amount} {offer.fiat} detected."
-                    await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), "admin@example.com", message)
+                    await server.sendmail(os.getenv("EMAIL_USER"), "admin@example.com", message)
             db.commit()
             return {"message": "Trade completed", "usdt_balance": buyer.balance, "btc_balance": buyer.btc_balance, "eth_balance": buyer.eth_balance}
         db.commit()
@@ -424,7 +428,7 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
 @app.post("/cancel-offer")
 async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -442,7 +446,7 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
             user.blocked_until = datetime.utcnow() + timedelta(hours=24)
             async with email_sender as server:
                 message = f"Subject: Account Blocked\n\nYour account has been blocked for 24 hours due to excessive cancellations."
-                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), user.email, message)
+                await server.sendmail(os.getenv("EMAIL_USER"), user.email, message)
         if offer.frozen_amount > 0:
             if offer.user_id == user_id:
                 seller = db.query(User).filter(User.id == offer.user_id).first()
@@ -471,7 +475,7 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
 @app.post("/send-message")
 async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text: str = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -484,12 +488,11 @@ async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text
         message = Message(offer_id=offer_id, user_id=user_id, text=text)
         db.add(message)
         db.commit()
-        # Уведомление о новом сообщении
         recipient_id = offer.buyer_id if user_id == offer.user_id else offer.user_id
         recipient = db.query(User).filter(User.id == recipient_id).first()
         async with email_sender as server:
             message = f"Subject: New Message\n\nYou have a new message for offer #{offer_id}: {text}"
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), recipient.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER"), recipient.email, message)
         return {"message": "Message sent"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -497,7 +500,7 @@ async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text
 @app.get("/get-messages")
 async def get_messages(offer_id: int, user_id: int, token: str):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -521,7 +524,7 @@ async def get_messages(offer_id: int, user_id: int, token: str):
 @app.post("/create-dispute")
 async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), screenshot: UploadFile = File(None), video: UploadFile = File(None), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
     except jwt.InvalidTokenError:
@@ -538,19 +541,16 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
         if screenshot:
             contents = await screenshot.read()
             screenshot_path = f"disputes/{offer_id}_{user_id}_screenshot.jpg"
-            # Сохранить файл (например, в файловую систему)
         if video:
             contents = await video.read()
             video_path = f"disputes/{offer_id}_{user_id}_video.mp4"
-            # Сохранить файл
         dispute = Dispute(offer_id=offer_id, user_id=user_id, screenshot=screenshot_path, video=video_path)
         db.add(dispute)
         offer.status = "disputed"
         db.commit()
-        # Уведомление админу
         async with email_sender as server:
             message = f"Subject: New Dispute\n\nDispute created for offer #{offer_id}. Please review."
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), "admin@example.com", message)
+            await server.sendmail(os.getenv("EMAIL_USER"), "admin@example.com", message)
         return {"message": "Dispute created"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -558,7 +558,7 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
 @app.get("/get-disputes")
 async def get_disputes(user_id: int, token: str):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if not payload.get("is_admin", False):
             raise HTTPException(status_code=403, detail="Admin access required")
     except jwt.InvalidTokenError:
@@ -573,7 +573,7 @@ async def get_disputes(user_id: int, token: str):
 @app.post("/resolve-dispute")
 async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(...), action: str = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if not payload.get("is_admin", False):
             raise HTTPException(status_code=403, detail="Admin access required")
     except jwt.InvalidTokenError:
@@ -621,11 +621,10 @@ async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(..
         dispute.status = "resolved"
         dispute.resolution = resolution
         db.commit()
-        # Уведомление участников
         async with email_sender as server:
             message = f"Subject: Dispute Resolved\n\nDispute #{dispute_id} for offer #{offer.id} has been resolved. Action: {action}. Resolution: {resolution}"
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, message)
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER"), buyer.email, message)
+            await server.sendmail(os.getenv("EMAIL_USER"), seller.email, message)
         return {"message": "Dispute resolved", "action": action}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -633,7 +632,7 @@ async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(..
 @app.get("/admin-stats")
 async def admin_stats(token: str):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if not payload.get("is_admin", False):
             raise HTTPException(status_code=403, detail="Admin access required")
     except jwt.InvalidTokenError:
@@ -644,37 +643,50 @@ async def admin_stats(token: str):
         transactions = db.query(Transaction).filter(Transaction.created_at >= today).all()
         total_earnings_today = sum(t.commission for t in transactions)
         total_earnings = sum(t.commission for t in db.query(Transaction).all())
-        active_users = db.query(User).filter(User.verified == True, User.blocked_until == None).count()
-        large_trades = db.query(Offer).filter(Offer.fiat_amount * convert_to_usdt(Offer.currency, 1) >= 10000, Offer.status == "completed").all()
+        active_users = db.query(User).filter(User.verified == True, User.blocked_until == None).all()
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        weekly_transactions = db.query(Transaction).filter(Transaction.created_at >= week_ago).all()
+        daily_stats = {i: 0 for i in range(7)}
+        for t in weekly_transactions:
+            day_index = (datetime.utcnow() - t.created_at).days
+            if day_index < 7:
+                daily_stats[day_index] += t.commission
+        weekly_stats = [daily_stats[i] for i in range(6, -1, -1)]
+        large_trades = db.query(Offer).filter(Offer.status == "completed").all()
+        large_trades = [
+            {"id": o.id, "fiat_amount": o.fiat_amount, "fiat": o.fiat, "created_at": o.created_at}
+            for o in large_trades if o.fiat_amount * convert_to_usdt(o.currency, 1) >= 10000
+        ]
         return {
             "earnings_today": total_earnings_today,
             "earnings_total": total_earnings,
-            "active_users": active_users,
-            "large_trades": [{"id": t.id, "fiat_amount": t.fiat_amount, "fiat": t.fiat, "created_at": t.created_at} for t in large_trades]
+            "active_users": [{"id": u.id, "email": u.email, "trades_completed": u.trades_completed} for u in active_users],
+            "weekly_stats": weekly_stats,
+            "large_trades": large_trades
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@app.get("/admin-users")
-async def admin_users(token: str):
+@app.post("/withdraw-earnings")
+async def withdraw_earnings(amount: float = Form(...), wallet_address: str = Form(...), token: str = Form(...)):
     try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         if not payload.get("is_admin", False):
             raise HTTPException(status_code=403, detail="Admin access required")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
     db = next(get_db())
     try:
-        users = db.query(User).all()
-        return [{
-            "id": u.id,
-            "email": u.email,
-            "trades_completed": u.trades_completed,
-            "balance": u.balance,
-            "cancellations": u.cancellations,
-            "blocked_until": u.blocked_until,
-            "verified": u.verified
-        } for u in users]
+        total_earnings = sum(t.commission for t in db.query(Transaction).all())
+        if amount > total_earnings:
+            raise HTTPException(status_code=400, detail="Insufficient earnings to withdraw")
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+        # Логика вывода (заглушка, нужно подключить реальный блокчейн API)
+        async with email_sender as server:
+            message = f"Subject: Withdrawal Request\n\nAdmin requested withdrawal of {amount} USDT to {wallet_address}."
+            await server.sendmail(os.getenv("EMAIL_USER"), "admin@example.com", message)
+        return {"message": f"Withdrawal of {amount} USDT to {wallet_address} requested"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
