@@ -1,0 +1,5 @@
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-email-password
+TWILIO_SID=your-twilio-sid
+TWILIO_AUTH_TOKEN=your-twilio-token
+SECRET_KEY=your-secret-key
