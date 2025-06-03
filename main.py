@@ -35,7 +35,7 @@ class User(Base):
     verified = Column(Boolean, default=False)
     blocked_until = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
-    verification_code = Column(String, nullable=True)  # Новое поле
+    verification_code = Column(String, nullable=True)
 
 class Offer(Base):
     __tablename__ = "offers"
@@ -169,7 +169,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/create-offer")
-async def create_offer(user_id: int, sell_currency: str = Form(...), sell_amount: float = Form(...), buy_currency: str = Form(...), payment_method: str = Form(...), contact: str = Form(...), token: str = Form(...)):
+async def create_offer(user_id: int = Form(...), sell_currency: str = Form(...), sell_amount: float = Form(...), buy_currency: str = Form(...), payment_method: str = Form(...), contact: str = Form(...), token: str = Form(...)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
