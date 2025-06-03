@@ -4,7 +4,7 @@ let userId = localStorage.getItem("userId");
 let isAdmin = localStorage.getItem("isAdmin") === "true";
 let currentOfferId = null;
 let currentTab = "buy";
-let language = "ru";
+let language = localStorage.getItem("language") || "ru";
 let chatInterval = null;
 
 if (token && userId) {
@@ -15,8 +15,6 @@ if (token && userId) {
     if (isAdmin) {
         document.getElementById("admin-section").style.display = "block";
         fetchAdminStats();
-        fetchUsers();
-        fetchLargeTrades();
     }
     fetchOffers();
     fetchMyOffers();
@@ -99,6 +97,7 @@ async function login() {
             localStorage.setItem("token", token);
             localStorage.setItem("userId", userId);
             localStorage.setItem("isAdmin", isAdmin);
+            localStorage.setItem("language", language);
             document.getElementById("login-success").textContent = language === "ru" ? "Вход успешен" : "Login successful";
             document.getElementById("login-error").textContent = "";
             document.getElementById("auth-section").style.display = "none";
@@ -111,8 +110,6 @@ async function login() {
             if (isAdmin) {
                 document.getElementById("admin-section").style.display = "block";
                 fetchAdminStats();
-                fetchUsers();
-                fetchLargeTrades();
             }
             fetchOffers();
             fetchMyOffers();
@@ -129,14 +126,18 @@ function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("isAdmin");
+    localStorage.removeItem("language");
     token = null;
     userId = null;
     isAdmin = false;
+    language = "ru";
     document.getElementById("auth-section").style.display = "block";
     document.getElementById("user-section").style.display = "none";
     document.getElementById("admin-section").style.display = "none";
     document.getElementById("logout-link").style.display = "none";
     document.getElementById("profile-link").style.display = "none";
+    document.getElementById("language").value = "ru";
+    changeLanguage();
 }
 
 async function deposit() {
@@ -404,43 +405,70 @@ async function fetchAdminStats() {
         const response = await fetch(`${API_URL}/admin-stats?token=${token}`);
         const data = await response.json();
         if (response.ok) {
-            document.getElementById("admin-earnings-today").textContent = data.earnings_today.toFixed(2);
-            document.getElementById("admin-earnings-total").textContent = data.earnings_total.toFixed(2);
-            document.getElementById("active-users").textContent = data.active_users;
+            document.getElementById("admin-earnings-today").textContent = data.earnings_today;
+            document.getElementById("admin-earnings-total").textContent = data.earnings_total;
+
+            const activeUsersList = document.getElementById("active-users");
+            activeUsersList.innerHTML = "";
+            data.active_users.forEach(user => {
+                const userDiv = document.createElement("div");
+                userDiv.innerHTML = `
+                    <p>ID: ${user.id}</p>
+                    <p>Email: ${user.email}</p>
+                    <p>Trades Completed: ${user.trades_completed}</p>
+                    <button onclick="blockUser(${user.id})">${language === "ru" ? "Заблокировать" : "Block"}</button>
+                `;
+                activeUsersList.appendChild(userDiv);
+            });
+
+            const largeTradesList = document.getElementById("large-trades");
+            largeTradesList.innerHTML = "";
+            data.large_trades.forEach(trade => {
+                const tradeDiv = document.createElement("div");
+                tradeDiv.innerHTML = `
+                    <p>Offer ID: ${trade.id}</p>
+                    <p>Amount: ${trade.fiat_amount} ${trade.fiat}</p>
+                    <p>Date: ${new Date(trade.created_at).toLocaleString()}</p>
+                `;
+                largeTradesList.appendChild(tradeDiv);
+            });
+
+            const weeklyStats = data.weekly_stats;
+            const labels = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString());
+            }
+            renderWeeklyStatsChart(labels, weeklyStats);
         }
     } catch (error) {
         console.error("Error fetching admin stats:", error);
     }
 }
 
-async function fetchUsers() {
-    try {
-        const response = await fetch(`${API_URL}/admin-users?token=${token}`);
-        const users = await response.json();
-        const userManagement = document.getElementById("user-management");
-        userManagement.innerHTML = "";
-        users.forEach(user => {
-            const userDiv = document.createElement("div");
-            userDiv.className = "user";
-            userDiv.innerHTML = `
-                <p>Email: ${user.email}</p>
-                <p>Trades: ${user.trades_completed}</p>
-                <p>Balance: ${user.balance} USDT</p>
-                <p>Cancellations: ${user.cancellations}</p>
-                <p>Blocked Until: ${user.blocked_until ? new Date(user.blocked_until).toLocaleString() : "N/A"}</p>
-                <p>Verified: ${user.verified ? "Yes" : "No"}</p>
-                <button onclick="blockUser(${user.id}, ${!user.blocked_until})">${user.blocked_until ? "Unblock" : "Block"}</button>
-            `;
-            userManagement.appendChild(userDiv);
-        });
-    } catch (error) {
-        console.error("Error fetching users:", error);
-    }
-}
-
-async function blockUser(userId, block) {
-    // Здесь можно добавить эндпоинт для блокировки/разблокировки
-    alert(`User ${userId} ${block ? "blocked" : "unblocked"} - functionality to be implemented`);
+function renderWeeklyStatsChart(labels, data) {
+    const ctx = document.getElementById("weekly-stats-chart").getContext("2d");
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: language === "ru" ? "Комиссии за неделю (USDT)" : "Weekly Commissions (USDT)",
+                data: data,
+                borderColor: "#28a745",
+                backgroundColor: "rgba(40, 167, 69, 0.2)",
+                fill: true
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 }
 
 async function fetchDisputes() {
@@ -493,25 +521,8 @@ async function resolveDispute(disputeId) {
     }
 }
 
-async function fetchLargeTrades() {
-    try {
-        const response = await fetch(`${API_URL}/admin-stats?token=${token}`);
-        const data = await response.json();
-        const largeTrades = document.getElementById("large-trades");
-        largeTrades.innerHTML = "";
-        data.large_trades.forEach(trade => {
-            const tradeDiv = document.createElement("div");
-            tradeDiv.className = "trade";
-            tradeDiv.innerHTML = `
-                <p>ID: ${trade.id}</p>
-                <p>Amount: ${trade.fiat_amount} ${trade.fiat}</p>
-                <p>Date: ${new Date(trade.created_at).toLocaleString()}</p>
-            `;
-            largeTrades.appendChild(tradeDiv);
-        });
-    } catch (error) {
-        console.error("Error fetching large trades:", error);
-    }
+async function blockUser(userId) {
+    alert(language === "ru" ? "Функция блокировки в разработке" : "Block user function is under development");
 }
 
 function switchTab(tab) {
@@ -524,12 +535,14 @@ function switchTab(tab) {
     document.getElementById("sell-section").style.display = tab === "sell" ? "block" : "none";
     document.getElementById("my-offers-section").style.display = tab === "my-offers" ? "block" : "none";
     document.getElementById("chat-section").style.display = "none";
+    document.getElementById("dispute-section").style.display = "none";
     if (chatInterval) clearInterval(chatInterval);
     fetchOffers();
 }
 
 function changeLanguage() {
     language = document.getElementById("language").value;
+    localStorage.setItem("language", language);
     document.querySelectorAll("[data-lang]").forEach(el => {
         const key = el.getAttribute("data-lang");
         const translations = {
@@ -545,13 +558,14 @@ function changeLanguage() {
             "create-offer": { "ru": "Создать заявку", "en": "Create Offer" },
             "my-offers": { "ru": "Мои заявки", "en": "My Offers" },
             "chat": { "ru": "Чат", "en": "Chat" },
-            "admin-panel": { "ru": "Админский кабинет", "en": "Admin Panel" },
-            "dispute": { "ru": "Открыть спор", "en": "Open Dispute" }
+            "dispute": { "ru": "Открыть спор", "en": "Open Dispute" },
+            "admin-panel": { "ru": "Админский кабинет", "en": "Admin Panel" }
         };
         el.textContent = translations[key][language] + (el.id === "user-email" ? ` ${document.getElementById("user-email").textContent}` : "");
     });
     fetchOffers();
     fetchMyOffers();
+    if (isAdmin) fetchAdminStats();
 }
 
 function openSupport() {
