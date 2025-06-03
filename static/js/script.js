@@ -5,7 +5,7 @@ let isAdmin = localStorage.getItem("isAdmin") === "true";
 let currentOfferId = null;
 let currentTab = "buy";
 let language = "ru";
-let messageInterval = null;
+let chatInterval = null;
 
 if (token && userId) {
     document.getElementById("auth-section").style.display = "none";
@@ -128,7 +128,6 @@ function logout() {
     token = null;
     userId = null;
     isAdmin = false;
-    if (messageInterval) clearInterval(messageInterval);
     document.getElementById("auth-section").style.display = "block";
     document.getElementById("user-section").style.display = "none";
     document.getElementById("admin-section").style.display = "none";
@@ -246,12 +245,11 @@ async function fetchMyOffers() {
                 <div>
                     ${offer.status === "pending" ? `<button onclick="confirmOffer(${offer.id})">${language === "ru" ? "Подтвердить" : "Confirm"}</button>` : ""}
                     ${offer.status === "pending" || offer.status === "active" ? `<button onclick="cancelOffer(${offer.id})">${language === "ru" ? "Отменить" : "Cancel"}</button>` : ""}
-                    ${offer.status === "pending" ? `<button id="chat-btn-${offer.id}" onclick="openChat(${offer.id})">${language === "ru" ? "Чат" : "Chat"} <span id="chat-unread-${offer.id}" style="color: #ff4d4f;"></span></button>` : ""}
+                    ${offer.status === "pending" ? `<button onclick="openChat(${offer.id})">${language === "ru" ? "Чат" : "Chat"}</button>` : ""}
                     ${offer.status === "pending" ? `<button onclick="createDispute(${offer.id})">${language === "ru" ? "Открыть спор" : "Open Dispute"}</button>` : ""}
                 </div>
             `;
             offersList.appendChild(offerDiv);
-            checkUnreadMessages(offer.id);
         });
     } catch (error) {
         console.error(language === "ru" ? "Ошибка при загрузке моих заявок" : "Error fetching my offers", error);
@@ -323,9 +321,8 @@ async function openChat(offerId) {
     currentOfferId = offerId;
     document.getElementById("chat-section").style.display = "block";
     fetchMessages();
-    if (messageInterval) clearInterval(messageInterval);
-    messageInterval = setInterval(fetchMessages, 5000); // Обновляем каждые 5 секунд
-    markMessagesAsRead(offerId);
+    if (chatInterval) clearInterval(chatInterval);
+    chatInterval = setInterval(fetchMessages, 5000);
 }
 
 async function fetchMessages() {
@@ -337,7 +334,10 @@ async function fetchMessages() {
         messages.forEach(message => {
             const messageDiv = document.createElement("div");
             messageDiv.className = `chat-message ${message.user_id == userId ? "sent" : "received"}`;
-            messageDiv.textContent = `${message.text} (${new Date(message.created_at).toLocaleString()})`;
+            messageDiv.innerHTML = `
+                <strong>${message.user_email}:</strong> ${message.text} <br>
+                <small>${new Date(message.created_at).toLocaleString()}</small>
+            `;
             chatMessages.appendChild(messageDiv);
         });
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -359,7 +359,6 @@ async function sendMessage() {
         if (response.ok) {
             document.getElementById("chat-input").value = "";
             fetchMessages();
-            notifyOtherParty(currentOfferId);
         } else {
             alert(data.detail);
         }
@@ -368,48 +367,19 @@ async function sendMessage() {
     }
 }
 
-async function notifyOtherParty(offerId) {
-    try {
-        const response = await fetch(`${API_URL}/my-offers?user_id=${userId}&token=${token}`);
-        const offers = await response.json();
-        const offer = offers.find(o => o.id == offerId);
-        if (offer) {
-            const otherUserId = offer.user_id == userId ? offer.buyer_id : offer.user_id;
-            // Имитация уведомления (в реальном проекте это может быть WebSocket или email)
-            console.log(`Уведомление отправлено пользователю ${otherUserId}`);
-        }
-    } catch (error) {
-        console.error("Ошибка при уведомлении:", error);
-    }
-}
-
-async function checkUnreadMessages(offerId) {
-    try {
-        const response = await fetch(`${API_URL}/get-messages?offer_id=${offerId}&user_id=${userId}&token=${token}`);
-        const messages = await response.json();
-        const unreadCount = messages.filter(m => m.user_id != userId).length;
-        const unreadSpan = document.getElementById(`chat-unread-${offerId}`);
-        if (unreadSpan) {
-            unreadSpan.textContent = unreadCount > 0 ? `(${unreadCount})` : "";
-        }
-    } catch (error) {
-        console.error("Ошибка при проверке непрочитанных сообщений:", error);
-    }
-}
-
-function markMessagesAsRead(offerId) {
-    const unreadSpan = document.getElementById(`chat-unread-${offerId}`);
-    if (unreadSpan) {
-        unreadSpan.textContent = "";
-    }
-}
-
 async function createDispute(offerId) {
+    const screenshot = document.getElementById("dispute-screenshot")?.files[0];
+    const video = document.getElementById("dispute-video")?.files[0];
+    const formData = new FormData();
+    formData.append("offer_id", offerId);
+    formData.append("user_id", userId);
+    formData.append("token", token);
+    if (screenshot) formData.append("screenshot", screenshot);
+    if (video) formData.append("video", video);
     try {
         const response = await fetch(`${API_URL}/create-dispute`, {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `offer_id=${offerId}&user_id=${userId}&token=${token}`
+            body: formData
         });
         const data = await response.json();
         if (response.ok) {
@@ -437,6 +407,53 @@ async function fetchAdminStats() {
     }
 }
 
+async function fetchDisputes() {
+    if (!isAdmin) return;
+    try {
+        const response = await fetch(`${API_URL}/get-disputes?user_id=${userId}&token=${token}`);
+        const disputes = await response.json();
+        const disputesList = document.getElementById("disputes-list");
+        disputesList.innerHTML = "";
+        disputes.forEach(dispute => {
+            const disputeDiv = document.createElement("div");
+            disputeDiv.className = "dispute";
+            disputeDiv.innerHTML = `
+                <p>ID: ${dispute.id}, Offer ID: ${dispute.offer_id}, Status: ${dispute.status}</p>
+                <input type="text" id="resolution-${dispute.id}" placeholder="${language === 'ru' ? 'Решение' : 'Resolution'}">
+                <select id="action-${dispute.id}">
+                    <option value="resolve">${language === 'ru' ? 'Разрешить' : 'Resolve'}</option>
+                    <option value="cancel">${language === 'ru' ? 'Отменить' : 'Cancel'}</option>
+                </select>
+                <button onclick="resolveDispute(${dispute.id})">${language === 'ru' ? 'Разрешить спор' : 'Resolve Dispute'}</button>
+            `;
+            disputesList.appendChild(disputeDiv);
+        });
+    } catch (error) {
+        console.error("Error fetching disputes:", error);
+    }
+}
+
+async function resolveDispute(disputeId) {
+    const resolution = document.getElementById(`resolution-${disputeId}`).value;
+    const action = document.getElementById(`action-${disputeId}`).value;
+    try {
+        const response = await fetch(`${API_URL}/resolve-dispute`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `dispute_id=${disputeId}&resolution=${resolution}&action=${action}&token=${token}`
+        });
+        const data = await response.json();
+        if (response.ok) {
+            alert(language === "ru" ? "Спор разрешён" : "Dispute resolved");
+            fetchDisputes();
+        } else {
+            alert(data.detail);
+        }
+    } catch (error) {
+        alert(language === "ru" ? `Ошибка: ${error.message}` : `Error: ${error.message}`);
+    }
+}
+
 function switchTab(tab) {
     currentTab = tab;
     document.getElementById("buy-tab").classList.remove("active");
@@ -447,7 +464,7 @@ function switchTab(tab) {
     document.getElementById("sell-section").style.display = tab === "sell" ? "block" : "none";
     document.getElementById("my-offers-section").style.display = tab === "my-offers" ? "block" : "none";
     document.getElementById("chat-section").style.display = "none";
-    if (messageInterval) clearInterval(messageInterval);
+    if (chatInterval) clearInterval(chatInterval);
     fetchOffers();
 }
 
@@ -482,4 +499,8 @@ function openSupport() {
 
 function openProfile() {
     alert(language === "ru" ? "Профиль пока в разработке" : "Profile is under development");
+}
+
+if (isAdmin) {
+    fetchDisputes();
 }
