@@ -108,6 +108,7 @@ async def read_root(request: Request):
 
 @app.post("/register")
 async def register(email: str = Form(...), phone: str = Form(...), password: str = Form(...), referral_code: str = Form(None)):
+    print(f"Received request: email={email}, phone={phone}, password={password}, referral_code={referral_code}")
     db = next(get_db())
     try:
         if db.query(User).filter(User.email == email).first():
@@ -161,7 +162,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
         if not user or not pwd_context.verify(password, user.password) or not user.verified:
             raise HTTPException(status_code=400, detail="Неверные данные или не верифицирован")
         token = jwt.encode({"user_id": user.id}, os.getenv("SECRET_KEY", "your-secret-key"), algorithm="HS256")
-        return {"token": token, "user_id": user.id}
+        return {"token": token, "user_id": user.id"}
     except Exception as e:
         print(f"Error in /login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
