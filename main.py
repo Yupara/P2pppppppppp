@@ -42,14 +42,18 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     verification_code = Column(String, nullable=True)
     referral_earnings = Column(Float, default=0.0)
+    btc_balance = Column(Float, default=0.0)
+    eth_balance = Column(Float, default=0.0)
 
 class Offer(Base):
     __tablename__ = "offers"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    sell_currency = Column(String)
-    sell_amount = Column(Float)
-    buy_currency = Column(String)
+    offer_type = Column(String)  # "sell" или "buy"
+    currency = Column(String)    # Криптовалюта (USDT, BTC, ETH)
+    amount = Column(Float)       # Сумма в криптовалюте
+    fiat = Column(String)        # Фиатная валюта (USD, RUB, EUR)
+    fiat_amount = Column(Float)  # Сумма в фиате
     payment_method = Column(String)
     contact = Column(String)
     status = Column(String, default="active")
@@ -68,6 +72,7 @@ class Message(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     text = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("User", foreign_keys=[user_id])
 
 class Dispute(Base):
     __tablename__ = "disputes"
@@ -113,6 +118,11 @@ def get_db():
     finally:
         db.close()
 
+# Функция для конвертации крипты в USDT (заглушка для теста)
+def convert_to_usdt(currency: str, amount: float) -> float:
+    rates = {"USDT": 1.0, "BTC": 70000, "ETH": 3500}  # Примерные курсы
+    return amount * rates.get(currency, 1.0)
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -135,7 +145,7 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
         db.add(user)
         db.commit()
 
-        # Отправка кода на email (временно тестовый код)
+        # Отправка кода на email
         async with email_sender as server:
             message = f"Subject: Verification Code\n\nYour verification code: {verification_code}"
             await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), email, message)
@@ -174,12 +184,38 @@ async def login(email: str = Form(...), password: str = Form(...)):
         expire = datetime.utcnow() + timedelta(hours=1)
         token_payload = {"user_id": user.id, "exp": expire, "is_admin": email == "admin@example.com"}
         token = jwt.encode(token_payload, os.getenv("SECRET_KEY", "your-secret-key"), algorithm="HS256")
-        return {"token": token, "user_id": user.id, "is_admin": email == "admin@example.com"}
+        return {"token": token, "user_id": user.id, "is_admin": email == "admin@example.com", "trades_completed": user.trades_completed}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/deposit")
+async def deposit(user_id: int = Form(...), currency: str = Form(...), amount: float = Form(...), token: str = Form(...)):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found")
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+        if currency == "USDT":
+            user.balance += amount
+        elif currency == "BTC":
+            user.btc_balance += amount
+        elif currency == "ETH":
+            user.eth_balance += amount
+        db.commit()
+        return {"message": "Balance updated", "usdt_balance": user.balance, "btc_balance": user.btc_balance, "eth_balance": user.eth_balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/create-offer")
-async def create_offer(user_id: int = Form(...), offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), payment_method: str = Form(...), contact: str = Form(...), token: str = Form(...)):
+async def create_offer(user_id: int = Form(...), offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...), token: str = Form(...)):
     try:
         payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
         if payload["user_id"] != user_id:
@@ -191,33 +227,93 @@ async def create_offer(user_id: int = Form(...), offer_type: str = Form(...), cu
         user = db.query(User).filter(User.id == user_id).first()
         if not user or not user.verified:
             raise HTTPException(status_code=400, detail="User not found or not verified")
-        if user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        user.balance -= amount
-        offer = Offer(user_id=user_id, sell_currency=currency if offer_type == "sell" else fiat, sell_amount=amount if offer_type == "sell" else 0, buy_currency=fiat if offer_type == "sell" else currency, payment_method=payment_method, contact=contact)
+        if user.blocked_until and user.blocked_until > datetime.utcnow():
+            raise HTTPException(status_code=403, detail="User is blocked")
+        if currency == "USDT" and user.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient USDT balance")
+        elif currency == "BTC" and user.btc_balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient BTC balance")
+        elif currency == "ETH" and user.eth_balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient ETH balance")
+        if currency == "USDT":
+            user.balance -= amount
+        elif currency == "BTC":
+            user.btc_balance -= amount
+        elif currency == "ETH":
+            user.eth_balance -= amount
+        offer = Offer(
+            user_id=user_id,
+            offer_type=offer_type,
+            currency=currency,
+            amount=amount,
+            fiat=fiat,
+            fiat_amount=fiat_amount,
+            payment_method=payment_method,
+            contact=contact
+        )
         db.add(offer)
         db.commit()
-        return {"message": "Offer created", "user_balance": user.balance}
+        return {"message": "Offer created", "usdt_balance": user.balance, "btc_balance": user.btc_balance, "eth_balance": user.eth_balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.get("/offers")
-async def get_offers(offer_type: str = None, currency: str = None, fiat: str = None, payment_method: str = None, min_amount: float = None):
+async def get_offers(offer_type: str = None, currency: str = None, fiat: str = None, payment_method: str = None, amount: float = None):
     db = next(get_db())
     try:
         query = db.query(Offer).filter(Offer.status == "active")
         if offer_type:
-            query = query.filter(Offer.sell_currency == (fiat if offer_type == "sell" else currency) if offer_type == "sell" else Offer.buy_currency == currency)
+            query = query.filter(Offer.offer_type == offer_type)
         if currency:
-            query = query.filter(Offer.sell_currency == currency or Offer.buy_currency == currency)
+            query = query.filter(Offer.currency == currency)
         if fiat:
-            query = query.filter(Offer.sell_currency == fiat or Offer.buy_currency == fiat)
+            query = query.filter(Offer.fiat == fiat)
         if payment_method and payment_method != "all":
             query = query.filter(Offer.payment_method == payment_method)
-        if min_amount:
-            query = query.filter(Offer.sell_amount >= min_amount)
+        if amount:
+            query = query.filter(Offer.amount >= amount)
         offers = query.all()
-        return [{"id": o.id, "user_id": o.user_id, "sell_currency": o.sell_currency, "sell_amount": o.sell_amount, "buy_currency": o.buy_currency, "payment_method": o.payment_method, "contact": o.contact, "status": o.status} for o in offers]
+        return [{
+            "id": o.id,
+            "user_id": o.user_id,
+            "offer_type": o.offer_type,
+            "currency": o.currency,
+            "amount": o.amount,
+            "fiat": o.fiat,
+            "fiat_amount": o.fiat_amount,
+            "payment_method": o.payment_method,
+            "contact": o.contact,
+            "status": o.status,
+            "created_at": o.created_at
+        } for o in offers]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/my-offers")
+async def get_my_offers(user_id: int, token: str):
+    try:
+        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
+        if payload["user_id"] != user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db = next(get_db())
+    try:
+        offers = db.query(Offer).filter((Offer.user_id == user_id) | (Offer.buyer_id == user_id)).all()
+        return [{
+            "id": o.id,
+            "user_id": o.user_id,
+            "offer_type": o.offer_type,
+            "currency": o.currency,
+            "amount": o.amount,
+            "fiat": o.fiat,
+            "fiat_amount": o.fiat_amount,
+            "payment_method": o.payment_method,
+            "contact": o.contact,
+            "status": o.status,
+            "created_at": o.created_at,
+            "buyer_id": o.buyer_id
+        } for o in offers]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
@@ -234,10 +330,28 @@ async def buy_offer(offer_id: int = Form(...), buyer_id: int = Form(...), token:
         offer = db.query(Offer).filter(Offer.id == offer_id, Offer.status == "active").first()
         if not offer or offer.user_id == buyer_id:
             raise HTTPException(status_code=400, detail="Offer unavailable")
+        buyer = db.query(User).filter(User.id == buyer_id).first()
+        if offer.currency == "USDT" and buyer.balance < offer.amount:
+            raise HTTPException(status_code=400, detail="Insufficient USDT balance")
+        elif offer.currency == "BTC" and buyer.btc_balance < offer.amount:
+            raise HTTPException(status_code=400, detail="Insufficient BTC balance")
+        elif offer.currency == "ETH" and buyer.eth_balance < offer.amount:
+            raise HTTPException(status_code=400, detail="Insufficient ETH balance")
         offer.buyer_id = buyer_id
         offer.status = "pending"
-        offer.frozen_amount = offer.sell_amount
+        offer.frozen_amount = offer.amount
+        if offer.currency == "USDT":
+            buyer.balance -= offer.amount
+        elif offer.currency == "BTC":
+            buyer.btc_balance -= offer.amount
+        elif offer.currency == "ETH":
+            buyer.eth_balance -= offer.amount
         db.commit()
+        # Уведомление о начале сделки
+        seller = db.query(User).filter(User.id == offer.user_id).first()
+        async with email_sender as server:
+            message = f"Subject: New Trade Started\n\nYour offer #{offer.id} has been accepted by a buyer."
+            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
         return {"message": "Offer bought, awaiting confirmation"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -262,15 +376,23 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
         elif offer.buyer_id == user_id:
             offer.buyer_confirmed = True
         if offer.seller_confirmed and offer.buyer_confirmed:
-            commission_rate = 0.005 if offer.user.trades_completed < 50 else 0.0025
-            commission = offer.sell_amount * commission_rate
-            amount_to_buyer = offer.sell_amount - commission
-            buyer = db.query(User).filter(User.id == offer.buyer_id).first()
             seller = db.query(User).filter(User.id == offer.user_id).first()
-            buyer.balance += amount_to_buyer
-            seller.balance += 0  # Seller gets nothing until admin review (for disputes)
+            buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+            commission_rate = 0.005 if seller.trades_completed < 50 else 0.0025
+            commission = offer.fiat_amount * commission_rate * 2  # 0.5% от каждого
+            usdt_commission = convert_to_usdt(offer.currency, commission)
+            amount_to_buyer = offer.amount
+            amount_to_seller = offer.fiat_amount - commission
+            # Начисление крипты покупателю
+            if offer.currency == "USDT":
+                buyer.balance += amount_to_buyer
+            elif offer.currency == "BTC":
+                buyer.btc_balance += amount_to_buyer
+            elif offer.currency == "ETH":
+                buyer.eth_balance += amount_to_buyer
+            seller.balance += amount_to_seller  # Фиат продавцу
             offer.status = "completed"
-            transaction = Transaction(offer_id=offer_id, commission=commission)
+            transaction = Transaction(offer_id=offer_id, commission=usdt_commission)
             db.add(transaction)
             offer.frozen_amount = 0
             buyer.trades_completed += 1
@@ -279,10 +401,20 @@ async def confirm_offer(offer_id: int = Form(...), user_id: int = Form(...), tok
             if seller.referral_code:
                 referrer = db.query(User).filter(User.referral_code == seller.referral_code).first()
                 if referrer:
-                    referrer_earnings = commission * 0.20
+                    referrer_earnings = usdt_commission * 0.20
                     referrer.referral_earnings += referrer_earnings
+            # Уведомление о завершении сделки
+            async with email_sender as server:
+                message = f"Subject: Trade Completed\n\nYour trade #{offer_id} has been completed."
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), seller.email, message)
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), buyer.email, message)
+            # Проверка на крупную сделку
+            if offer.fiat_amount * convert_to_usdt(offer.currency, 1) >= 10000:
+                async with email_sender as server:
+                    message = f"Subject: Large Trade\n\nTrade #{offer_id} for {offer.fiat_amount} {offer.fiat} detected."
+                    await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), "admin@example.com", message)
             db.commit()
-            return {"message": "Trade completed", "buyer_balance": buyer.balance}
+            return {"message": "Trade completed", "usdt_balance": buyer.balance, "btc_balance": buyer.btc_balance, "eth_balance": buyer.eth_balance}
         db.commit()
         return {"message": "Confirmation received, awaiting other party"}
     except Exception as e:
@@ -307,9 +439,26 @@ async def cancel_offer(offer_id: int = Form(...), user_id: int = Form(...), toke
         user.cancellations += 1
         if user.cancellations >= 10:
             user.blocked_until = datetime.utcnow() + timedelta(hours=24)
+            async with email_sender as server:
+                message = f"Subject: Account Blocked\n\nYour account has been blocked for 24 hours due to excessive cancellations."
+                await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), user.email, message)
         if offer.frozen_amount > 0:
-            seller = db.query(User).filter(User.id == offer.user_id).first()
-            seller.balance += offer.frozen_amount
+            if offer.user_id == user_id:
+                seller = db.query(User).filter(User.id == offer.user_id).first()
+                if offer.currency == "USDT":
+                    seller.balance += offer.frozen_amount
+                elif offer.currency == "BTC":
+                    seller.btc_balance += offer.frozen_amount
+                elif offer.currency == "ETH":
+                    seller.eth_balance += offer.frozen_amount
+            elif offer.buyer_id == user_id:
+                buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+                if offer.currency == "USDT":
+                    buyer.balance += offer.frozen_amount
+                elif offer.currency == "BTC":
+                    buyer.btc_balance += offer.frozen_amount
+                elif offer.currency == "ETH":
+                    buyer.eth_balance += offer.frozen_amount
             offer.frozen_amount = 0
         offer.status = "cancelled"
         offer.buyer_id = None
@@ -334,6 +483,12 @@ async def send_message(offer_id: int = Form(...), user_id: int = Form(...), text
         message = Message(offer_id=offer_id, user_id=user_id, text=text)
         db.add(message)
         db.commit()
+        # Уведомление о новом сообщении
+        recipient_id = offer.buyer_id if user_id == offer.user_id else offer.user_id
+        recipient = db.query(User).filter(User.id == recipient_id).first()
+        async with email_sender as server:
+            message = f"Subject: New Message\n\nYou have a new message for offer #{offer_id}: {text}"
+            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), recipient.email, message)
         return {"message": "Message sent"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -352,7 +507,13 @@ async def get_messages(offer_id: int, user_id: int, token: str):
         if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
             raise HTTPException(status_code=403, detail="You are not part of this trade")
         messages = db.query(Message).filter(Message.offer_id == offer_id).all()
-        return [{"id": m.id, "user_id": m.user_id, "text": m.text, "created_at": m.created_at} for m in messages]
+        return [{
+            "id": m.id,
+            "user_id": m.user_id,
+            "user_email": m.user.email,
+            "text": m.text,
+            "created_at": m.created_at
+        } for m in messages]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
@@ -382,7 +543,7 @@ async def create_dispute(offer_id: int = Form(...), user_id: int = Form(...), sc
         dispute = Dispute(offer_id=offer_id, user_id=user_id, screenshot=screenshot_path, video=video_path)
         db.add(dispute)
         offer.status = "disputed"
-        offer.frozen_amount = offer.sell_amount
+        offer.frozen_amount = offer.amount
         db.commit()
         # Уведомление админу
         async with email_sender as server:
@@ -425,18 +586,32 @@ async def resolve_dispute(dispute_id: int = Form(...), resolution: str = Form(..
             raise HTTPException(status_code=400, detail="Offer not found")
         if action == "resolve":
             commission_rate = 0.005
-            commission = offer.sell_amount * commission_rate
-            amount_to_buyer = offer.sell_amount - commission
+            commission = offer.fiat_amount * commission_rate * 2
+            usdt_commission = convert_to_usdt(offer.currency, commission)
+            amount_to_buyer = offer.amount
+            amount_to_seller = offer.fiat_amount - commission
             buyer = db.query(User).filter(User.id == offer.buyer_id).first()
             seller = db.query(User).filter(User.id == offer.user_id).first()
-            buyer.balance += amount_to_buyer
-            transaction = Transaction(offer_id=offer.id, commission=commission)
+            if offer.currency == "USDT":
+                buyer.balance += amount_to_buyer
+            elif offer.currency == "BTC":
+                buyer.btc_balance += amount_to_buyer
+            elif offer.currency == "ETH":
+                buyer.eth_balance += amount_to_buyer
+            seller.balance += amount_to_seller
+            transaction = Transaction(offer_id=offer.id, commission=usdt_commission)
             db.add(transaction)
             offer.status = "completed"
             offer.frozen_amount = 0
         elif action == "cancel":
             seller = db.query(User).filter(User.id == offer.user_id).first()
-            seller.balance += offer.frozen_amount
+            buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+            if offer.currency == "USDT":
+                buyer.balance += offer.frozen_amount
+            elif offer.currency == "BTC":
+                buyer.btc_balance += offer.frozen_amount
+            elif offer.currency == "ETH":
+                buyer.eth_balance += offer.frozen_amount
             offer.frozen_amount = 0
             offer.status = "cancelled"
         else:
@@ -484,55 +659,3 @@ async def reset_db():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-@app.get("/my-offers")
-async def get_my_offers(user_id: int, token: str):
-    try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
-        if payload["user_id"] != user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    db = next(get_db())
-    try:
-        offers = db.query(Offer).filter((Offer.user_id == user_id) | (Offer.buyer_id == user_id)).all()
-        return [{"id": o.id, "sell_currency": o.sell_currency, "sell_amount": o.sell_amount, "buy_currency": o.buy_currency, "payment_method": o.payment_method, "contact": o.contact, "status": o.status} for o in offers]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
-@app.get("/user-data")
-async def get_user_data(user_id: int, token: str):
-    try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
-        if payload["user_id"] != user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=400, detail="User not found")
-        return {"balance": user.balance, "trades_completed": user.trades_completed}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
-@app.post("/support")
-async def send_support(user_id: int = Form(...), message: str = Form(...), token: str = Form(...)):
-    try:
-        payload = jwt.decode(token, os.getenv("SECRET_KEY", "your-secret-key"), algorithms=["HS256"])
-        if payload["user_id"] != user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=400, detail="User not found")
-        # Уведомление админу
-        async with email_sender as server:
-            admin_message = f"Subject: Support Request\n\nUser ID: {user_id}\nMessage: {message}\nEmail: {user.email}"
-            await server.sendmail(os.getenv("EMAIL_USER", "test@example.com"), "admin@example.com", admin_message)
-        return {"message": "Support request sent, admin will respond if needed"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
