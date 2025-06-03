@@ -35,6 +35,7 @@ class User(Base):
     verified = Column(Boolean, default=False)
     blocked_until = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
+    verification_code = Column(String, nullable=True)  # Новое поле
 
 class Offer(Base):
     __tablename__ = "offers"
