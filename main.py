@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from passlib.context import CryptContext
 from twilio.rest import Client
+from twilio.base.exceptions import TwilioException
 from aiosmtplib import SMTP
 from datetime import datetime, timedelta
 import jwt
@@ -112,7 +113,13 @@ email_sender = SMTP(
     username=os.getenv("EMAIL_USER"),
     password=os.getenv("EMAIL_PASS")
 )
-twilio_client = Client(os.getenv("TWILIO_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+
+# Инициализация Twilio с обработкой ошибок
+twilio_client = None
+try:
+    twilio_client = Client(os.getenv("TWILIO_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+except TwilioException as e:
+    print(f"Twilio initialization failed: {e}. SMS notifications will be disabled.")
 
 # CORS
 app.add_middleware(
@@ -164,6 +171,17 @@ async def register(email: str = Form(...), phone: str = Form(...), password: str
         async with email_sender as server:
             message = f"Subject: Verification Code\n\nYour verification code: {verification_code}"
             await server.sendmail(os.getenv("EMAIL_USER"), email, message)
+
+        # Отправка SMS через Twilio, если настроен
+        if twilio_client:
+            try:
+                twilio_client.messages.create(
+                    body=f"Your verification code: {verification_code}",
+                    from_=os.getenv("TWILIO_PHONE_NUMBER"),
+                    to=phone
+                )
+            except TwilioException as e:
+                print(f"Failed to send SMS: {e}")
 
         return {"message": "Code sent", "verification_code": verification_code}
     except HTTPException as http_exc:
