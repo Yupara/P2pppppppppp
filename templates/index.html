@@ -67,8 +67,6 @@
                     <p>Метод: {{ offer.payment_method }}</p>
                     <p>Статистика: {{ offer.user.orders_completed }} ордеров | {{ offer.user.rating }}%</p>
                     <form action="/buy-offer/{{ offer.id }}" method="post">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="token" value="YOUR_TOKEN">
                         <button type="submit">{{ "Покупка" if offer.offer_type == "sell" else "Продажа" }}</button>
                     </form>
                 </div>
@@ -78,8 +76,6 @@
         <div class="create-offer">
             <h3>Создать объявление</h3>
             <form action="/create-offer" method="post">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="token" value="YOUR_TOKEN">
                 <select name="offer_type" required>
                     <option value="buy">Покупка</option>
                     <option value="sell">Продажа</option>
