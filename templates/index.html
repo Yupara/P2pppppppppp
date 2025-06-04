@@ -42,19 +42,46 @@
             justify-content: center;
             font-weight: bold;
         }
-        .upgrade {
+        .balance {
             background-color: #2e2e2e;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
             margin: 10px 0;
             text-align: center;
         }
-        .stats {
+        .balance button {
+            background-color: #27ae60;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .investment {
             background-color: #2e2e2e;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
             margin: 10px 0;
             text-align: center;
+        }
+        .progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            width: 60%;
+            height: 10px;
+            background-color: #1a1a1a;
+            border-radius: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #f1c40f;
+            border-radius: 5px;
+            width: {{ user.vip_progress }}%;
         }
         .other-offers {
             background-color: #2e2e2e;
@@ -142,17 +169,32 @@
             <span>Help & Support</span>
         </div>
 
-        <div class="upgrade">
-            <p>Общий мейкер</p>
-            <p>Upgrade to verified advertiser for more benefits</p>
+        <div class="balance">
+            <p>Balance: ${{ user.balance }}</p>
+            <p>VIP Level: {{ user.vip_level }}</p>
+            <form action="/deposit" method="post">
+                <input type="number" name="amount" step="0.01" placeholder="Amount to Deposit" required>
+                <button type="submit">Deposit</button>
+            </form>
+            <form action="/withdraw" method="post">
+                <input type="number" name="amount" step="0.01" placeholder="Amount to Withdraw" required>
+                <button type="submit">Withdraw</button>
+            </form>
         </div>
 
-        <div class="stats">
-            <p>Исполнено ордеров за 30 дней: 8 ордеров</p>
-            <p>Исполнено за 30 мин: 100%</p>
-            <p>Средн. время перевода: 1 мин</p>
-            <p>Средн. время оплаты: 4 мин</p>
-            <p><a href="#">Больше данных</a></p>
+        <div class="investment">
+            <p>Invest 50,000 USDT and receive VIP {{ user.vip_level + 1 }} with daily earnings!</p>
+            <p>Progress: {{ user.vip_progress }}%</p>
+            <div class="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <span>VIP {{ user.vip_level }}</span>
+            </div>
+            <form action="/invest" method="post">
+                <input type="number" name="amount" step="0.01" placeholder="Amount to Invest" required>
+                <button type="submit">Invest</button>
+            </form>
         </div>
 
         <div class="other-offers">
