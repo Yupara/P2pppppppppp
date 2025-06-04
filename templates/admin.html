@@ -28,8 +28,6 @@
                 <div class="user">
                     <p>ID: {{ u.id }} | Email: {{ u.email }} | Banned: {{ u.is_banned }}</p>
                     <form action="/admin/ban-user/{{ u.id }}" method="post">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="token" value="YOUR_TOKEN">
                         <button type="submit">Забанить</button>
                     </form>
                 </div>
@@ -47,7 +45,7 @@
         <button onclick="window.location.href='/'">P2P</button>
         <button onclick="window.location.href='/orders'">Orders</button>
         <button onclick="window.location.href='/ads'">Ads</button>
-        <button class="active" onclick="window.location.href='/profile'">Profile</button>
+        <button onclick="window.location.href='/profile'">Profile</button>
     </div>
 </body>
 </html>
