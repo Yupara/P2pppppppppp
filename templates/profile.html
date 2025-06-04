@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Green P2P Exchange</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button onclick="history.back()">←</button>
+            <div class="user-info">
+                <img src="https://via.placeholder.com/40" alt="User Avatar">
+                <div>
+                    <p>{{ user.email[:3] }}****@*****.com</p>
+                    <p>UID: {{ user.id }}123456</p>
+                </div>
+            </div>
+            <span>{{ now.strftime('%H:%M') }}</span>
+        </div>
+
+        <div class="profile">
+            <h3>Профиль</h3>
+            <p>Статус: {{ 'Мерчант' if user.is_merchant else 'VIP ' + user.vip_level|string if user.vip_level > 0 else 'Обычный' }}</p>
+            <p>Верификация: 
+                {{ 'Email' if user.verified_email else '' }}
+                {{ 'Phone' if user.verified_phone else '' }}
+                {{ 'Identity' if user.verified_identity else '' }}
+            </p>
+            <p>Статистика: {{ user.orders_completed }} ордеров | {{ user.rating }}% | Среднее время: {{ user.avg_transfer_time }} мин</p>
+            <p>Реферальный код: {{ user.referral_code }}</p>
+            <form action="/add-payment-method" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="token" value="YOUR_TOKEN">
+                <select name="payment_method">
+                    <option value="SBP">SBP</option>
+                    <option value="Sberbank">Sberbank</option>
+                    <option value="Tinkoff">Tinkoff</option>
+                    <option value="YooMoney">YooMoney</option>
+                    <option value="Cash">Cash</option>
+                </select>
+                <button type="submit">Добавить способ оплаты</button>
+            </form>
+            <button onclick="window.location.href='/merchant-apply'">Стать мерчантом</button>
+            <form action="/update-notifications" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="token" value="YOUR_TOKEN">
+                <label><input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}> Уведомления</label>
+                <button type="submit">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button onclick="window.location.href='/'">P2P</button>
+        <button onclick="window.location.href='/orders'">Orders</button>
+        <button onclick="window.location.href='/ads'">Ads</button>
+        <button class="active" onclick="window.location.href='/profile'">Profile</button>
+    </div>
+</body>
+</html>
