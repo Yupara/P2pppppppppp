@@ -1,13 +1,10 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, Form, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi_csrf_protect import CsrfProtect
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
-from jose import JWTError, jwt
 from fastapi_websocket_pubsub import PubSubClient
 import os
 import logging
@@ -27,13 +24,8 @@ else:
     logger.warning("Directory 'static' not found. Skipping mount.")
 
 # Настройки
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
-CSRF_SECRET_KEY = os.getenv("CSRF_SECRET_KEY", "your-csrf-secret-key")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///p2p_exchange.db")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -45,7 +37,6 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     phone = Column(String, unique=True)
-    hashed_password = Column(String)
     balance = Column(Float, default=0.0)
     escrow_balance = Column(Float, default=0.0)
     verified_email = Column(Boolean, default=False)
@@ -129,12 +120,10 @@ def add_test_data():
     db = SessionLocal()
     try:
         if not db.query(User).filter(User.id == 1).first():
-            hashed_password = pwd_context.hash("testpassword123")
-            new_user = User(id=1, email="test@example.com", phone="1234567890", hashed_password=hashed_password, balance=1717.0, verified_identity=True, referral_code="TEST123", is_admin=True)
+            new_user = User(id=1, email="test@example.com", phone="1234567890", balance=1717.0, verified_identity=True, referral_code="TEST123", is_admin=True)
             db.add(new_user)
         if not db.query(User).filter(User.id == 2).first():
-            hashed_password = pwd_context.hash("user2password")
-            other_user = User(id=2, email="user2@example.com", phone="0987654321", hashed_password=hashed_password, balance=100.0, verified_identity=True, referral_code="USER123")
+            other_user = User(id=2, email="user2@example.com", phone="0987654321", balance=100.0, verified_identity=True, referral_code="USER123")
             db.add(other_user)
         if not db.query(Offer).filter(Offer.user_id == 2).first():
             new_offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=1000.0, fiat="RUB", fiat_amount=95000.0, payment_method="SBP", contact="user2_contact")
@@ -145,17 +134,6 @@ def add_test_data():
 
 add_test_data()
 
-# CSRF конфигурация с использованием списка кортежей
-@CsrfProtect.load_config
-def get_csrf_config():
-    return [
-        ("secret_key", CSRF_SECRET_KEY),
-        ("cookie_samesite", "lax"),
-        ("cookie_secure", False),
-        ("cookie_httponly", True),
-        ("token_location", "header")
-    ]
-
 # Зависимости
 def get_db():
     db = SessionLocal()
@@ -164,72 +142,26 @@ def get_db():
     finally:
         db.close()
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def get_current_user(token: str = Form(...), db: SessionLocal = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = db.query(User).filter(User.email == email).first()
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-        user.last_seen = datetime.utcnow()
-        db.commit()
-        return user
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+# Фиксированный пользователь для теста
+def get_test_user(db: SessionLocal):
+    user = db.query(User).filter(User.id == 1).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Test user not found")
+    user.last_seen = datetime.utcnow()
+    db.commit()
+    return user
 
 # Роуты
-@app.post("/auth/register")
-async def register(email: str = Form(...), password: str = Form(...), phone: str = Form(...), referral_code: Optional[str] = Form(None), db: SessionLocal = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    hashed_password = pwd_context.hash(password)
-    import uuid
-    new_user = User(email=email, phone=phone, hashed_password=hashed_password, referral_code=str(uuid.uuid4()))
-    if referral_code:
-        referrer = db.query(User).filter(User.referral_code == referral_code).first()
-        if referrer:
-            new_user.referred_by = referrer.id
-            referral = Referral(referrer_id=referrer.id, referred_id=new_user.id, bonus_amount=10.0)
-            referrer.balance += 10.0
-            db.add(referral)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    token = create_access_token({"sub": email})
-    return {"access_token": token, "token_type": "bearer"}
-
-@app.post("/auth/login")
-async def login(email: str = Form(...), password: str = Form(...), db: SessionLocal = Depends(get_db)):
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not pwd_context.verify(password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"sub": email})
-    return {"access_token": token, "token_type": "bearer"}
-
-@app.get("/csrf-token")
-async def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
-    return {"csrf_token": csrf_protect.generate_csrf()}
-
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db), tab: str = Query("buy")):
+async def read_root(request: Request, db: SessionLocal = Depends(get_db), tab: str = Query("buy")):
+    user = get_test_user(db)
     offers = db.query(Offer).filter(Offer.status == "active", Offer.offer_type == tab).all()
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "user": current_user,
+        "user": user,
         "offers": offers,
         "tab": tab,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "now": datetime.utcnow()
     })
 
 @app.get("/offers/filter")
@@ -243,9 +175,9 @@ async def filter_offers(
     only_online: bool = Query(False),
     only_merchants: bool = Query(False),
     db: SessionLocal = Depends(get_db),
-    request: Request = None,
-    current_user: User = Depends(get_current_user)
+    request: Request = None
 ):
+    user = get_test_user(db)
     query = db.query(Offer).filter(Offer.status == "active", Offer.offer_type == offer_type)
     if currency:
         query = query.filter(Offer.currency == currency)
@@ -264,11 +196,10 @@ async def filter_offers(
     offers = query.all()
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "user": current_user,
+        "user": user,
         "offers": offers,
         "tab": offer_type,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "now": datetime.utcnow()
     })
 
 @app.post("/create-offer")
@@ -284,20 +215,17 @@ async def create_offer(
     only_verified: bool = Form(False),
     only_vip: bool = Form(False),
     description: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_user),
-    db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends(),
-    request: Request = None
+    db: SessionLocal = Depends(get_db)
 ):
-    await csrf_protect.validate_csrf(request)
-    if offer_type == "sell" and current_user.balance < amount:
+    user = get_test_user(db)
+    if offer_type == "sell" and user.balance < amount:
         raise HTTPException(status_code=400, detail="Insufficient balance")
     if amount < 500 or amount > 5000:
         raise HTTPException(status_code=400, detail="Amount out of range (500-5000)")
-    if only_vip and current_user.vip_level == 0:
+    if only_vip and user.vip_level == 0:
         raise HTTPException(status_code=400, detail="VIP status required")
     offer = Offer(
-        user_id=current_user.id,
+        user_id=user.id,
         offer_type=offer_type,
         currency=currency,
         amount=amount,
@@ -311,39 +239,36 @@ async def create_offer(
         description=description
     )
     if offer_type == "sell":
-        current_user.balance -= amount
-        current_user.escrow_balance += amount
+        user.balance -= amount
+        user.escrow_balance += amount
     db.add(offer)
     db.commit()
-    return {"message": "Offer created", "balance": current_user.balance}
+    return {"message": "Offer created", "balance": user.balance}
 
 @app.post("/buy-offer/{offer_id}")
 async def buy_offer(
     offer_id: int,
-    current_user: User = Depends(get_current_user),
-    db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends(),
-    request: Request = None
+    db: SessionLocal = Depends(get_db)
 ):
-    await csrf_protect.validate_csrf(request)
+    user = get_test_user(db)
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
     if not offer or offer.status != "active":
         raise HTTPException(status_code=400, detail="Offer not available")
-    if offer.only_verified and not current_user.verified_identity:
+    if offer.only_verified and not user.verified_identity:
         raise HTTPException(status_code=400, detail="Verification required")
-    if offer.only_vip and current_user.vip_level == 0:
+    if offer.only_vip and user.vip_level == 0:
         raise HTTPException(status_code=400, detail="VIP status required")
-    if current_user.balance < offer.fiat_amount:
+    if user.balance < offer.fiat_amount:
         raise HTTPException(status_code=400, detail="Insufficient balance")
     
     transaction = Transaction(
         offer_id=offer_id,
-        buyer_id=current_user.id,
+        buyer_id=user.id,
         seller_id=offer.user_id,
         amount=offer.amount,
         fiat_amount=offer.fiat_amount
     )
-    current_user.balance -= offer.fiat_amount
+    user.balance -= offer.fiat_amount
     offer.status = "pending"
     db.add(transaction)
     db.commit()
@@ -352,16 +277,13 @@ async def buy_offer(
 @app.post("/complete-transaction/{transaction_id}")
 async def complete_transaction(
     transaction_id: int,
-    current_user: User = Depends(get_current_user),
-    db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends(),
-    request: Request = None
+    db: SessionLocal = Depends(get_db)
 ):
-    await csrf_protect.validate_csrf(request)
+    user = get_test_user(db)
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
     if not transaction or transaction.status != "pending":
         raise HTTPException(status_code=400, detail="Invalid transaction")
-    if transaction.seller_id != current_user.id:
+    if transaction.seller_id != user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     transaction.status = "completed"
     transaction.completed_at = datetime.utcnow()
@@ -381,67 +303,64 @@ async def complete_transaction(
 async def create_dispute(
     transaction_id: int,
     reason: str = Form(...),
-    current_user: User = Depends(get_current_user),
-    db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends(),
-    request: Request = None
+    db: SessionLocal = Depends(get_db)
 ):
-    await csrf_protect.validate_csrf(request)
+    user = get_test_user(db)
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
     if not transaction or transaction.status != "pending":
         raise HTTPException(status_code=400, detail="Invalid transaction")
-    if transaction.buyer_id != current_user.id and transaction.seller_id != current_user.id:
+    if transaction.buyer_id != user.id and transaction.seller_id != user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    dispute = Dispute(transaction_id=transaction_id, initiator_id=current_user.id, reason=reason)
+    dispute = Dispute(transaction_id=transaction_id, initiator_id=user.id, reason=reason)
     transaction.status = "disputed"
     db.add(dispute)
     db.commit()
     return {"message": "Dispute created", "dispute_id": dispute.id}
 
 @app.get("/profile", response_class=HTMLResponse)
-async def profile(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+async def profile(request: Request, db: SessionLocal = Depends(get_db)):
+    user = get_test_user(db)
     return templates.TemplateResponse("profile.html", {
         "request": request,
-        "user": current_user,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "user": user,
+        "now": datetime.utcnow()
     })
 
 @app.get("/orders", response_class=HTMLResponse)
-async def orders(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
-    transactions = db.query(Transaction).filter((Transaction.buyer_id == current_user.id) | (Transaction.seller_id == current_user.id)).all()
+async def orders(request: Request, db: SessionLocal = Depends(get_db)):
+    user = get_test_user(db)
+    transactions = db.query(Transaction).filter((Transaction.buyer_id == user.id) | (Transaction.seller_id == user.id)).all()
     return templates.TemplateResponse("orders.html", {
         "request": request,
-        "user": current_user,
+        "user": user,
         "transactions": transactions,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "now": datetime.utcnow()
     })
 
 @app.get("/ads", response_class=HTMLResponse)
-async def ads(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
-    offers = db.query(Offer).filter(Offer.user_id == current_user.id).all()
+async def ads(request: Request, db: SessionLocal = Depends(get_db)):
+    user = get_test_user(db)
+    offers = db.query(Offer).filter(Offer.user_id == user.id).all()
     return templates.TemplateResponse("ads.html", {
         "request": request,
-        "user": current_user,
+        "user": user,
         "offers": offers,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "now": datetime.utcnow()
     })
 
 @app.get("/chat/{transaction_id}", response_class=HTMLResponse)
-async def chat(request: Request, transaction_id: int, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+async def chat(request: Request, transaction_id: int, db: SessionLocal = Depends(get_db)):
+    user = get_test_user(db)
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
-    if not transaction or (transaction.buyer_id != current_user.id and transaction.seller_id != current_user.id):
+    if not transaction or (transaction.buyer_id != user.id and transaction.seller_id != user.id):
         raise HTTPException(status_code=403, detail="Not authorized")
     messages = db.query(ChatMessage).filter(ChatMessage.transaction_id == transaction_id).all()
     return templates.TemplateResponse("chat.html", {
         "request": request,
-        "user": current_user,
+        "user": user,
         "messages": messages,
         "transaction_id": transaction_id,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "now": datetime.utcnow()
     })
 
 @app.websocket("/ws/chat/{transaction_id}")
@@ -474,8 +393,9 @@ async def websocket_chat(websocket: WebSocket, transaction_id: int, db: SessionL
         client.disconnect()
 
 @app.get("/admin", response_class=HTMLResponse)
-async def admin_panel(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
-    if not current_user.is_admin:
+async def admin_panel(request: Request, db: SessionLocal = Depends(get_db)):
+    user = get_test_user(db)
+    if not user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     users = db.query(User).all()
     disputes = db.query(Dispute).filter(Dispute.status == "open").all()
@@ -483,19 +403,18 @@ async def admin_panel(request: Request, current_user: User = Depends(get_current
         "request": request,
         "users": users,
         "disputes": disputes,
-        "now": datetime.utcnow(),
-        "csrf_token": await get_csrf_token()
+        "now": datetime.utcnow()
     })
 
 @app.post("/admin/ban-user/{user_id}")
-async def ban_user(user_id: int, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db), csrf_protect: CsrfProtect = Depends(), request: Request = None):
-    await csrf_protect.validate_csrf(request)
-    if not current_user.is_admin:
+async def ban_user(user_id: int, db: SessionLocal = Depends(get_db)):
+    user = get_test_user(db)
+    if not user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
-    user.is_banned = True
+    target_user.is_banned = True
     db.commit()
     return {"message": "User banned"}
 
