@@ -24,11 +24,6 @@ class User(Base):
     phone = Column(String, unique=True)
     balance = Column(Float, default=0.0)
     verified = Column(Boolean, default=False)
-    notifications_enabled = Column(Boolean, default=True)
-    subscriptions_enabled = Column(Boolean, default=True)
-    vip_level = Column(Integer, default=0)
-    vip_progress = Column(Float, default=0.0)
-    total_invested = Column(Float, default=0.0)
 
 class Offer(Base):
     __tablename__ = "offers"
@@ -51,16 +46,32 @@ def add_test_data():
     try:
         test_user = db.query(User).filter(User.id == 1).first()
         if not test_user:
-            new_user = User(id=1, email="para1333@example.com", phone="1234567890", balance=1717.0, verified=True)
+            new_user = User(id=1, email="para1333@example.com", phone="1234567890", balance=70.96)
             db.add(new_user)
-        other_user = db.query(User).filter(User.id == 2).first()
-        if not other_user:
-            other_user = User(id=2, email="user2@example.com", phone="0987654321", balance=100.0, verified=True)
-            db.add(other_user)
-        offer = db.query(Offer).filter(Offer.user_id == 2).first()
-        if not offer:
-            new_offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=1000.0, fiat="RUB", fiat_amount=95000.0, payment_method="SBP", contact="user2_contact")
-            db.add(new_offer)
+        other_user1 = db.query(User).filter(User.id == 2).first()
+        if not other_user1:
+            other_user1 = User(id=2, email="savak@example.com", phone="9876543210", balance=100.0)
+            db.add(other_user1)
+        offer1 = db.query(Offer).filter(Offer.user_id == 2, Offer.id == 1).first()
+        if not offer1:
+            new_offer1 = Offer(user_id=2, offer_type="sell", currency="USDT", amount=304.7685, fiat="RUB", fiat_amount=30476.85, payment_method="Local Card(Yellow)", contact="savak_contact")
+            db.add(new_offer1)
+        other_user2 = db.query(User).filter(User.id == 3).first()
+        if not other_user2:
+            other_user2 = User(id=3, email="iluj@example.com", phone="1112223333", balance=50.0)
+            db.add(other_user2)
+        offer2 = db.query(Offer).filter(Offer.user_id == 3, Offer.id == 2).first()
+        if not offer2:
+            new_offer2 = Offer(user_id=3, offer_type="sell", currency="USDT", amount=128.8821, fiat="RUB", fiat_amount=12888.21, payment_method="Local Card(Green)", contact="iluj_contact")
+            db.add(new_offer2)
+        other_user3 = db.query(User).filter(User.id == 4).first()
+        if not other_user3:
+            other_user3 = User(id=4, email="prodam@example.com", phone="4445556666", balance=150.0)
+            db.add(other_user3)
+        offer3 = db.query(Offer).filter(Offer.user_id == 4, Offer.id == 3).first()
+        if not offer3:
+            new_offer3 = Offer(user_id=4, offer_type="sell", currency="USDT", amount=150.0, fiat="RUB", fiat_amount=15000.0, payment_method="SBP", contact="prodam_contact")
+            db.add(new_offer3)
         db.commit()
     finally:
         db.close()
@@ -90,27 +101,18 @@ async def read_root(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/settings", response_class=HTMLResponse)
-async def settings_page(request: Request):
+@app.post("/create-offer")
+async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
     db = next(get_db())
     try:
         user = db.query(User).filter(User.id == 1).first()
-        return templates.TemplateResponse("settings.html", {
-            "request": request,
-            "user": user
-        })
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/update-settings")
-async def update_settings(notifications_enabled: bool = Form(False), subscriptions_enabled: bool = Form(False)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        user.notifications_enabled = notifications_enabled
-        user.subscriptions_enabled = subscriptions_enabled
+        if not user or user.balance < amount or amount < 500 or amount > 5000:
+            raise HTTPException(status_code=400, detail="Insufficient balance or amount out of range (500-5000)")
+        user.balance -= amount
+        offer = Offer(user_id=1, offer_type=offer_type, currency=currency, amount=amount, fiat=fiat, fiat_amount=fiat_amount, payment_method=payment_method, contact=contact)
+        db.add(offer)
         db.commit()
-        return {"message": "Settings updated"}
+        return {"message": "Offer created", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -124,52 +126,6 @@ async def deposit(amount: float = Form(...)):
         user.balance += amount
         db.commit()
         return {"message": "Deposit successful", "balance": user.balance}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/withdraw")
-async def withdraw(amount: float = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        user.balance -= amount
-        db.commit()
-        return {"message": "Withdrawal successful", "balance": user.balance}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/invest")
-async def invest(amount: float = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if not user or user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        user.balance -= amount
-        user.total_invested += amount
-        user.vip_progress += amount / 50000.0 * 100  # 50,000 USD for next VIP level
-        if user.vip_progress >= 100:
-            user.vip_level += 1
-            user.vip_progress = 0.0
-        db.commit()
-        return {"message": "Investment successful", "balance": user.balance, "vip_level": user.vip_level, "vip_progress": user.vip_progress}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/create-offer")
-async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if not user or user.balance < amount or amount < 500 or amount > 5000:
-            raise HTTPException(status_code=400, detail="Insufficient balance or amount out of range (500-5000)")
-        user.balance -= amount
-        offer = Offer(user_id=1, offer_type=offer_type, currency=currency, amount=amount, fiat=fiat, fiat_amount=fiat_amount, payment_method=payment_method, contact=contact)
-        db.add(offer)
-        db.commit()
-        return {"message": "Offer created", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
