@@ -56,36 +56,41 @@
             margin: 10px 0;
             text-align: center;
         }
-        .nav-item {
+        .other-offers {
             background-color: #2e2e2e;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
-            margin: 5px 0;
-            text-align: center;
+            margin: 10px 0;
         }
-        .nav-item button {
-            background: none;
-            border: none;
-            color: #d3d3d3;
-            cursor: pointer;
-            width: 100%;
+        .other-offers h3 {
+            margin-top: 0;
         }
-        .footer {
-            display: flex;
-            justify-content: space-around;
+        .offer {
+            border-bottom: 1px dashed #d3d3d3;
             padding: 10px 0;
-            background-color: #1a1a1a;
-            border-top: 1px solid #2e2e2e;
         }
-        .footer button {
-            background: none;
+        .offer button {
+            background-color: #27ae60;
+            color: #fff;
+            padding: 5px 10px;
             border: none;
-            color: #d3d3d3;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
         }
-        .footer .active {
-            color: #f1c40f;
+        .offers {
+            background-color: #2e2e2e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .offers h3 {
+            margin-top: 0;
+        }
+        .filters {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
         }
         form {
             display: flex;
@@ -104,26 +109,22 @@
             color: #fff;
             cursor: pointer;
         }
-        .settings, .other-offers, .create-offer {
-            background-color: #2e2e2e;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .settings h3, .other-offers h3, .create-offer h3 {
-            margin-top: 0;
-        }
-        .offer {
-            border-bottom: 1px solid #3e3e3e;
-            padding: 10px 0;
-        }
-        .offer:last-child {
-            border-bottom: none;
-        }
-        label {
+        .footer {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: space-around;
+            padding: 10px 0;
+            background-color: #1a1a1a;
+            border-top: 1px solid #2e2e2e;
+        }
+        .footer button {
+            background: none;
+            border: none;
+            color: #d3d3d3;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .footer .active {
+            color: #f1c40f;
         }
     </style>
 </head>
@@ -147,108 +148,83 @@
         </div>
 
         <div class="stats">
-            <p>Исполнено ордеров за 30 дней: 8 Ордера</p>
-            <p>Исполнено за 30 дней: 100%</p>
-            <p>Средн. время перевода: 1 мин.</p>
-            <p>Средн. время оплаты: 4 мин.</p>
-            <p>Больше данных ></p>
-        </div>
-
-        <div class="settings">
-            <h3>Настройки</h3>
-            <form action="/update-settings" method="post">
-                <label>
-                    <span>Уведомления</span>
-                    <input type="checkbox" name="notifications" {% if user.notifications %}checked{% endif %}>
-                </label>
-                <label>
-                    <span>Предпочитаемая валюта</span>
-                    <select name="preferred_currency">
-                        <option value="RUB" {% if user.preferred_currency == "RUB" %}selected{% endif %}>RUB</option>
-                        <option value="USD" {% if user.preferred_currency == "USD" %}selected{% endif %}>USD</option>
-                        <option value="EUR" {% if user.preferred_currency == "EUR" %}selected{% endif %}>EUR</option>
-                    </select>
-                </label>
-                <label>
-                    <span>Предпочитаемый способ оплаты</span>
-                    <select name="preferred_payment">
-                        <option value="SBP" {% if user.preferred_payment == "SBP" %}selected{% endif %}>SBP</option>
-                        <option value="Local Card(Yellow)" {% if user.preferred_payment == "Local Card(Yellow)" %}selected{% endif %}>Local Card(Yellow)</option>
-                        <option value="Local Card(Green)" {% if user.preferred_payment == "Local Card(Green)" %}selected{% endif %}>Local Card(Green)</option>
-                    </select>
-                </label>
-                <button type="submit">Сохранить настройки</button>
-            </form>
+            <p>Исполнено ордеров за 30 дней: 8 ордеров</p>
+            <p>Исполнено за 30 мин: 100%</p>
+            <p>Средн. время перевода: 1 мин</p>
+            <p>Средн. время оплаты: 4 мин</p>
+            <p><a href="#">Больше данных</a></p>
         </div>
 
         <div class="other-offers">
             <h3>Объявления других пользователей</h3>
+            <div class="filters">
+                <select>
+                    <option value="USDT">USDT</option>
+                </select>
+                <select>
+                    <option value="RUB">RUB</option>
+                </select>
+                <input type="number" placeholder="Сумма">
+                <select>
+                    <option value="Local Card(Yellow)">Local Card(Yellow)</option>
+                    <option value="Local Card(Green)">Local Card(Green)</option>
+                    <option value="SBP">SBP</option>
+                </select>
+            </div>
             {% for offer in other_offers %}
                 <div class="offer">
-                    <p>ID: {{ offer.id }}</p>
-                    <p>Пользователь: user{{ offer.user_id }}</p>
+                    <p>Продавец: user{{ offer.user_id }}</p>
                     <p>Тип: {{ offer.offer_type }}</p>
                     <p>Сумма: {{ offer.amount }} {{ offer.currency }}</p>
                     <p>Фиат: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Метод оплаты: {{ offer.payment_method }}</p>
-                    <p>Контакт: {{ offer.contact }}</p>
+                    <p>Метод: {{ offer.payment_method }}</p>
+                    <button>Купить</button>
                 </div>
             {% endfor %}
         </div>
 
-        <div class="create-offer">
+        <div class="offers">
             <h3>Разместить объявление</h3>
             <form action="/create-offer" method="post">
                 <select name="offer_type" required>
-                    <option value="sell">Продать</option>
-                    <option value="buy">Купить</option>
+                    <option value="sell">Sell</option>
+                    <option value="buy">Buy</option>
                 </select>
                 <select name="currency" required>
                     <option value="USDT">USDT</option>
                 </select>
-                <input type="number" name="amount" step="0.01" placeholder="Сумма (500-5000)" min="500" max="5000" required>
+                <input type="number" name="amount" step="0.01" placeholder="Amount (500-5000)" min="500" max="5000" required>
                 <select name="fiat" required>
                     <option value="RUB">RUB</option>
                 </select>
-                <input type="number" name="fiat_amount" step="0.01" placeholder="Сумма в фиате" required>
+                <input type="number" name="fiat_amount" step="0.01" placeholder="Fiat Amount" required>
                 <select name="payment_method" required>
                     <option value="Local Card(Yellow)">Local Card(Yellow)</option>
                     <option value="Local Card(Green)">Local Card(Green)</option>
                     <option value="SBP">SBP</option>
                 </select>
-                <input type="text" name="contact" placeholder="Контактная информация" required>
-                <button type="submit">Разместить объявление</button>
+                <input type="text" name="contact" placeholder="Contact Info" required>
+                <button type="submit">Разместить</button>
             </form>
-        </div>
 
-        <div class="nav-item">
-            <button>P2P-купон</button>
-        </div>
-        <div class="nav-item">
-            <button>Список оплат</button>
-        </div>
-        <div class="nav-item">
-            <button>Мерчанты</button>
-        </div>
-        <div class="nav-item">
-            <button>Контактные данные</button>
-        </div>
-        <div class="nav-item">
-            <button>Оставьте отзыв</button>
-        </div>
-        <div class="nav-item">
-            <button>Настройка уведомлений</button>
-        </div>
-        <div class="nav-item">
-            <button>Подписки</button>
+            <h3>Ваши активные объявления</h3>
+            {% for offer in offers %}
+                <div class="offer">
+                    <p>ID: {{ offer.id }}</p>
+                    <p>Type: {{ offer.offer_type }}</p>
+                    <p>Amount: {{ offer.amount }} {{ offer.currency }}</p>
+                    <p>Fiat: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+                    <p>Method: {{ offer.payment_method }}</p>
+                </div>
+            {% endfor %}
         </div>
     </div>
 
     <div class="footer">
-        <button class="active">P2P</button>
+        <button onclick="window.location.href='/'" class="active">P2P</button>
         <button>Orders</button>
         <button>Ads</button>
-        <button>Profile</button>
+        <button onclick="window.location.href='/settings'">Profile</button>
     </div>
 </body>
 </html>
