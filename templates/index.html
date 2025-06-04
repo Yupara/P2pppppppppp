@@ -1,56 +1,179 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Green P2P Exchange</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            background-color: #1A3C34;
+            color: #A9CBA2;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+        }
+        .tabs button {
+            background: none;
+            border: none;
+            color: #A9CBA2;
+            font-size: 16px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .tabs button.active {
+            color: #FFCA28;
+            border-bottom: 2px solid #FFCA28;
+        }
+        .filters {
+            background: #1E4A40;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .filters form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filters select, .filters input[type="number"] {
+            background: #2A5D50;
+            border: none;
+            color: #A9CBA2;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .filters button {
+            background: #2E7D32;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .offers {
+            margin-bottom: 10px;
+        }
+        .offer {
+            background: #1E4A40;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .offer p {
+            margin: 5px 0;
+        }
+        .offer .status {
+            color: #FFCA28;
+        }
+        .offer button {
+            background: #2E7D32;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .create-offer {
+            background: #1E4A40;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .create-offer form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .create-offer select, .create-offer input, .create-offer textarea {
+            background: #2A5D50;
+            border: none;
+            color: #A9CBA2;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .create-offer button {
+            background: #2E7D32;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: #1A3C34;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .footer button {
+            background: none;
+            border: none;
+            color: #A9CBA2;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .footer button.active {
+            color: #FFCA28;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <button onclick="history.back()">←</button>
-            <div class="user-info">
-                <img src="https://via.placeholder.com/40" alt="User Avatar">
-                <div>
-                    <p>{{ user.email[:3] }}****@*****.com</p>
-                    <p>UID: {{ user.id }}123456</p>
-                </div>
+            <div class="tabs">
+                <button class="{% if tab == 'buy' %}active{% endif %}" onclick="window.location.href='/?tab=buy'">Покупка</button>
+                <button class="{% if tab == 'sell' %}active{% endif %}" onclick="window.location.href='/?tab=sell'">Продажа</button>
             </div>
             <span>{{ now.strftime('%H:%M') }}</span>
-        </div>
-
-        <div class="tabs">
-            <button class="{% if tab == 'buy' %}active{% endif %}" onclick="window.location.href='/?tab=buy'">Покупка</button>
-            <button class="{% if tab == 'sell' %}active{% endif %}" onclick="window.location.href='/?tab=sell'">Продажа</button>
         </div>
 
         <div class="filters">
             <form action="/offers/filter" method="get">
                 <input type="hidden" name="offer_type" value="{{ tab }}">
                 <select name="currency">
-                    <option value="">USDT</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                    <option value="TON">TON</option>
+                    <option value="USDT" {% if not currency %}selected{% endif %}>USDT</option>
+                    <option value="BTC" {% if currency == 'BTC' %}selected{% endif %}>BTC</option>
+                    <option value="ETH" {% if currency == 'ETH' %}selected{% endif %}>ETH</option>
+                    <option value="TON" {% if currency == 'TON' %}selected{% endif %}>TON</option>
                 </select>
                 <select name="fiat">
-                    <option value="">RUB</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
+                    <option value="RUB" {% if not fiat %}selected{% endif %}>RUB</option>
+                    <option value="USD" {% if fiat == 'USD' %}selected{% endif %}>USD</option>
+                    <option value="EUR" {% if fiat == 'EUR' %}selected{% endif %}>EUR</option>
                 </select>
-                <input type="number" name="amount" placeholder="Сумма">
+                <input type="number" name="amount" placeholder="Сумма" value="{{ amount if amount else '' }}">
                 <select name="payment_method">
-                    <option value="">SBP</option>
-                    <option value="Sberbank">Sberbank</option>
-                    <option value="Tinkoff">Tinkoff</option>
-                    <option value="YooMoney">YooMoney</option>
-                    <option value="Cash">Cash</option>
+                    <option value="" {% if not payment_method %}selected{% endif %}>SBP</option>
+                    <option value="Sberbank" {% if payment_method == 'Sberbank' %}selected{% endif %}>Sberbank</option>
+                    <option value="Tinkoff" {% if payment_method == 'Tinkoff' %}selected{% endif %}>Tinkoff</option>
+                    <option value="YooMoney" {% if payment_method == 'YooMoney' %}selected{% endif %}>YooMoney</option>
+                    <option value="Cash" {% if payment_method == 'Cash' %}selected{% endif %}>Cash</option>
                 </select>
-                <label><input type="checkbox" name="only_verified"> Только с верификацией</label>
-                <label><input type="checkbox" name="only_online"> Только онлайн</label>
-                <label><input type="checkbox" name="only_merchants"> Только мерчанты</label>
+                <label><input type="checkbox" name="only_verified" {% if only_verified %}checked{% endif %}> Только с верификацией</label>
+                <label><input type="checkbox" name="only_online" {% if only_online %}checked{% endif %}> Только онлайн</label>
+                <label><input type="checkbox" name="only_merchants" {% if only_merchants %}checked{% endif %}> Только мерчанты</label>
                 <button type="submit">Фильтровать</button>
             </form>
         </div>
@@ -59,15 +182,13 @@
             <h3>Объявления</h3>
             {% for offer in offers %}
                 <div class="offer">
-                    <p>Пользователь: user{{ offer.user_id }} <span style="color: {{ '#0f0' if offer.user.last_seen > now - timedelta(minutes=15) else '#f00' }}">●</span></p>
-                    <p>Время активности: {{ (now - offer.created_at).seconds // 60 }} мин.</p>
+                    <p>Пользователь: {{ offer.user.email.split('@')[0] }} <span class="status" style="color: {{ '#2E7D32' if offer.user.last_seen > now - timedelta(minutes=15) else '#FFCA28' }}">●</span> <span class="status">{{ offer.user.orders_completed }} Ордеров | {{ '10%' }}</span></p>
                     <p>Курс: {{ (offer.fiat_amount / offer.amount) | round(2) }} {{ offer.fiat }}/{{ offer.currency }}</p>
                     <p>Количество: {{ offer.amount }} {{ offer.currency }}</p>
                     <p>Лимиты: {{ (offer.amount * 0.5) | round(2) }} – {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Метод: {{ offer.payment_method }}</p>
-                    <p>Статистика: {{ offer.user.orders_completed }} ордеров | {{ offer.user.rating }}%</p>
+                    <p>Метод: {{ offer.payment_method }} {% if offer.payment_method == 'SBP' %}<span>💳</span>{% else %}<span>⚙️</span>{% endif %}</p>
                     <form action="/buy-offer/{{ offer.id }}" method="post">
-                        <button type="submit">{{ "Покупка" if offer.offer_type == "sell" else "Продажа" }}</button>
+                        <button type="submit">Покупка</button>
                     </form>
                 </div>
             {% endfor %}
@@ -105,16 +226,16 @@
                 <label><input type="checkbox" name="only_verified"> Только для верифицированных</label>
                 <label><input type="checkbox" name="only_vip"> Только для VIP</label>
                 <textarea name="description" placeholder="Описание объявления"></textarea>
-                <button type="submit">Создать</button>
+                <button type="submit">Создать объявление</button>
             </form>
         </div>
     </div>
 
     <div class="footer">
-        <button class="active" onclick="window.location.href='/'">P2P</button>
-        <button onclick="window.location.href='/orders'">Orders</button>
-        <button onclick="window.location.href='/ads'">Ads</button>
-        <button onclick="window.location.href='/profile'">Profile</button>
+        <button class="{% if request.path == '/' %}active{% endif %}" onclick="window.location.href='/'">P2P</button>
+        <button class="{% if request.path == '/orders' %}active{% endif %}" onclick="window.location.href='/orders'">Orders</button>
+        <button class="{% if request.path == '/ads' %}active{% endif %}" onclick="window.location.href='/ads'">Ads</button>
+        <button class="{% if request.path == '/profile' %}active{% endif %}" onclick="window.location.href='/profile'">Profile</button>
     </div>
 </body>
 </html>
