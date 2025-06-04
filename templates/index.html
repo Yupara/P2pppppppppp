@@ -136,6 +136,69 @@
         .footer button.active {
             color: #FFCA28;
         }
+        /* Новый стиль для блока деталей сделки */
+        .trade-details {
+            background: #1C2526;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: none; /* Скрыт по умолчанию, показывается при выборе */
+        }
+        .trade-details.active {
+            display: block;
+        }
+        .trade-details .price {
+            color: #F4A261;
+            font-size: 18px;
+        }
+        .trade-details .timer {
+            color: #F4A261;
+        }
+        .trade-details .methods {
+            color: #A9CBA2;
+        }
+        .trade-details select, .trade-details input {
+            background: #2A3438;
+            border: none;
+            color: #D3D3D3;
+            padding: 5px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .trade-details button {
+            background: #F4A261;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+        }
+        .trade-details .seller-info .bank-select {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .trade-details .seller-info .bank-select select {
+            background: #2A3438;
+            border: none;
+            color: #D3D3D3;
+            padding: 5px;
+            border-radius: 5px;
+            flex-grow: 1;
+        }
+        .trade-details .seller-info .bank-select button {
+            background: none;
+            border: none;
+            color: #F4A261;
+            cursor: pointer;
+        }
+        .trade-details .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -311,20 +374,8 @@
                     <p>Курс: {{ (offer.fiat_amount / offer.amount) | round(2) }} {{ offer.fiat }}/{{ offer.currency }}</p>
                     <p>Количество: {{ offer.amount }} {{ offer.currency }}</p>
                     <p>Лимиты: {{ (offer.amount * 0.5) | round(2) }} – {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Метод: {{ offer.payment_method }} 
-                        {% if offer.payment_method in ['SBP', 'Sberbank', 'Tinkoff', 'YooMoney', 'PayPal', 'Revolut', 'Wise', 'Binance Pay', 'Alfa-Bank', 'VTB', 'Gazprombank', 'Rosbank', 'Raiffeisenbank', 'Kaspi Bank', 'Halyk Bank', 'PrivatBank', 'Monobank', 'Oschadbank', 'Ziraat Bankası', 'Garanti Bankası', 'Emirates NBD', 'ADCB', 'Vietcombank', 'BBVA', 'Nubank'] %}
-                            <span>🏦</span>
-                        {% elif offer.payment_method in ['WeChat Pay', 'Alipay', 'Paytm', 'UPI', 'PhonePe', 'Google Pay', 'Pix', 'LINE Pay', 'Rakuten Pay', 'Suica', 'KakaoPay', 'Naver Pay', 'Samsung Pay', 'PromptPay', 'TrueMoney', 'PayNow', 'DBS PayLah!', 'Maybank2u', 'GrabPay', 'GoPay', 'OVO', 'DANA', 'GCash', 'PayMaya', 'MoMo', 'ZaloPay', 'Capitec Pay', 'FNB eWallet', 'Opay', 'Paga', 'Flutterwave', 'Fawry', 'Vodafone Cash', 'M-Pesa', 'Airtel Money', 'Mercado Pago', 'Ualá', 'Nequi', 'DaviPlata', 'STC Pay', 'QNB Mobile Pay', 'Vodafone Qatar', 'Monzo', 'Starling Bank', 'Interac', 'Wealthsimple', 'TWINT', 'PostFinance', 'Swish', 'Vipps', 'MobilePay', 'BLIK'] %}
-                            <span>📱</span>
-                        {% elif offer.payment_method in ['Cash', 'Oxxo', 'Boleto'] %}
-                            <span>💵</span>
-                        {% else %}
-                            <span>⚙️</span>
-                        {% endif %}
-                    </p>
-                    <form action="/buy-offer/{{ offer.id }}" method="post">
-                        <button type="submit">Покупка</button>
-                    </form>
+                    <p>Метод: {{ offer.payment_method }} {% if offer.payment_method == 'SBP' %}<span>💳</span>{% elif offer.payment_method in ['Sberbank', 'Tinkoff', 'YooMoney', 'PayPal', 'Revolut', 'Wise', 'Binance Pay'] %}<span>🏦</span>{% else %}<span>⚙️</span>{% endif %}</p>
+                    <a href="#" onclick="showTradeDetails({{ offer.id }})">Подробнее</a>
                 </div>
             {% endfor %}
         </div>
@@ -489,6 +540,62 @@
                 <button type="submit">Создать объявление</button>
             </form>
         </div>
+
+        <!-- Новый блок для деталей сделки -->
+        <div class="trade-details" id="trade-details-{{ offer.id if offer else 'default' }}">
+            <div class="header">
+                <button onclick="hideTradeDetails()">←</button>
+                <h2>Покупка {{ offer.currency if offer else 'USDT' }}</h2>
+                <span>{{ now.strftime('%H:%M') }}</span>
+            </div>
+            {% if offer %}
+            <div class="offer-details">
+                <p class="price">Цена {{ (offer.fiat_amount / offer.amount) | round(2) }} {{ offer.fiat }} <span class="timer">40с</span></p>
+                <p>Количество {{ offer.amount }} {{ offer.currency }}</p>
+                <p class="methods">Способы оплаты | {{ offer.payment_method }} {% if offer.payment_method == 'Sberbank' %}| Совкомбанк{% endif %}</p>
+                <p>Лимиты оплаты {{ (offer.amount * 0.5) | round(2) }} – {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+                <p>За флат <span class="timer">За криптовалюту</span></p>
+                <form action="/buy-offer/{{ offer.id }}" method="post">
+                    <button type="submit">Покупка</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="amount-section">
+                <select name="currency">
+                    <option value="RUB" {% if not fiat %}selected{% endif %}>RUB</option>
+                    <option value="USD" {% if fiat == 'USD' %}selected{% endif %}>USD</option>
+                    <option value="EUR" {% if fiat == 'EUR' %}selected{% endif %}>EUR</option>
+                    <!-- Другие валюты можно добавить -->
+                </select>
+                <input type="number" name="amount" placeholder="Введите сумму" step="0.01" required>
+                <button type="submit">Покупка</button>
+            </div>
+
+            <div class="seller-info">
+                <p>Условия мейкера</p>
+                <div class="bank-select">
+                    <select name="bank">
+                        <option value="T-Bank">Т-Банк</option>
+                        <option value="Sberbank">Сбербанк</option>
+                        <option value="Tinkoff">Тинькофф</option>
+                    </select>
+                    <button>→</button>
+                </div>
+                <p>Принимаю оплату от Т-БАНК, ПС на почту от имени БАНКА!</p>
+            </div>
+
+            <div class="transaction-details">
+                <p>Сведения о транзакции</p>
+                <a href="/profile">{{ offer.user.email.split('@')[0] if offer else 'Kulich' }} <span>→</span></a>
+                <div class="stats">
+                    <p>Высокий рейтинг %</p><p>99%</p>
+                    <p>Исполненные ордера за 30 дней</p><p>{{ offer.user.orders_completed if offer else '2426' }} Ордера</p>
+                    <p>Процент исполнения за 30 дней (%)</p><p>100%</p>
+                    <p>Средн. время перевода</p><p>2 мин.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
@@ -497,5 +604,14 @@
         <button class="{% if request.path == '/ads' %}active{% endif %}" onclick="window.location.href='/ads'">Ads</button>
         <button class="{% if request.path == '/profile' %}active{% endif %}" onclick="window.location.href='/profile'">Profile</button>
     </div>
+
+    <script>
+        function showTradeDetails(offerId) {
+            document.getElementById('trade-details-' + offerId).classList.add('active');
+        }
+        function hideTradeDetails() {
+            document.querySelectorAll('.trade-details').forEach(el => el.classList.remove('active'));
+        }
+    </script>
 </body>
 </html>
