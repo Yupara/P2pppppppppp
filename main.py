@@ -26,6 +26,9 @@ class User(Base):
     verified = Column(Boolean, default=False)
     notifications_enabled = Column(Boolean, default=True)
     subscriptions_enabled = Column(Boolean, default=True)
+    vip_level = Column(Integer, default=0)
+    vip_progress = Column(Float, default=0.0)
+    total_invested = Column(Float, default=0.0)
 
 class Offer(Base):
     __tablename__ = "offers"
@@ -48,7 +51,7 @@ def add_test_data():
     try:
         test_user = db.query(User).filter(User.id == 1).first()
         if not test_user:
-            new_user = User(id=1, email="para1333@example.com", phone="1234567890", balance=70.96, verified=True)
+            new_user = User(id=1, email="para1333@example.com", phone="1234567890", balance=1717.0, verified=True)
             db.add(new_user)
         other_user = db.query(User).filter(User.id == 2).first()
         if not other_user:
@@ -111,6 +114,50 @@ async def update_settings(notifications_enabled: bool = Form(False), subscriptio
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/deposit")
+async def deposit(amount: float = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+        user.balance += amount
+        db.commit()
+        return {"message": "Deposit successful", "balance": user.balance}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/withdraw")
+async def withdraw(amount: float = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if user.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+        user.balance -= amount
+        db.commit()
+        return {"message": "Withdrawal successful", "balance": user.balance}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/invest")
+async def invest(amount: float = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if not user or user.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+        user.balance -= amount
+        user.total_invested += amount
+        user.vip_progress += amount / 50000.0 * 100  # 50,000 USD for next VIP level
+        if user.vip_progress >= 100:
+            user.vip_level += 1
+            user.vip_progress = 0.0
+        db.commit()
+        return {"message": "Investment successful", "balance": user.balance, "vip_level": user.vip_level, "vip_progress": user.vip_progress}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/create-offer")
 async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
     db = next(get_db())
@@ -123,19 +170,6 @@ async def create_offer(offer_type: str = Form(...), currency: str = Form(...), a
         db.add(offer)
         db.commit()
         return {"message": "Offer created", "balance": user.balance}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/deposit")
-async def deposit(amount: float = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if amount <= 0:
-            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
-        user.balance += amount
-        db.commit()
-        return {"message": "Deposit successful", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
