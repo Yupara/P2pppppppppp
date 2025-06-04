@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Depends, Query
+from fastapi import FastAPI, Request, Form, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -19,7 +19,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Монтирование статических файлов
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+else:
+    logger.warning("Directory 'static' not found. Skipping mount.")
 
 # Настройки
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
@@ -42,11 +47,12 @@ class User(Base):
     phone = Column(String, unique=True)
     hashed_password = Column(String)
     balance = Column(Float, default=0.0)
-    escrow_balance = Column(Float, default=0.0)  # Для эскроу
+    escrow_balance = Column(Float, default=0.0)
     verified_email = Column(Boolean, default=False)
     verified_phone = Column(Boolean, default=False)
     verified_identity = Column(Boolean, default=False)
     is_merchant = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
     vip_level = Column(Integer, default=0)
     vip_progress = Column(Float, default=0.0)
     total_invested = Column(Float, default=0.0)
@@ -55,25 +61,27 @@ class User(Base):
     referred_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     orders_completed = Column(Integer, default=0)
     rating = Column(Float, default=0.0)
-    avg_transfer_time = Column(Float, default=0.0)  # В минутах
+    avg_transfer_time = Column(Float, default=0.0)
+    last_seen = Column(DateTime, default=datetime.utcnow)
 
 class Offer(Base):
     __tablename__ = "offers"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    offer_type = Column(String)  # buy/sell
-    currency = Column(String)  # USDT, BTC, ETH, TON
+    offer_type = Column(String)
+    currency = Column(String)
     amount = Column(Float)
-    fiat = Column(String)  # RUB, USD, EUR
+    fiat = Column(String)
     fiat_amount = Column(Float)
     payment_method = Column(String)
     contact = Column(String)
-    status = Column(String, default="active")  # active, completed, cancelled
+    status = Column(String, default="active")
     created_at = Column(DateTime, default=datetime.utcnow)
-    payment_window = Column(Integer, default=15)  # Время оплаты в минутах
+    payment_window = Column(Integer, default=15)
     only_verified = Column(Boolean, default=False)
     only_vip = Column(Boolean, default=False)
     description = Column(Text, nullable=True)
+    user = relationship("User")
 
 class Transaction(Base):
     __tablename__ = "transactions"
@@ -83,9 +91,10 @@ class Transaction(Base):
     seller_id = Column(Integer, ForeignKey("users.id"))
     amount = Column(Float)
     fiat_amount = Column(Float)
-    status = Column(String, default="pending")  # pending, completed, disputed, cancelled
+    status = Column(String, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
+    offer = relationship("Offer")
 
 class Dispute(Base):
     __tablename__ = "disputes"
@@ -93,7 +102,7 @@ class Dispute(Base):
     transaction_id = Column(Integer, ForeignKey("transactions.id"))
     initiator_id = Column(Integer, ForeignKey("users.id"))
     reason = Column(Text)
-    status = Column(String, default="open")  # open, resolved
+    status = Column(String, default="open")
     created_at = Column(DateTime, default=datetime.utcnow)
     resolved_at = Column(DateTime, nullable=True)
 
@@ -114,6 +123,27 @@ class Referral(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+
+# Тестовые данные
+def add_test_data():
+    db = SessionLocal()
+    try:
+        if not db.query(User).filter(User.id == 1).first():
+            hashed_password = pwd_context.hash("testpassword123")
+            new_user = User(id=1, email="test@example.com", phone="1234567890", hashed_password=hashed_password, balance=1717.0, verified_identity=True, referral_code="TEST123", is_admin=True)
+            db.add(new_user)
+        if not db.query(User).filter(User.id == 2).first():
+            hashed_password = pwd_context.hash("user2password")
+            other_user = User(id=2, email="user2@example.com", phone="0987654321", hashed_password=hashed_password, balance=100.0, verified_identity=True, referral_code="USER123")
+            db.add(other_user)
+        if not db.query(Offer).filter(Offer.user_id == 2).first():
+            new_offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=1000.0, fiat="RUB", fiat_amount=95000.0, payment_method="SBP", contact="user2_contact")
+            db.add(new_offer)
+        db.commit()
+    finally:
+        db.close()
+
+add_test_data()
 
 # CSRF
 class CsrfSettings:
@@ -148,6 +178,8 @@ def get_current_user(token: str = Form(...), db: SessionLocal = Depends(get_db))
         user = db.query(User).filter(User.email == email).first()
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
+        user.last_seen = datetime.utcnow()
+        db.commit()
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -165,6 +197,9 @@ async def register(email: str = Form(...), password: str = Form(...), phone: str
         referrer = db.query(User).filter(User.referral_code == referral_code).first()
         if referrer:
             new_user.referred_by = referrer.id
+            referral = Referral(referrer_id=referrer.id, referred_id=new_user.id, bonus_amount=10.0)
+            referrer.balance += 10.0
+            db.add(referral)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -184,13 +219,15 @@ async def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
     return {"csrf_token": csrf_protect.generate_csrf()}
 
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
-    offers = db.query(Offer).filter(Offer.status == "active").all()
+async def read_root(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db), tab: str = Query("buy")):
+    offers = db.query(Offer).filter(Offer.status == "active", Offer.offer_type == tab).all()
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": current_user,
         "offers": offers,
-        "tab": "buy"
+        "tab": tab,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
     })
 
 @app.get("/offers/filter")
@@ -221,7 +258,14 @@ async def filter_offers(
     if only_merchants:
         query = query.join(User).filter(User.is_merchant == True)
     offers = query.all()
-    return offers
+    return templates.TemplateResponse("index.html", {
+        "request": Request,
+        "user": get_current_user,
+        "offers": offers,
+        "tab": offer_type,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
+    })
 
 @app.post("/create-offer")
 async def create_offer(
@@ -263,7 +307,7 @@ async def create_offer(
     )
     if offer_type == "sell":
         current_user.balance -= amount
-        current_user.escrow_balance += amount  # Блокировка в эскроу
+        current_user.escrow_balance += amount
     db.add(offer)
     db.commit()
     return {"message": "Offer created", "balance": current_user.balance}
@@ -346,7 +390,52 @@ async def create_dispute(
     db.commit()
     return {"message": "Dispute created", "dispute_id": dispute.id}
 
-# WebSocket для чата
+@app.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "user": current_user,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
+    })
+
+@app.get("/orders", response_class=HTMLResponse)
+async def orders(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+    transactions = db.query(Transaction).filter((Transaction.buyer_id == current_user.id) | (Transaction.seller_id == current_user.id)).all()
+    return templates.TemplateResponse("orders.html", {
+        "request": request,
+        "user": current_user,
+        "transactions": transactions,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
+    })
+
+@app.get("/ads", response_class=HTMLResponse)
+async def ads(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+    offers = db.query(Offer).filter(Offer.user_id == current_user.id).all()
+    return templates.TemplateResponse("ads.html", {
+        "request": request,
+        "user": current_user,
+        "offers": offers,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
+    })
+
+@app.get("/chat/{transaction_id}", response_class=HTMLResponse)
+async def chat(request: Request, transaction_id: int, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    if not transaction or (transaction.buyer_id != current_user.id and transaction.seller_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    messages = db.query(ChatMessage).filter(ChatMessage.transaction_id == transaction_id).all()
+    return templates.TemplateResponse("chat.html", {
+        "request": request,
+        "user": current_user,
+        "messages": messages,
+        "transaction_id": transaction_id,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
+    })
+
 @app.websocket("/ws/chat/{transaction_id}")
 async def websocket_chat(websocket: WebSocket, transaction_id: int, db: SessionLocal = Depends(get_db)):
     await websocket.accept()
@@ -376,18 +465,31 @@ async def websocket_chat(websocket: WebSocket, transaction_id: int, db: SessionL
     except WebSocketDisconnect:
         client.disconnect()
 
-# Админка
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(request: Request, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
-    if not current_user.is_admin:  # Предполагается поле is_admin в модели User
+    if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     users = db.query(User).all()
     disputes = db.query(Dispute).filter(Dispute.status == "open").all()
     return templates.TemplateResponse("admin.html", {
         "request": request,
         "users": users,
-        "disputes": disputes
+        "disputes": disputes,
+        "now": datetime.utcnow(),
+        "csrf_token": await get_csrf_token()
     })
+
+@app.post("/admin/ban-user/{user_id}")
+async def ban_user(user_id: int, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db), csrf_protect: CsrfProtect = Depends()):
+    await csrf_protect.validate_csrf(request)
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_banned = True
+    db.commit()
+    return {"message": "User banned"}
 
 if __name__ == "__main__":
     import uvicorn
