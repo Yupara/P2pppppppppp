@@ -12,7 +12,6 @@ from fastapi_websocket_pubsub import PubSubClient
 import os
 import logging
 from typing import Optional
-from pydantic_settings import BaseSettings
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -47,21 +46,21 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     phone = Column(String, unique=True)
     hashed_password = Column(String)
-    balance = Column(Integer, default=0.0)
-    escrow_balance = Column(Integer, default=0.0)
+    balance = Column(Float, default=0.0)
+    escrow_balance = Column(Float, default=0.0)
     verified_email = Column(Boolean, default=False)
     verified_phone = Column(Boolean, default=False)
     verified_identity = Column(Boolean, default=False)
-    is_merchant = Column(Boolean, default=True)
-    is_admin = Column(Boolean, default=True)
+    is_merchant = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
     vip_level = Column(Integer, default=0)
-    vip_progress = Column(Integer, default=0.0)
-    total_invested = Column(Integer, default=0.0)
+    vip_progress = Column(Float, default=0.0)
+    total_invested = Column(Float, default=0.0)
     notifications_enabled = Column(Boolean, default=True)
     referral_code = Column(String, unique=True)
     referred_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     orders_completed = Column(Integer, default=0)
-    rating = Column(Integer, default=0.0)
+    rating = Column(Float, default=0.0)
     avg_transfer_time = Column(Float, default=0.0)
     last_seen = Column(DateTime, default=datetime.utcnow)
 
@@ -71,9 +70,9 @@ class Offer(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     offer_type = Column(String)
     currency = Column(String)
-    amount = Column(Integer)
+    amount = Column(Float)
     fiat = Column(String)
-    fiat_amount = Column(Integer)
+    fiat_amount = Column(Float)
     payment_method = Column(String)
     contact = Column(String)
     status = Column(String, default="active")
@@ -90,8 +89,8 @@ class Transaction(Base):
     offer_id = Column(Integer, ForeignKey("offers.id"))
     buyer_id = Column(Integer, ForeignKey("users.id"))
     seller_id = Column(Integer, ForeignKey("users.id"))
-    amount = Column(Integer)
-    fiat_amount = Column(Integer)
+    amount = Column(Float)
+    fiat_amount = Column(Float)
     status = Column(String, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
@@ -120,7 +119,7 @@ class Referral(Base):
     id = Column(Integer, primary_key=True, index=True)
     referrer_id = Column(Integer, ForeignKey("users.id"))
     referred_id = Column(Integer, ForeignKey("users.id"))
-    bonus_amount = Column(Integer, default=0.0)
+    bonus_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
@@ -146,17 +145,16 @@ def add_test_data():
 
 add_test_data()
 
-# CSRF конфигурация с использованием pydantic
-class CsrfSettings(BaseSettings):
-    secret_key: str = CSRF_SECRET_KEY
-    cookie_samesite: str = "lax"
-    cookie_secure: bool = False
-    cookie_httponly: bool = True
-    token_location: str = "header"
-
+# CSRF конфигурация с использованием списка кортежей
 @CsrfProtect.load_config
 def get_csrf_config():
-    return CsrfSettings()
+    return [
+        ("secret_key", CSRF_SECRET_KEY),
+        ("cookie_samesite", "lax"),
+        ("cookie_secure", False),
+        ("cookie_httponly", True),
+        ("token_location", "header")
+    ]
 
 # Зависимости
 def get_db():
@@ -244,7 +242,9 @@ async def filter_offers(
     only_verified: bool = Query(False),
     only_online: bool = Query(False),
     only_merchants: bool = Query(False),
-    db: SessionLocal = Depends(get_db)
+    db: SessionLocal = Depends(get_db),
+    request: Request = None,
+    current_user: User = Depends(get_current_user)
 ):
     query = db.query(Offer).filter(Offer.status == "active", Offer.offer_type == offer_type)
     if currency:
@@ -263,8 +263,8 @@ async def filter_offers(
         query = query.join(User).filter(User.is_merchant == True)
     offers = query.all()
     return templates.TemplateResponse("index.html", {
-        "request": Request,
-        "user": get_current_user,
+        "request": request,
+        "user": current_user,
         "offers": offers,
         "tab": offer_type,
         "now": datetime.utcnow(),
@@ -286,7 +286,8 @@ async def create_offer(
     description: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends()
+    csrf_protect: CsrfProtect = Depends(),
+    request: Request = None
 ):
     await csrf_protect.validate_csrf(request)
     if offer_type == "sell" and current_user.balance < amount:
@@ -321,7 +322,8 @@ async def buy_offer(
     offer_id: int,
     current_user: User = Depends(get_current_user),
     db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends()
+    csrf_protect: CsrfProtect = Depends(),
+    request: Request = None
 ):
     await csrf_protect.validate_csrf(request)
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
@@ -352,7 +354,8 @@ async def complete_transaction(
     transaction_id: int,
     current_user: User = Depends(get_current_user),
     db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends()
+    csrf_protect: CsrfProtect = Depends(),
+    request: Request = None
 ):
     await csrf_protect.validate_csrf(request)
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
@@ -380,7 +383,8 @@ async def create_dispute(
     reason: str = Form(...),
     current_user: User = Depends(get_current_user),
     db: SessionLocal = Depends(get_db),
-    csrf_protect: CsrfProtect = Depends()
+    csrf_protect: CsrfProtect = Depends(),
+    request: Request = None
 ):
     await csrf_protect.validate_csrf(request)
     transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
@@ -484,7 +488,7 @@ async def admin_panel(request: Request, current_user: User = Depends(get_current
     })
 
 @app.post("/admin/ban-user/{user_id}")
-async def ban_user(user_id: int, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db), csrf_protect: CsrfProtect = Depends()):
+async def ban_user(user_id: int, current_user: User = Depends(get_current_user), db: SessionLocal = Depends(get_db), csrf_protect: CsrfProtect = Depends(), request: Request = None):
     await csrf_protect.validate_csrf(request)
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
