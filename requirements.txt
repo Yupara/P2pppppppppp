@@ -4,3 +4,4 @@ sqlalchemy
 aiosmtplib
 python-dotenv
 jinja2
+python-multipart
