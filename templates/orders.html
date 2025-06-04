@@ -32,8 +32,6 @@
                     <p>Статус: {{ transaction.status }}</p>
                     <p>Участник: user{{ transaction.buyer_id if transaction.seller_id == user.id else transaction.seller_id }}</p>
                     <form action="/dispute/{{ transaction.id }}" method="post">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="token" value="YOUR_TOKEN">
                         <input type="text" name="reason" placeholder="Причина спора" required>
                         <button type="submit">Открыть спор</button>
                     </form>
