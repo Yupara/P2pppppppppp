@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Green P2P Exchange</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button onclick="history.back()">←</button>
+            <div class="user-info">
+                <img src="https://via.placeholder.com/40" alt="User Avatar">
+                <div>
+                    <p>{{ user.email[:3] }}****@*****.com</p>
+                    <p>UID: {{ user.id }}123456</p>
+                </div>
+            </div>
+            <span>{{ now.strftime('%H:%M') }}</span>
+        </div>
+
+        <div class="admin">
+            <h3>Панель администратора</h3>
+            <h4>Пользователи</h4>
+            {% for u in users %}
+                <div class="user">
+                    <p>ID: {{ u.id }} | Email: {{ u.email }} | Banned: {{ u.is_banned }}</p>
+                    <form action="/admin/ban-user/{{ u.id }}" method="post">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="token" value="YOUR_TOKEN">
+                        <button type="submit">Забанить</button>
+                    </form>
+                </div>
+            {% endfor %}
+            <h4>Споры</h4>
+            {% for dispute in disputes %}
+                <div class="dispute">
+                    <p>ID: {{ dispute.id }} | Transaction: {{ dispute.transaction_id }} | Reason: {{ dispute.reason }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="footer">
+        <button onclick="window.location.href='/'">P2P</button>
+        <button onclick="window.location.href='/orders'">Orders</button>
+        <button onclick="window.location.href='/ads'">Ads</button>
+        <button class="active" onclick="window.location.href='/profile'">Profile</button>
+    </div>
+</body>
+</html>
