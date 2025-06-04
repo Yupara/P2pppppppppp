@@ -163,6 +163,16 @@
             <p><strong>USDT:</strong> {{ user.balance }}</p>
             <p><strong>BTC:</strong> {{ user.btc_balance }}</p>
             <p><strong>ETH:</strong> {{ user.eth_balance }}</p>
+            <h3>Deposit Funds</h3>
+            <form action="/deposit" method="post">
+                <select name="currency" required>
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <input type="number" name="amount" step="0.01" placeholder="Amount" required>
+                <button type="submit">Deposit</button>
+            </form>
         </div>
 
         <div class="section">
@@ -199,14 +209,33 @@
                         <p><strong>Fiat:</strong> {{ offer.fiat }} ({{ offer.fiat_amount }})</p>
                         <p><strong>Method:</strong> {{ offer.payment_method }}</p>
                         <p><strong>Contact:</strong> {{ offer.contact }}</p>
-                        <form action="/buy-offer" method="post">
-                            <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                            <button type="submit">Buy Offer</button>
-                        </form>
-                        <form action="/cancel-offer" method="post">
-                            <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                            <button type="submit">Cancel Offer</button>
-                        </form>
+                        <p><strong>Status:</strong> {{ offer.status }}</p>
+                        {% if offer.status == "active" %}
+                            <form action="/buy-offer" method="post">
+                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
+                                <button type="submit">Buy Offer</button>
+                            </form>
+                        {% endif %}
+                        {% if offer.status in ["active", "pending"] %}
+                            <form action="/cancel-offer" method="post">
+                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
+                                <button type="submit">Cancel Offer</button>
+                            </form>
+                        {% endif %}
+                        {% if offer.status == "pending" %}
+                            <form action="/confirm-offer" method="post">
+                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
+                                <button type="submit">Confirm Offer</button>
+                            </form>
+                        {% endif %}
+                        {% if offer.status == "pending" %}
+                            <form action="/create-dispute" method="post" enctype="multipart/form-data">
+                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
+                                <input type="file" name="screenshot" accept="image/*">
+                                <input type="file" name="video" accept="video/*">
+                                <button type="submit">Create Dispute</button>
+                            </form>
+                        {% endif %}
                         <h3>Chat for Offer #{{ offer.id }}</h3>
                         <div class="chat-box" id="chat-{{ offer.id }}">
                             <!-- Messages will be loaded dynamically -->
@@ -221,6 +250,13 @@
             {% else %}
                 <p>No active offers found.</p>
             {% endif %}
+        </div>
+
+        <div class="section">
+            <h2>My Offers</h2>
+            <div id="my-offers">
+                <!-- Offers will be loaded dynamically -->
+            </div>
         </div>
 
         <div class="section">
@@ -250,11 +286,29 @@
 
         <div class="section">
             <h2>Admin Stats</h2>
-            <p><strong>Earnings Today:</strong> {{ earnings_today }} USDT</p>
-            <p><strong>Total Earnings:</strong> {{ total_earnings }} USDT</p>
-            <p><strong>Available Earnings:</strong> {{ available_earnings }} USDT</p>
-            <p><strong>Active Users:</strong> {{ active_users_count }}</p>
+            {% if is_admin %}
+                <div id="admin-stats">
+                    <!-- Stats will be loaded dynamically -->
+                </div>
+                <form action="/withdraw-earnings" method="post">
+                    <button type="submit">Withdraw Earnings</button>
+                </form>
+                <form action="/reset-db" method="post">
+                    <button type="submit">Reset Database</button>
+                </form>
+            {% else %}
+                <p>Admin access required.</p>
+            {% endif %}
         </div>
+
+        {% if is_admin %}
+            <div class="section">
+                <h2>Disputes</h2>
+                <div id="disputes">
+                    <!-- Disputes will be loaded dynamically -->
+                </div>
+            </div>
+        {% endif %}
     </div>
 
     <script>
@@ -285,10 +339,100 @@
             return false;
         }
 
+        async function loadMyOffers() {
+            const response = await fetch('/my-offers');
+            const offers = await response.json();
+            const container = document.getElementById('my-offers');
+            container.innerHTML = '';
+            offers.forEach(offer => {
+                const div = document.createElement('div');
+                div.className = 'offer';
+                div.innerHTML = `
+                    <p><strong>ID:</strong> ${offer.id}</p>
+                    <p><strong>Type:</strong> ${offer.offer_type}</p>
+                    <p><strong>Currency:</strong> ${offer.currency} (${offer.amount})</p>
+                    <p><strong>Fiat:</strong> ${offer.fiat} (${offer.fiat_amount})</p>
+                    <p><strong>Method:</strong> ${offer.payment_method}</p>
+                    <p><strong>Contact:</strong> ${offer.contact}</p>
+                    <p><strong>Status:</strong> ${offer.status}</p>
+                    ${offer.status === 'pending' ? `
+                        <form action="/confirm-offer" method="post">
+                            <input type="hidden" name="offer_id" value="${offer.id}">
+                            <button type="submit">Confirm Offer</button>
+                        </form>
+                        <form action="/create-dispute" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="offer_id" value="${offer.id}">
+                            <input type="file" name="screenshot" accept="image/*">
+                            <input type="file" name="video" accept="video/*">
+                            <button type="submit">Create Dispute</button>
+                        </form>
+                    ` : ''}
+                    ${offer.status === 'active' || offer.status === 'pending' ? `
+                        <form action="/cancel-offer" method="post">
+                            <input type="hidden" name="offer_id" value="${offer.id}">
+                            <button type="submit">Cancel Offer</button>
+                        </form>
+                    ` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function loadAdminStats() {
+            const response = await fetch('/admin-stats');
+            const stats = await response.json();
+            const container = document.getElementById('admin-stats');
+            container.innerHTML = `
+                <p><strong>Earnings Today:</strong> ${stats.earnings_today} USDT</p>
+                <p><strong>Total Earnings:</strong> ${stats.earnings_total} USDT</p>
+                <p><strong>Available Earnings:</strong> ${stats.available_earnings} USDT</p>
+                <p><strong>Active Users:</strong> ${stats.active_users.length}</p>
+                <h3>Weekly Stats</h3>
+                <p>${stats.weekly_stats.join(', ')}</p>
+                <h3>Large Trades</h3>
+                ${stats.large_trades.map(trade => `<p>Trade #${trade.id}: ${trade.fiat_amount} ${trade.fiat} (${new Date(trade.created_at).toLocaleString()})</p>`).join('')}
+            `;
+        }
+
+        async function loadDisputes() {
+            const response = await fetch('/get-disputes');
+            const disputes = await response.json();
+            const container = document.getElementById('disputes');
+            container.innerHTML = '';
+            disputes.forEach(dispute => {
+                const div = document.createElement('div');
+                div.className = 'offer';
+                div.innerHTML = `
+                    <p><strong>Dispute ID:</strong> ${dispute.id}</p>
+                    <p><strong>Offer ID:</strong> ${dispute.offer_id}</p>
+                    <p><strong>User ID:</strong> ${dispute.user_id}</p>
+                    <p><strong>Status:</strong> ${dispute.status}</p>
+                    <p><strong>Resolution:</strong> ${dispute.resolution || 'N/A'}</p>
+                    ${dispute.status === 'open' ? `
+                        <form action="/resolve-dispute" method="post">
+                            <input type="hidden" name="dispute_id" value="${dispute.id}">
+                            <input type="text" name="resolution" placeholder="Resolution" required>
+                            <select name="action" required>
+                                <option value="resolve">Resolve Trade</option>
+                                <option value="cancel">Cancel Trade</option>
+                            </select>
+                            <button type="submit">Resolve Dispute</button>
+                        </form>
+                    ` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             {% for offer in offers %}
                 loadMessages({{ offer.id }});
             {% endfor %}
+            loadMyOffers();
+            {% if is_admin %}
+                loadAdminStats();
+                loadDisputes();
+            {% endif %}
         });
     </script>
 </body>
