@@ -1,64 +1,37 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime, timedelta
-from fastapi_websocket_pubsub import PubSubClient
-import os
-import logging
-from typing import Optional
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from pydantic import BaseModel
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
+import pytz
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Монтирование статических файлов
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-else:
-    logger.warning("Directory 'static' not found. Skipping mount.")
-
-# Настройки
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///p2p_exchange.db")
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+# Database setup
+engine = create_engine('sqlite:///p2p_exchange.db', echo=True)
 Base = declarative_base()
 
-# Модели
 class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    phone = Column(String, unique=True)
-    balance = Column(Float, default=0.0)
-    escrow_balance = Column(Float, default=0.0)
-    verified_email = Column(Boolean, default=False)
-    verified_phone = Column(Boolean, default=False)
-    verified_identity = Column(Boolean, default=False)
-    is_merchant = Column(Boolean, default=False)
-    is_admin = Column(Boolean, default=False)
-    vip_level = Column(Integer, default=0)
-    vip_progress = Column(Float, default=0.0)
-    total_invested = Column(Float, default=0.0)
-    notifications_enabled = Column(Boolean, default=True)
-    referral_code = Column(String, unique=True)
-    referred_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True)
     orders_completed = Column(Integer, default=0)
-    rating = Column(Float, default=0.0)
-    avg_transfer_time = Column(Float, default=0.0)
     last_seen = Column(DateTime, default=datetime.utcnow)
+    rating = Column(Float, default=99.0)
+    completion_rate = Column(Float, default=100.0)
+    avg_transfer_time = Column(String, default="2 мин.")
+    offers = relationship("Offer", back_populates="user")
 
 class Offer(Base):
-    __tablename__ = "offers"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    __tablename__ = 'offers'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
     offer_type = Column(String)
     currency = Column(String)
     amount = Column(Float)
@@ -66,357 +39,128 @@ class Offer(Base):
     fiat_amount = Column(Float)
     payment_method = Column(String)
     contact = Column(String)
-    status = Column(String, default="active")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    payment_window = Column(Integer, default=15)
+    payment_window = Column(Integer)
     only_verified = Column(Boolean, default=False)
     only_vip = Column(Boolean, default=False)
-    description = Column(Text, nullable=True)
-    user = relationship("User")
+    description = Column(String)
+    user = relationship("User", back_populates="offers")
 
-class Transaction(Base):
-    __tablename__ = "transactions"
-    id = Column(Integer, primary_key=True, index=True)
-    offer_id = Column(Integer, ForeignKey("offers.id"))
-    buyer_id = Column(Integer, ForeignKey("users.id"))
-    seller_id = Column(Integer, ForeignKey("users.id"))
-    amount = Column(Float)
-    fiat_amount = Column(Float)
-    status = Column(String, default="pending")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    completed_at = Column(DateTime, nullable=True)
-    offer = relationship("Offer")
+Base.metadata.create_all(engine)
+SessionLocal = sessionmaker(bind=engine)
+db = SessionLocal()
 
-class Dispute(Base):
-    __tablename__ = "disputes"
-    id = Column(Integer, primary_key=True, index=True)
-    transaction_id = Column(Integer, ForeignKey("transactions.id"))
-    initiator_id = Column(Integer, ForeignKey("users.id"))
-    reason = Column(Text)
-    status = Column(String, default="open")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    resolved_at = Column(DateTime, nullable=True)
-
-class ChatMessage(Base):
-    __tablename__ = "chat_messages"
-    id = Column(Integer, primary_key=True, index=True)
-    transaction_id = Column(Integer, ForeignKey("transactions.id"))
-    sender_id = Column(Integer, ForeignKey("users.id"))
-    message = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class Referral(Base):
-    __tablename__ = "referrals"
-    id = Column(Integer, primary_key=True, index=True)
-    referrer_id = Column(Integer, ForeignKey("users.id"))
-    referred_id = Column(Integer, ForeignKey("users.id"))
-    bonus_amount = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
-
-# Тестовые данные
-def add_test_data():
-    db = SessionLocal()
-    try:
-        if not db.query(User).filter(User.id == 1).first():
-            new_user = User(id=1, email="test@example.com", phone="1234567890", balance=1717.0, verified_identity=True, referral_code="TEST123", is_admin=True)
-            db.add(new_user)
-        if not db.query(User).filter(User.id == 2).first():
-            other_user = User(id=2, email="user2@example.com", phone="0987654321", balance=100.0, verified_identity=True, referral_code="USER123")
-            db.add(other_user)
-        if not db.query(Offer).filter(Offer.user_id == 2).first():
-            new_offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=1000.0, fiat="RUB", fiat_amount=95000.0, payment_method="SBP", contact="user2_contact")
-            db.add(new_offer)
+# Add or get test user
+def add_or_get_test_user():
+    user = db.query(User).filter(User.email == "testuser@example.com").first()
+    if not user:
+        user = User(email="testuser@example.com", orders_completed=0, last_seen=datetime.utcnow())
+        db.add(user)
         db.commit()
-    finally:
-        db.close()
+    return user
+
+# Add test data
+def add_test_data():
+    if not db.query(Offer).first():
+        user1 = User(email="user1@example.com", orders_completed=2426, last_seen=datetime.utcnow())
+        user2 = User(email="user2@example.com", orders_completed=1500, last_seen=datetime.utcnow() - timedelta(minutes=20))
+        db.add(user1)
+        db.add(user2)
+        db.commit()
+        offer1 = Offer(user_id=1, offer_type="sell", currency="USDT", amount=140.0, fiat="RUB", fiat_amount=140 * 77.10, payment_method="Sberbank", contact="user1_contact", payment_window=30)
+        offer2 = Offer(user_id=2, offer_type="buy", currency="BTC", amount=0.5, fiat="USD", fiat_amount=0.5 * 60000, payment_method="PayPal", contact="user2_contact", payment_window=15)
+        db.add(offer1)
+        db.add(offer2)
+        db.commit()
 
 add_test_data()
 
-# Зависимости
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# Фиксированный пользователь для теста
-def get_test_user(db: SessionLocal):
-    user = db.query(User).filter(User.id == 1).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Test user not found")
-    user.last_seen = datetime.utcnow()
-    db.commit()
-    return user
-
-# Роуты
+# Routes
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request, db: SessionLocal = Depends(get_db), tab: str = Query("buy")):
-    user = get_test_user(db)
-    offers = db.query(Offer).filter(Offer.status == "active", Offer.offer_type == tab).all()
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "user": user,
-        "offers": offers,
-        "tab": tab,
-        "now": datetime.utcnow()
-    })
-
-@app.get("/offers/filter")
-async def filter_offers(
-    offer_type: str = Query("buy"),
-    currency: Optional[str] = Query(None),
-    fiat: Optional[str] = Query(None),
-    amount: Optional[float] = Query(None),
-    payment_method: Optional[str] = Query(None),
-    only_verified: bool = Query(False),
-    only_online: bool = Query(False),
-    only_merchants: bool = Query(False),
-    db: SessionLocal = Depends(get_db),
-    request: Request = None
-):
-    user = get_test_user(db)
-    query = db.query(Offer).filter(Offer.status == "active", Offer.offer_type == offer_type)
+async def index(request: Request, tab: str = "buy", currency: str = None, fiat: str = None, amount: float = None, payment_method: str = None, only_verified: bool = False, only_online: bool = False, only_merchants: bool = False):
+    offers = db.query(Offer).filter(Offer.offer_type == ("sell" if tab == "buy" else "buy"))
     if currency:
-        query = query.filter(Offer.currency == currency)
+        offers = offers.filter(Offer.currency == currency)
     if fiat:
-        query = query.filter(Offer.fiat == fiat)
+        offers = offers.filter(Offer.fiat == fiat)
     if amount:
-        query = query.filter(Offer.amount >= amount)
+        offers = offers.filter(Offer.amount >= amount)
     if payment_method:
-        query = query.filter(Offer.payment_method == payment_method)
+        offers = offers.filter(Offer.payment_method == payment_method)
     if only_verified:
-        query = query.join(User).filter(User.verified_identity == True)
+        offers = offers.filter(Offer.only_verified == True)
     if only_online:
-        query = query.join(User).filter(User.last_seen > datetime.utcnow() - timedelta(minutes=15))
+        offers = offers.join(User).filter(User.last_seen > datetime.utcnow() - timedelta(minutes=15))
     if only_merchants:
-        query = query.join(User).filter(User.is_merchant == True)
-    offers = query.all()
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "user": user,
-        "offers": offers,
-        "tab": offer_type,
-        "now": datetime.utcnow()
-    })
+        offers = offers.filter(Offer.only_vip == True)
+    offers = offers.all()
+    now = datetime.now(pytz.timezone('Asia/Dushanbe'))
+    return templates.TemplateResponse("index.html", {"request": request, "offers": offers, "tab": tab, "currency": currency, "fiat": fiat, "amount": amount, "payment_method": payment_method, "only_verified": only_verified, "only_online": only_online, "only_merchants": only_merchants, "now": now})
+
+@app.get("/offers/filter", response_class=HTMLResponse)
+async def filter_offers(request: Request, offer_type: str, currency: str = None, fiat: str = None, amount: float = None, payment_method: str = None, only_verified: bool = False, only_online: bool = False, only_merchants: bool = False):
+    tab = "buy" if offer_type == "buy" else "sell"
+    url = f"/?tab={tab}"
+    if currency:
+        url += f"¤cy={currency}"
+    if fiat:
+        url += f"&fiat={fiat}"
+    if amount:
+        url += f"&amount={amount}"
+    if payment_method:
+        url += f"&payment_method={payment_method}"
+    if only_verified:
+        url += f"&only_verified={only_verified}"
+    if only_online:
+        url += f"&only_online={only_online}"
+    if only_merchants:
+        url += f"&only_merchants={only_merchants}"
+    return RedirectResponse(url)
 
 @app.post("/create-offer")
-async def create_offer(
-    offer_type: str = Form(...),
-    currency: str = Form(...),
-    amount: float = Form(...),
-    fiat: str = Form(...),
-    fiat_amount: float = Form(...),
-    payment_method: str = Form(...),
-    contact: str = Form(...),
-    payment_window: int = Form(15),
-    only_verified: bool = Form(False),
-    only_vip: bool = Form(False),
-    description: Optional[str] = Form(None),
-    db: SessionLocal = Depends(get_db)
-):
-    user = get_test_user(db)
-    if offer_type == "sell" and user.balance < amount:
-        raise HTTPException(status_code=400, detail="Insufficient balance")
-    if amount < 500 or amount > 5000:
-        raise HTTPException(status_code=400, detail="Amount out of range (500-5000)")
-    if only_vip and user.vip_level == 0:
-        raise HTTPException(status_code=400, detail="VIP status required")
-    offer = Offer(
-        user_id=user.id,
-        offer_type=offer_type,
-        currency=currency,
-        amount=amount,
-        fiat=fiat,
-        fiat_amount=fiat_amount,
-        payment_method=payment_method,
-        contact=contact,
-        payment_window=payment_window,
-        only_verified=only_verified,
-        only_vip=only_vip,
-        description=description
-    )
-    if offer_type == "sell":
-        user.balance -= amount
-        user.escrow_balance += amount
-    db.add(offer)
+async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...), payment_window: int = Form(...), only_verified: bool = Form(False), only_vip: bool = Form(False), description: str = Form(None)):
+    user = add_or_get_test_user()  # Используем временного пользователя
+    new_offer = Offer(user_id=user.id, offer_type=offer_type, currency=currency, amount=amount, fiat=fiat, fiat_amount=fiat_amount, payment_method=payment_method, contact=contact, payment_window=payment_window, only_verified=only_verified, only_vip=only_vip, description=description)
+    db.add(new_offer)
     db.commit()
-    return {"message": "Offer created", "balance": user.balance}
+    return RedirectResponse("/", status_code=303)
+
+@app.get("/buy-sell/{offer_id}", response_class=HTMLResponse)
+async def buy_sell_page(request: Request, offer_id: int):
+    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    now = datetime.now(pytz.timezone('Asia/Dushanbe'))
+    return templates.TemplateResponse("buy_sell.html", {"request": request, "offer": offer, "now": now})
 
 @app.post("/buy-offer/{offer_id}")
-async def buy_offer(
-    offer_id: int,
-    db: SessionLocal = Depends(get_db)
-):
-    user = get_test_user(db)
+async def buy_offer(offer_id: int):
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
-    if not offer or offer.status != "active":
-        raise HTTPException(status_code=400, detail="Offer not available")
-    if offer.only_verified and not user.verified_identity:
-        raise HTTPException(status_code=400, detail="Verification required")
-    if offer.only_vip and user.vip_level == 0:
-        raise HTTPException(status_code=400, detail="VIP status required")
-    if user.balance < offer.fiat_amount:
-        raise HTTPException(status_code=400, detail="Insufficient balance")
-    
-    transaction = Transaction(
-        offer_id=offer_id,
-        buyer_id=user.id,
-        seller_id=offer.user_id,
-        amount=offer.amount,
-        fiat_amount=offer.fiat_amount
-    )
-    user.balance -= offer.fiat_amount
-    offer.status = "pending"
-    db.add(transaction)
+    if not offer:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    user = offer.user
+    user.orders_completed += 1
+    db.delete(offer)
     db.commit()
-    return {"message": "Transaction started", "transaction_id": transaction.id}
-
-@app.post("/complete-transaction/{transaction_id}")
-async def complete_transaction(
-    transaction_id: int,
-    db: SessionLocal = Depends(get_db)
-):
-    user = get_test_user(db)
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
-    if not transaction or transaction.status != "pending":
-        raise HTTPException(status_code=400, detail="Invalid transaction")
-    if transaction.seller_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    transaction.status = "completed"
-    transaction.completed_at = datetime.utcnow()
-    seller = db.query(User).filter(User.id == transaction.seller_id).first()
-    buyer = db.query(User).filter(User.id == transaction.buyer_id).first()
-    seller.escrow_balance -= transaction.amount
-    seller.balance += transaction.fiat_amount
-    buyer.balance += transaction.amount
-    seller.orders_completed += 1
-    buyer.orders_completed += 1
-    offer = db.query(Offer).filter(Offer.id == transaction.offer_id).first()
-    offer.status = "completed"
-    db.commit()
-    return {"message": "Transaction completed"}
-
-@app.post("/dispute/{transaction_id}")
-async def create_dispute(
-    transaction_id: int,
-    reason: str = Form(...),
-    db: SessionLocal = Depends(get_db)
-):
-    user = get_test_user(db)
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
-    if not transaction or transaction.status != "pending":
-        raise HTTPException(status_code=400, detail="Invalid transaction")
-    if transaction.buyer_id != user.id and transaction.seller_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    dispute = Dispute(transaction_id=transaction_id, initiator_id=user.id, reason=reason)
-    transaction.status = "disputed"
-    db.add(dispute)
-    db.commit()
-    return {"message": "Dispute created", "dispute_id": dispute.id}
-
-@app.get("/profile", response_class=HTMLResponse)
-async def profile(request: Request, db: SessionLocal = Depends(get_db)):
-    user = get_test_user(db)
-    return templates.TemplateResponse("profile.html", {
-        "request": request,
-        "user": user,
-        "now": datetime.utcnow()
-    })
+    return RedirectResponse("/", status_code=303)
 
 @app.get("/orders", response_class=HTMLResponse)
-async def orders(request: Request, db: SessionLocal = Depends(get_db)):
-    user = get_test_user(db)
-    transactions = db.query(Transaction).filter((Transaction.buyer_id == user.id) | (Transaction.seller_id == user.id)).all()
-    return templates.TemplateResponse("orders.html", {
-        "request": request,
-        "user": user,
-        "transactions": transactions,
-        "now": datetime.utcnow()
-    })
+async def orders(request: Request):
+    return templates.TemplateResponse("orders.html", {"request": request})
 
 @app.get("/ads", response_class=HTMLResponse)
-async def ads(request: Request, db: SessionLocal = Depends(get_db)):
-    user = get_test_user(db)
-    offers = db.query(Offer).filter(Offer.user_id == user.id).all()
-    return templates.TemplateResponse("ads.html", {
-        "request": request,
-        "user": user,
-        "offers": offers,
-        "now": datetime.utcnow()
-    })
+async def ads(request: Request):
+    return templates.TemplateResponse("ads.html", {"request": request})
 
-@app.get("/chat/{transaction_id}", response_class=HTMLResponse)
-async def chat(request: Request, transaction_id: int, db: SessionLocal = Depends(get_db)):
-    user = get_test_user(db)
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
-    if not transaction or (transaction.buyer_id != user.id and transaction.seller_id != user.id):
-        raise HTTPException(status_code=403, detail="Not authorized")
-    messages = db.query(ChatMessage).filter(ChatMessage.transaction_id == transaction_id).all()
-    return templates.TemplateResponse("chat.html", {
-        "request": request,
-        "user": user,
-        "messages": messages,
-        "transaction_id": transaction_id,
-        "now": datetime.utcnow()
-    })
+@app.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request):
+    return templates.TemplateResponse("profile.html", {"request": request})
 
-@app.websocket("/ws/chat/{transaction_id}")
-async def websocket_chat(websocket: WebSocket, transaction_id: int, db: SessionLocal = Depends(get_db)):
-    await websocket.accept()
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
-    if not transaction:
-        await websocket.close(code=1008)
-        return
-    client = PubSubClient()
-    async def on_message(data):
-        await websocket.send_json(data)
-    client.subscribe(f"chat_{transaction_id}", on_message)
-    try:
-        while True:
-            data = await websocket.receive_json()
-            message = ChatMessage(
-                transaction_id=transaction_id,
-                sender_id=data["user_id"],
-                message=data["message"]
-            )
-            db.add(message)
-            db.commit()
-            await client.publish(f"chat_{transaction_id}", {
-                "sender_id": message.sender_id,
-                "message": message.message,
-                "created_at": message.created_at.isoformat()
-            })
-    except WebSocketDisconnect:
-        client.disconnect()
-
-@app.get("/admin", response_class=HTMLResponse)
-async def admin_panel(request: Request, db: SessionLocal = Depends(get_db)):
-    user = get_test_user(db)
-    if not user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    users = db.query(User).all()
-    disputes = db.query(Dispute).filter(Dispute.status == "open").all()
-    return templates.TemplateResponse("admin.html", {
-        "request": request,
-        "users": users,
-        "disputes": disputes,
-        "now": datetime.utcnow()
-    })
-
-@app.post("/admin/ban-user/{user_id}")
-async def ban_user(user_id: int, db: SessionLocal = Depends(get_db)):
-    user = get_test_user(db)
-    if not user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    target_user = db.query(User).filter(User.id == user_id).first()
-    if not target_user:
+@app.get("/profile/{user_id}", response_class=HTMLResponse)
+async def user_profile(request: Request, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    target_user.is_banned = True
-    db.commit()
-    return {"message": "User banned"}
+    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
 
 if __name__ == "__main__":
     import uvicorn
