@@ -615,3 +615,80 @@
     </script>
 </body>
 </html>
+<div class="create-offer">
+    <h3>Создать объявление</h3>
+    <form action="/create-offer" method="post">
+        <select name="offer_type" required>
+            <option value="buy">Покупка</option>
+            <option value="sell">Продажа</option>
+        </select>
+        <select name="currency" required>
+            <option value="USDT">USDT</option>
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
+            <option value="TON">TON</option>
+        </select>
+        <input type="number" name="amount" step="0.01" placeholder="Количество (500-5000)" min="500" max="5000" required>
+        <select name="fiat" required>
+            <option value="RUB">RUB</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="KZT">KZT</option>
+            <option value="UAH">UAH</option>
+            <option value="TRY">TRY</option>
+            <option value="CNY">CNY</option>
+            <option value="INR">INR</option>
+            <option value="BRL">BRL</option>
+            <option value="AED">AED</option>
+        </select>
+        <select name="rate" id="rate" required onchange="updateFiatAmount()">
+            <option value="77.10">77.10 RUB/USDT</option>
+            <option value="60000.00">60000.00 USD/BTC</option>
+            <option value="3000.00">3000.00 RUB/ETH</option>
+            <option value="200.00">200.00 RUB/TON</option>
+            <option value="85.00">85.00 KZT/USDT</option>
+            <option value="40.00">40.00 UAH/USDT</option>
+            <option value="30.00">30.00 TRY/USDT</option>
+            <option value="7.00">7.00 CNY/USDT</option>
+            <option value="83.00">83.00 INR/USDT</option>
+            <option value="5.50">5.50 BRL/USDT</option>
+            <option value="3.67">3.67 AED/USDT</option>
+        </select>
+        <input type="number" name="fiat_amount" id="fiat_amount" step="0.01" placeholder="Фиатная сумма" required readonly>
+        <select name="payment_method" required>
+            <option value="SBP">SBP</option>
+            <option value="Sberbank">Sberbank</option>
+            <option value="Tinkoff">Tinkoff</option>
+            <option value="YooMoney">YooMoney</option>
+            <option value="Cash">Cash</option>
+            <option value="QIWI">QIWI</option>
+            <option value="Payeer">Payeer</option>
+            <option value="AdvCash">AdvCash</option>
+            <option value="Perfect Money">Perfect Money</option>
+            <option value="PayPal">PayPal</option>
+            <option value="WebMoney">WebMoney</option>
+            <option value="Skrill">Skrill</option>
+            <option value="Binance Pay">Binance Pay</option>
+            <option value="Revolut">Revolut</option>
+            <option value="Wise">Wise</option>
+        </select>
+        <input type="text" name="contact" placeholder="Контактная информация" required>
+        <input type="number" name="payment_window" placeholder="Время оплаты (минуты)" value="15" required>
+        <label><input type="checkbox" name="only_verified"> Только для верифицированных</label>
+        <label><input type="checkbox" name="only_vip"> Только для VIP</label>
+        <textarea name="description" placeholder="Описание объявления"></textarea>
+        <button type="submit">Создать объявление</button>
+    </form>
+    <script>
+        function updateFiatAmount() {
+            const amount = document.querySelector('input[name="amount"]').value;
+            const rate = document.querySelector('#rate').value;
+            if (amount && rate) {
+                const fiatAmount = (amount * rate).toFixed(2);
+                document.querySelector('#fiat_amount').value = fiatAmount;
+            }
+        }
+        document.querySelector('input[name="amount"]').addEventListener('input', updateFiatAmount);
+        document.querySelector('#rate').addEventListener('change', updateFiatAmount);
+    </script>
+</div>
