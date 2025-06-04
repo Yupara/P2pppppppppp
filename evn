@@ -3,3 +3,4 @@ EMAIL_PASS=your-email-password
 TWILIO_SID=your-twilio-sid
 TWILIO_AUTH_TOKEN=your-twilio-token
 SECRET_KEY=your-secret-key
+TWILIO_PHONE_NUMBER=+1234567890
