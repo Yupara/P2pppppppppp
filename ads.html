@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Ads - Green P2P Exchange</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Повторяем стили из index.html */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button onclick="history.back()">←</button>
+            <div class="user-info">
+                <img src="https://via.placeholder.com/40" alt="User Avatar">
+                <div>
+                    <p>{{ user.email[:3] }}****@*****.com</p>
+                    <p>UID: {{ user.id }}123456</p>
+                </div>
+            </div>
+            <span>{{ now.strftime('%H:%M') }}</span>
+        </div>
+
+        <div class="ads">
+            <h3>Мои объявления</h3>
+            {% for offer in offers %}
+                <div class="offer">
+                    <p>ID: {{ offer.id }}</p>
+                    <p>Тип: {{ offer.offer_type }}</p>
+                    <p>Сумма: {{ offer.amount }} {{ offer.currency }}</p>
+                    <p>Фиат: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+                    <p>Метод: {{ offer.payment_method }}</p>
+                    <p>Статус: {{ offer.status }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="footer">
+        <button onclick="window.location.href='/'">P2P</button>
+        <button onclick="window.location.href='/orders'">Orders</button>
+        <button class="active" onclick="window.location.href='/ads'">Ads</button>
+        <button onclick="window.location.href='/profile'">Profile</button>
+    </div>
+</body>
+</html>
