@@ -24,9 +24,8 @@ class User(Base):
     phone = Column(String, unique=True)
     balance = Column(Float, default=0.0)
     verified = Column(Boolean, default=False)
-    notifications = Column(Boolean, default=True)
-    preferred_currency = Column(String, default="RUB")
-    preferred_payment = Column(String, default="SBP")
+    notifications_enabled = Column(Boolean, default=True)
+    subscriptions_enabled = Column(Boolean, default=True)
 
 class Offer(Base):
     __tablename__ = "offers"
@@ -55,10 +54,10 @@ def add_test_data():
         if not other_user:
             other_user = User(id=2, email="user2@example.com", phone="0987654321", balance=100.0, verified=True)
             db.add(other_user)
-        existing_offer = db.query(Offer).filter(Offer.user_id == 2).first()
-        if not existing_offer:
-            offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=50.0, fiat="RUB", fiat_amount=5000.0, payment_method="Local Card(Yellow)", contact="Telegram: @user2")
-            db.add(offer)
+        offer = db.query(Offer).filter(Offer.user_id == 2).first()
+        if not offer:
+            new_offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=1000.0, fiat="RUB", fiat_amount=95000.0, payment_method="SBP", contact="user2_contact")
+            db.add(new_offer)
         db.commit()
     finally:
         db.close()
@@ -77,7 +76,7 @@ async def read_root(request: Request):
     db = next(get_db())
     try:
         user = db.query(User).filter(User.id == 1).first()
-        offers = db.query(Offer).filter(Offer.status == "active").all()
+        offers = db.query(Offer).filter(Offer.user_id == 1, Offer.status == "active").all()
         other_offers = db.query(Offer).filter(Offer.user_id != 1, Offer.status == "active").all()
         return templates.TemplateResponse("index.html", {
             "request": request,
@@ -85,6 +84,30 @@ async def read_root(request: Request):
             "offers": offers,
             "other_offers": other_offers
         })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        return templates.TemplateResponse("settings.html", {
+            "request": request,
+            "user": user
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/update-settings")
+async def update_settings(notifications_enabled: bool = Form(False), subscriptions_enabled: bool = Form(False)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        user.notifications_enabled = notifications_enabled
+        user.subscriptions_enabled = subscriptions_enabled
+        db.commit()
+        return {"message": "Settings updated"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -113,19 +136,6 @@ async def deposit(amount: float = Form(...)):
         user.balance += amount
         db.commit()
         return {"message": "Deposit successful", "balance": user.balance}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/update-settings")
-async def update_settings(notifications: bool = Form(...), preferred_currency: str = Form(...), preferred_payment: str = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        user.notifications = notifications
-        user.preferred_currency = preferred_currency
-        user.preferred_payment = preferred_payment
-        db.commit()
-        return {"message": "Settings updated"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
