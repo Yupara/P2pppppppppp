@@ -10,7 +10,7 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a;
+            background-color: #1a3c2e;
             color: #d3d3d3;
             display: flex;
             flex-direction: column;
@@ -25,76 +25,42 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #2e2e2e;
+            border-bottom: 1px solid #2e5a47;
         }
-        .user-info {
+        .tabs {
             display: flex;
-            align-items: center;
             gap: 10px;
+            margin-bottom: 10px;
         }
-        .user-info div {
-            background: #f1c40f;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .balance {
-            background-color: #2e2e2e;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        .balance button {
-            background-color: #27ae60;
-            color: #fff;
+        .tab {
             padding: 5px 10px;
+            background-color: #224d3a;
             border: none;
             border-radius: 5px;
+            color: #d3d3d3;
             cursor: pointer;
-            margin: 5px;
         }
-        .investment {
-            background-color: #2e2e2e;
+        .tab.active {
+            background-color: #27ae60;
+            color: #fff;
+        }
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .offer-list {
+            background-color: #224d3a;
             padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
-        .progress {
+        .offer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 10px;
-        }
-        .progress-bar {
-            width: 60%;
-            height: 10px;
-            background-color: #1a1a1a;
-            border-radius: 5px;
-        }
-        .progress-fill {
-            height: 100%;
-            background-color: #f1c40f;
-            border-radius: 5px;
-            width: {{ user.vip_progress }}%;
-        }
-        .other-offers {
-            background-color: #2e2e2e;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .other-offers h3 {
-            margin-top: 0;
-        }
-        .offer {
-            border-bottom: 1px dashed #d3d3d3;
             padding: 10px 0;
+            border-bottom: 1px dashed #2e5a47;
         }
         .offer button {
             background-color: #27ae60;
@@ -104,20 +70,10 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        .offers {
-            background-color: #2e2e2e;
+        .create-offer {
+            background-color: #224d3a;
             padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .offers h3 {
-            margin-top: 0;
-        }
-        .filters {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            margin-bottom: 15px;
+            border-radius: 10px;
         }
         form {
             display: flex;
@@ -127,8 +83,8 @@
         input, select, button {
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #2e2e2e;
-            background-color: #1a1a1a;
+            border: 1px solid #2e5a47;
+            background-color: #1a3c2e;
             color: #d3d3d3;
         }
         button {
@@ -140,8 +96,8 @@
             display: flex;
             justify-content: space-around;
             padding: 10px 0;
-            background-color: #1a1a1a;
-            border-top: 1px solid #2e2e2e;
+            background-color: #1a3c2e;
+            border-top: 1px solid #2e5a47;
         }
         .footer button {
             background: none;
@@ -159,106 +115,66 @@
     <div class="container">
         <div class="header">
             <button onclick="history.back()">←</button>
-            <div class="user-info">
-                <div>Р</div>
-                <div>
-                    <p>para1333</p>
-                    <p>✓ Email ✓ SMS ✓ Verified</p>
-                </div>
-            </div>
-            <span>Help & Support</span>
+            <h2>Покупка Продажа</h2>
+            <select>
+                <option>RUB</option>
+            </select>
         </div>
 
-        <div class="balance">
-            <p>Balance: ${{ user.balance }}</p>
-            <p>VIP Level: {{ user.vip_level }}</p>
-            <form action="/deposit" method="post">
-                <input type="number" name="amount" step="0.01" placeholder="Amount to Deposit" required>
-                <button type="submit">Deposit</button>
-            </form>
-            <form action="/withdraw" method="post">
-                <input type="number" name="amount" step="0.01" placeholder="Amount to Withdraw" required>
-                <button type="submit">Withdraw</button>
-            </form>
+        <div class="tabs">
+            <button class="tab active">Покупка</button>
+            <button class="tab">Продажа</button>
         </div>
 
-        <div class="investment">
-            <p>Invest 50,000 USDT and receive VIP {{ user.vip_level + 1 }} with daily earnings!</p>
-            <p>Progress: {{ user.vip_progress }}%</p>
-            <div class="progress">
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                <span>VIP {{ user.vip_level }}</span>
-            </div>
-            <form action="/invest" method="post">
-                <input type="number" name="amount" step="0.01" placeholder="Amount to Invest" required>
-                <button type="submit">Invest</button>
-            </form>
+        <div class="filters">
+            <select>
+                <option>USDT</option>
+                <option>SIRE</option>
+                <option>TON</option>
+                <option>SOL</option>
+                <option>J</option>
+                <option>TRUMP</option>
+            </select>
+            <select>
+                <option>Все способы оплаты</option>
+            </select>
+            <span>Фильтр</span>
         </div>
 
-        <div class="other-offers">
-            <h3>Объявления других пользователей</h3>
-            <div class="filters">
-                <select>
-                    <option value="USDT">USDT</option>
-                </select>
-                <select>
-                    <option value="RUB">RUB</option>
-                </select>
-                <input type="number" placeholder="Сумма">
-                <select>
-                    <option value="Local Card(Yellow)">Local Card(Yellow)</option>
-                    <option value="Local Card(Green)">Local Card(Green)</option>
-                    <option value="SBP">SBP</option>
-                </select>
-            </div>
+        <div class="offer-list">
             {% for offer in other_offers %}
                 <div class="offer">
-                    <p>Продавец: user{{ offer.user_id }}</p>
-                    <p>Тип: {{ offer.offer_type }}</p>
-                    <p>Сумма: {{ offer.amount }} {{ offer.currency }}</p>
-                    <p>Фиат: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Метод: {{ offer.payment_method }}</p>
-                    <button>Купить</button>
+                    <div>
+                        <p>{{ offer.user.email.split('@')[0] }}</p>
+                        <p>{{ offer.amount }} {{ offer.currency }} ({{ offer.fiat_amount }} {{ offer.fiat }})</p>
+                        <p>Лимиты {{ 500 if offer.amount > 500 else 500 }} - {{ 5000 if offer.amount < 5000 else offer.amount }} {{ offer.fiat }}</p>
+                        <p>{{ offer.payment_method }} | {{ offer.contact }}</p>
+                    </div>
+                    <button>Покупка</button>
                 </div>
             {% endfor %}
         </div>
 
-        <div class="offers">
+        <div class="create-offer">
             <h3>Разместить объявление</h3>
             <form action="/create-offer" method="post">
                 <select name="offer_type" required>
-                    <option value="sell">Sell</option>
-                    <option value="buy">Buy</option>
+                    <option value="buy">Покупка</option>
+                    <option value="sell">Продажа</option>
                 </select>
                 <select name="currency" required>
                     <option value="USDT">USDT</option>
                 </select>
-                <input type="number" name="amount" step="0.01" placeholder="Amount (500-5000)" min="500" max="5000" required>
-                <select name="fiat" required>
-                    <option value="RUB">RUB</option>
-                </select>
-                <input type="number" name="fiat_amount" step="0.01" placeholder="Fiat Amount" required>
+                <input type="number" name="amount" step="0.01" placeholder="Сумма" min="500" max="5000" required>
+                <input type="number" name="fiat_amount" step="0.01" placeholder="Фиат" required>
                 <select name="payment_method" required>
                     <option value="Local Card(Yellow)">Local Card(Yellow)</option>
                     <option value="Local Card(Green)">Local Card(Green)</option>
                     <option value="SBP">SBP</option>
                 </select>
-                <input type="text" name="contact" placeholder="Contact Info" required>
+                <input type="text" name="contact" placeholder="Контакт" required>
                 <button type="submit">Разместить</button>
             </form>
-
-            <h3>Ваши активные объявления</h3>
-            {% for offer in offers %}
-                <div class="offer">
-                    <p>ID: {{ offer.id }}</p>
-                    <p>Type: {{ offer.offer_type }}</p>
-                    <p>Amount: {{ offer.amount }} {{ offer.currency }}</p>
-                    <p>Fiat: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Method: {{ offer.payment_method }}</p>
-                </div>
-            {% endfor %}
         </div>
     </div>
 
@@ -266,7 +182,7 @@
         <button onclick="window.location.href='/'" class="active">P2P</button>
         <button>Orders</button>
         <button>Ads</button>
-        <button onclick="window.location.href='/settings'">Profile</button>
+        <button>Profile</button>
     </div>
 </body>
 </html>
