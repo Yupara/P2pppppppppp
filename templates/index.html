@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +10,14 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #1a3c2e;
+            background-color: #1a1a1a;
             color: #d3d3d3;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         .container {
-            max-width: 400px;
-            margin: 0 auto;
+            flex: 1;
             padding: 10px;
         }
         .header {
@@ -23,211 +25,230 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
+            border-bottom: 1px solid #2e2e2e;
         }
-        .header img {
-            width: 30px;
-            height: 30px;
-        }
-        .coupons {
+        .user-info {
             display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
+            align-items: center;
+            gap: 10px;
         }
-        .coupon {
-            background-color: #224d3a;
+        .user-info div {
+            background: #f1c40f;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .upgrade {
+            background-color: #2e2e2e;
             padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            flex: 1;
-            margin: 0 5px;
-        }
-        .coupon p {
-            margin: 5px 0;
-        }
-        .coupon button {
-            background-color: #f5a623;
-            color: #1a3c2e;
-            border: none;
-            padding: 5px 10px;
             border-radius: 5px;
-            cursor: pointer;
-        }
-        .payment-methods {
-            background-color: #224d3a;
-            padding: 15px;
-            border-radius: 10px;
             margin: 10px 0;
+            text-align: center;
         }
-        .payment-methods a {
-            color: #f5a623;
-            text-decoration: none;
-        }
-        .merchants {
-            background-color: #224d3a;
-            padding: 15px;
-            border-radius: 10px;
+        .stats {
+            background-color: #2e2e2e;
+            padding: 10px;
+            border-radius: 5px;
             margin: 10px 0;
+            text-align: center;
         }
-        .order-form {
-            background-color: #224d3a;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
+        .nav-item {
+            background-color: #2e2e2e;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            text-align: center;
         }
-        .order-form .tabs {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 10px;
-        }
-        .order-form .tabs button {
+        .nav-item button {
             background: none;
             border: none;
             color: #d3d3d3;
-            padding: 5px 10px;
             cursor: pointer;
-            border-bottom: 2px solid transparent;
+            width: 100%;
         }
-        .order-form .tabs button.active {
-            border-bottom: 2px solid #f5a623;
-            color: #f5a623;
+        .footer {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            background-color: #1a1a1a;
+            border-top: 1px solid #2e2e2e;
+        }
+        .footer button {
+            background: none;
+            border: none;
+            color: #d3d3d3;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .footer .active {
+            color: #f1c40f;
         }
         form {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        input, select {
+        input, select, button {
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #2e5a47;
-            background-color: #1a3c2e;
+            border: 1px solid #2e2e2e;
+            background-color: #1a1a1a;
             color: #d3d3d3;
         }
         button {
-            background-color: #f5a623;
-            color: #1a3c2e;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
+            background-color: #27ae60;
+            color: #fff;
             cursor: pointer;
         }
-        .orders {
-            background-color: #224d3a;
+        .settings, .other-offers, .create-offer {
+            background-color: #2e2e2e;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 5px;
             margin: 10px 0;
         }
-        .order {
-            margin: 10px 0;
+        .settings h3, .other-offers h3, .create-offer h3 {
+            margin-top: 0;
         }
-        .order p {
-            margin: 5px 0;
-        }
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            width: 400px;
-            background-color: #224d3a;
-            display: flex;
-            justify-content: space-around;
+        .offer {
+            border-bottom: 1px solid #3e3e3e;
             padding: 10px 0;
-            border-top: 1px solid #2e5a47;
         }
-        .navbar button {
-            background: none;
-            border: none;
-            color: #d3d3d3;
-            cursor: pointer;
-            font-size: 14px;
+        .offer:last-child {
+            border-bottom: none;
         }
-        .navbar button.active {
-            color: #f5a623;
+        label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://via.placeholder.com/30" alt="Logo">
-            <span>07:08</span>
-            <img src="https://via.placeholder.com/30" alt="User">
+            <button onclick="history.back()">←</button>
+            <div class="user-info">
+                <div>Р</div>
+                <div>
+                    <p>para1333</p>
+                    <p>✓ Email ✓ SMS ✓ Verified</p>
+                </div>
+            </div>
+            <span>Help & Support</span>
         </div>
 
-        <div class="coupons">
-            <div class="coupon">
-                <p>P2P-купон</p>
-                <p>0.00 USDT</p>
-                <button>Купить</button>
-            </div>
-            <div class="coupon">
-                <p>Список оплат</p>
-                <button>Перейти</button>
-            </div>
-            <div class="coupon">
-                <p>Мерчанты</p>
-                <button>Стать</button>
-            </div>
+        <div class="upgrade">
+            <p>Общий мейкер</p>
+            <p>Upgrade to verified advertiser for more benefits</p>
         </div>
 
-        <div class="payment-methods">
-            <h3>Методы оплаты</h3>
-            <p>Добавьте методы оплаты для покупки и продажи</p>
-            <a href="#">Добавить способ оплаты</a>
+        <div class="stats">
+            <p>Исполнено ордеров за 30 дней: 8 Ордера</p>
+            <p>Исполнено за 30 дней: 100%</p>
+            <p>Средн. время перевода: 1 мин.</p>
+            <p>Средн. время оплаты: 4 мин.</p>
+            <p>Больше данных ></p>
         </div>
 
-        <div class="merchants">
-            <h3>Торговля с проверенными мерчантами</h3>
-            <p>Больше сделок, меньше рисков</p>
-            <button>Торговать</button>
-        </div>
-
-        <div class="order-form">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('buy')">Купить</button>
-                <button class="tab" onclick="switchTab('sell')">Продать</button>
-            </div>
-            <form action="/create-order" method="post">
-                <input type="hidden" name="order_type" id="order-type" value="buy">
-                <p>Я хочу заплатить: 500-5000 RUB</p>
-                <input type="number" name="fiat_amount" step="0.01" placeholder="Сумма (RUB)" required>
-                <p>Я получу: {{ user.balance }} USDT</p>
-                <input type="number" name="amount" step="0.01" placeholder="Сумма (USDT)" required>
-                <select name="payment_method" required>
-                    <option value="Local Card">Local Card</option>
-                    <option value="SBP">SBP</option>
-                </select>
-                <button type="submit">Создать ордер</button>
+        <div class="settings">
+            <h3>Настройки</h3>
+            <form action="/update-settings" method="post">
+                <label>
+                    <span>Уведомления</span>
+                    <input type="checkbox" name="notifications" {% if user.notifications %}checked{% endif %}>
+                </label>
+                <label>
+                    <span>Предпочитаемая валюта</span>
+                    <select name="preferred_currency">
+                        <option value="RUB" {% if user.preferred_currency == "RUB" %}selected{% endif %}>RUB</option>
+                        <option value="USD" {% if user.preferred_currency == "USD" %}selected{% endif %}>USD</option>
+                        <option value="EUR" {% if user.preferred_currency == "EUR" %}selected{% endif %}>EUR</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Предпочитаемый способ оплаты</span>
+                    <select name="preferred_payment">
+                        <option value="SBP" {% if user.preferred_payment == "SBP" %}selected{% endif %}>SBP</option>
+                        <option value="Local Card(Yellow)" {% if user.preferred_payment == "Local Card(Yellow)" %}selected{% endif %}>Local Card(Yellow)</option>
+                        <option value="Local Card(Green)" {% if user.preferred_payment == "Local Card(Green)" %}selected{% endif %}>Local Card(Green)</option>
+                    </select>
+                </label>
+                <button type="submit">Сохранить настройки</button>
             </form>
         </div>
 
-        <div class="orders">
-            <h3>Активные ордеры</h3>
-            {% for order in orders %}
-                <div class="order">
-                    <p>ID: {{ order.id }}</p>
-                    <p>Тип: {{ order.order_type }}</p>
-                    <p>Сумма: {{ order.amount }} {{ order.currency }}</p>
-                    <p>Фиат: {{ order.fiat_amount }} {{ order.fiat }}</p>
-                    <p>Метод: {{ order.payment_method }}</p>
+        <div class="other-offers">
+            <h3>Объявления других пользователей</h3>
+            {% for offer in other_offers %}
+                <div class="offer">
+                    <p>ID: {{ offer.id }}</p>
+                    <p>Пользователь: user{{ offer.user_id }}</p>
+                    <p>Тип: {{ offer.offer_type }}</p>
+                    <p>Сумма: {{ offer.amount }} {{ offer.currency }}</p>
+                    <p>Фиат: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+                    <p>Метод оплаты: {{ offer.payment_method }}</p>
+                    <p>Контакт: {{ offer.contact }}</p>
                 </div>
             {% endfor %}
         </div>
+
+        <div class="create-offer">
+            <h3>Разместить объявление</h3>
+            <form action="/create-offer" method="post">
+                <select name="offer_type" required>
+                    <option value="sell">Продать</option>
+                    <option value="buy">Купить</option>
+                </select>
+                <select name="currency" required>
+                    <option value="USDT">USDT</option>
+                </select>
+                <input type="number" name="amount" step="0.01" placeholder="Сумма (500-5000)" min="500" max="5000" required>
+                <select name="fiat" required>
+                    <option value="RUB">RUB</option>
+                </select>
+                <input type="number" name="fiat_amount" step="0.01" placeholder="Сумма в фиате" required>
+                <select name="payment_method" required>
+                    <option value="Local Card(Yellow)">Local Card(Yellow)</option>
+                    <option value="Local Card(Green)">Local Card(Green)</option>
+                    <option value="SBP">SBP</option>
+                </select>
+                <input type="text" name="contact" placeholder="Контактная информация" required>
+                <button type="submit">Разместить объявление</button>
+            </form>
+        </div>
+
+        <div class="nav-item">
+            <button>P2P-купон</button>
+        </div>
+        <div class="nav-item">
+            <button>Список оплат</button>
+        </div>
+        <div class="nav-item">
+            <button>Мерчанты</button>
+        </div>
+        <div class="nav-item">
+            <button>Контактные данные</button>
+        </div>
+        <div class="nav-item">
+            <button>Оставьте отзыв</button>
+        </div>
+        <div class="nav-item">
+            <button>Настройка уведомлений</button>
+        </div>
+        <div class="nav-item">
+            <button>Подписки</button>
+        </div>
     </div>
 
-    <div class="navbar">
+    <div class="footer">
         <button class="active">P2P</button>
         <button>Orders</button>
         <button>Ads</button>
         <button>Profile</button>
     </div>
-
-    <script>
-        function switchTab(type) {
-            document.getElementById('order-type').value = type;
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-        }
-    </script>
 </body>
 </html>
