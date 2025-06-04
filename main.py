@@ -43,6 +43,7 @@ class User(Base):
     referral_earnings = Column(Float, default=0.0)
     btc_balance = Column(Float, default=0.0)
     eth_balance = Column(Float, default=0.0)
+    theme = Column(String, default="light")  # Настройка темы
 
 class Offer(Base):
     __tablename__ = "offers"
@@ -139,7 +140,8 @@ def add_test_data():
                 balance=1000.0,
                 btc_balance=0.5,
                 eth_balance=2.0,
-                verified=True
+                verified=True,
+                theme="dark"
             )
             db.add(new_user)
 
@@ -204,12 +206,24 @@ def convert_to_usdt(currency: str, amount: float) -> float:
     rates = {"USDT": 1.0, "BTC": 70000, "ETH": 3500}  # Примерные курсы
     return amount * rates.get(currency, 1.0)
 
-# Главная страница с открытым доступом
+# Главная страница
 @app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
+async def read_root(request: Request, offer_type: str = None, currency: str = None, fiat: str = None, payment_method: str = None, amount: float = None):
     db = next(get_db())
     try:
-        offers = db.query(Offer).filter(Offer.status == "active").all()
+        user = db.query(User).filter(User.id == 1).first()  # Тестовый пользователь
+        query = db.query(Offer).filter(Offer.status == "active")
+        if offer_type:
+            query = query.filter(Offer.offer_type == offer_type)
+        if currency:
+            query = query.filter(Offer.currency == currency)
+        if fiat:
+            query = query.filter(Offer.fiat == fiat)
+        if payment_method and payment_method != "all":
+            query = query.filter(Offer.payment_method == payment_method)
+        if amount:
+            query = query.filter(Offer.amount >= amount)
+        offers = query.all()
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         transactions = db.query(Transaction).filter(Transaction.created_at >= today).all()
         total_earnings_today = sum(t.commission for t in transactions)
@@ -236,7 +250,8 @@ async def read_root(request: Request):
             "earnings_today": total_earnings_today,
             "total_earnings": total_earnings,
             "available_earnings": available_earnings,
-            "active_users_count": len(active_users)
+            "active_users_count": len(active_users),
+            "user": user
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
@@ -245,7 +260,7 @@ async def read_root(request: Request):
 async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
     db = next(get_db())
     try:
-        user_id = 1  # Используем тестового пользователя
+        user_id = 1  # Тестовый пользователь
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=400, detail="User not found")
@@ -350,6 +365,101 @@ async def confirm_offer(offer_id: int = Form(...)):
             return {"message": "Trade completed", "usdt_balance": buyer.balance, "btc_balance": buyer.btc_balance, "eth_balance": buyer.eth_balance}
         db.commit()
         return {"message": "Confirmation received, awaiting other party"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/cancel-offer")
+async def cancel_offer(offer_id: int = Form(...)):
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer or offer.status not in ["pending", "active"]:
+            raise HTTPException(status_code=400, detail="Offer not found or not cancellable")
+        user_id = 1  # Тестовый пользователь
+        if offer.user_id != user_id and offer.buyer_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        user = db.query(User).filter(User.id == user_id).first()
+        user.cancellations += 1
+        if user.cancellations >= 10:
+            user.blocked_until = datetime.utcnow() + timedelta(hours=24)
+            async with email_sender as server:
+                message = f"Subject: Account Blocked\n\nYour account has been blocked for 24 hours due to excessive cancellations."
+                await server.sendmail(os.getenv("EMAIL_USER"), user.email, message)
+        if offer.frozen_amount > 0:
+            if offer.user_id == user_id:
+                seller = user
+                if offer.currency == "USDT":
+                    seller.balance += offer.frozen_amount
+                elif offer.currency == "BTC":
+                    seller.btc_balance += offer.frozen_amount
+                elif offer.currency == "ETH":
+                    seller.eth_balance += offer.frozen_amount
+            elif offer.buyer_id == user_id:
+                buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+                if offer.currency == "USDT":
+                    buyer.balance += offer.frozen_amount
+                elif offer.currency == "BTC":
+                    buyer.btc_balance += offer.frozen_amount
+                elif offer.currency == "ETH":
+                    buyer.eth_balance += offer.frozen_amount
+            offer.frozen_amount = 0
+        offer.status = "cancelled"
+        offer.buyer_id = None
+        db.commit()
+        return {"message": "Offer cancelled"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/send-message")
+async def send_message(offer_id: int = Form(...), text: str = Form(...)):
+    db = next(get_db())
+    try:
+        user_id = 1  # Тестовый пользователь
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
+            raise HTTPException(status_code=403, detail="You are not part of this trade")
+        message = Message(offer_id=offer_id, user_id=user_id, text=text)
+        db.add(message)
+        db.commit()
+        recipient_id = offer.buyer_id if user_id == offer.user_id else offer.user_id
+        recipient = db.query(User).filter(User.id == recipient_id).first()
+        async with email_sender as server:
+            message = f"Subject: New Message\n\nYou have a new message for offer #{offer.id}: {text}"
+            await server.sendmail(os.getenv("EMAIL_USER"), recipient.email, message)
+        return {"message": "Message sent"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.get("/get-messages")
+async def get_messages(offer_id: int):
+    db = next(get_db())
+    try:
+        user_id = 1  # Тестовый пользователь
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer or (offer.user_id != user_id and offer.buyer_id != user_id):
+            raise HTTPException(status_code=403, detail="Not authorized")
+        messages = db.query(Message).filter(Message.offer_id == offer_id).all()
+        return [{
+            "id": m.id,
+            "user_id": m.user_id,
+            "user_email": m.user.email,
+            "text": m.text,
+            "created_at": m.created_at
+        } for m in messages]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/update-theme")
+async def update_theme(theme: str = Form(...)):
+    db = next(get_db())
+    try:
+        user_id = 1  # Тестовый пользователь
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found")
+        user.theme = theme
+        db.commit()
+        return {"message": "Theme updated"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
