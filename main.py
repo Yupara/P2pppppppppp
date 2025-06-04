@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Form, HTTPException, Depends, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
