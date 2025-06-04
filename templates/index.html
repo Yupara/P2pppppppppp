@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Exchange</title>
+    <title>Green P2P Exchange</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -41,6 +41,9 @@
             border-radius: 10px;
             margin: 10px 0;
             text-align: center;
+        }
+        .investment p {
+            margin: 5px 0;
         }
         .investment button {
             background-color: #f1c40f;
@@ -81,6 +84,7 @@
             border: none;
             color: #d3d3d3;
             cursor: pointer;
+            font-size: 16px;
         }
         .balance {
             background-color: #224d3a;
@@ -88,6 +92,17 @@
             border-radius: 10px;
             margin: 10px 0;
             text-align: center;
+        }
+        .balance p {
+            margin: 5px 0;
+        }
+        .balance button {
+            background-color: #f1c40f;
+            color: #1a3c2e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
         }
         .offers {
             background-color: #224d3a;
@@ -98,6 +113,21 @@
         .offer {
             margin: 10px 0;
         }
+        .offer p {
+            margin: 5px 0;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #2e5a47;
+            background-color: #1a3c2e;
+            color: #d3d3d3;
+        }
     </style>
 </head>
 <body>
@@ -107,15 +137,15 @@
             <div class="user-info">
                 <img src="https://via.placeholder.com/40" alt="User Avatar">
                 <div>
-                    <p>usu****@*****.com</p>
-                    <p>UID: 123456789</p>
+                    <p>{{ user.email[:3] }}****@*****.com</p>
+                    <p>UID: {{ user.id }}123456</p>
                 </div>
             </div>
-            <span>06:33</span>
+            <span>06:55</span>
         </div>
 
         <div class="investment">
-            <p>Invest 50,000 USDT and receive VIP 1 with daily earnings!</p>
+            <p>Invest 50,000 USDT and receive VIP {{ user.vip_level + 1 }} with daily earnings!</p>
             <p>Progress: {{ user.vip_progress }}%</p>
             <div class="progress">
                 <div class="progress-bar">
@@ -124,7 +154,7 @@
                 <span>VIP {{ user.vip_level }}</span>
             </div>
             <form action="/invest" method="post">
-                <input type="number" name="amount" step="0.01" placeholder="Amount" required>
+                <input type="number" name="amount" step="0.01" placeholder="Amount to Invest" required>
                 <button type="submit">Invest</button>
             </form>
         </div>
@@ -136,18 +166,51 @@
         </div>
 
         <div class="balance">
-            <p>Balance: $1,717</p>
+            <p>Balance: ${{ user.balance }}</p>
             <p>1 polsTko(wa) Available</p>
-            <button>Withdraw</button>
+            <form action="/deposit" method="post">
+                <input type="number" name="amount" step="0.01" placeholder="Amount to Deposit" required>
+                <button type="submit">Deposit</button>
+            </form>
+            <form action="/withdraw" method="post">
+                <input type="number" name="amount" step="0.01" placeholder="Amount to Withdraw" required>
+                <button type="submit">Withdraw</button>
+            </form>
         </div>
 
         <div class="offers">
+            <h3>Create Offer</h3>
+            <form action="/create-offer" method="post">
+                <select name="offer_type" required>
+                    <option value="sell">Sell</option>
+                    <option value="buy">Buy</option>
+                </select>
+                <select name="currency" required>
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <input type="number" name="amount" step="0.01" placeholder="Amount" required>
+                <select name="fiat" required>
+                    <option value="USD">USD</option>
+                    <option value="RUB">RUB</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <input type="number" name="fiat_amount" step="0.01" placeholder="Fiat Amount" required>
+                <input type="text" name="payment_method" placeholder="Payment Method" required>
+                <input type="text" name="contact" placeholder="Contact Info" required>
+                <button type="submit">Create Offer</button>
+            </form>
+
             <h3>Active Offers</h3>
             {% for offer in offers %}
                 <div class="offer">
                     <p>ID: {{ offer.id }}</p>
                     <p>Type: {{ offer.offer_type }}</p>
                     <p>Amount: {{ offer.amount }} {{ offer.currency }}</p>
+                    <p>Fiat: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+                    <p>Method: {{ offer.payment_method }}</p>
+                    <p>Contact: {{ offer.contact }}</p>
                 </div>
             {% endfor %}
         </div>
