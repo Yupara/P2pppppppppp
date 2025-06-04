@@ -1,48 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P2P Exchange</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        .offer, .stat {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .offer:hover, .stat:hover {
+            background-color: #ecf0f1;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, select, button {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to P2P Exchange</h1>
-    <p>Explore active offers and stats without logging in!</p>
+    <div class="container">
+        <h1>Welcome to P2P Exchange</h1>
+        <p>Explore active offers and stats without logging in!</p>
 
-    <h2>Active Offers</h2>
-    <div id="offers"></div>
+        <div class="section">
+            <h2>Active Offers</h2>
+            {% if offers %}
+                {% for offer in offers %}
+                    <div class="offer">
+                        <p><strong>ID:</strong> {{ offer.id }}</p>
+                        <p><strong>Type:</strong> {{ offer.offer_type }}</p>
+                        <p><strong>Currency:</strong> {{ offer.currency }} ({{ offer.amount }})</p>
+                        <p><strong>Fiat:</strong> {{ offer.fiat }} ({{ offer.fiat_amount }})</p>
+                        <p><strong>Method:</strong> {{ offer.payment_method }}</p>
+                        <p><strong>Contact:</strong> {{ offer.contact }}</p>
+                        <form action="/buy-offer" method="post">
+                            <input type="hidden" name="offer_id" value="{{ offer.id }}">
+                            <button type="submit">Buy Offer</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No active offers found.</p>
+            {% endif %}
+        </div>
 
-    <h2>Admin Stats</h2>
-    <div id="stats"></div>
+        <div class="section">
+            <h2>Create Offer</h2>
+            <form action="/create-offer" method="post">
+                <select name="offer_type" required>
+                    <option value="sell">Sell</option>
+                    <option value="buy">Buy</option>
+                </select>
+                <select name="currency" required>
+                    <option value="USDT">USDT</option>
+                    <option value="BTC">BTC</option>
+                    <option value="ETH">ETH</option>
+                </select>
+                <input type="number" name="amount" step="0.01" placeholder="Amount" required>
+                <select name="fiat" required>
+                    <option value="USD">USD</option>
+                    <option value="RUB">RUB</option>
+                    <option value="EUR">EUR</option>
+                </select>
+                <input type="number" name="fiat_amount" step="0.01" placeholder="Fiat Amount" required>
+                <input type="text" name="payment_method" placeholder="Payment Method" required>
+                <input type="text" name="contact" placeholder="Contact Info" required>
+                <button type="submit">Create Offer</button>
+            </form>
+        </div>
 
-    <script>
-        // Загрузка активных офферов
-        fetch('/offers')
-            .then(response => response.json())
-            .then(data => {
-                const offersDiv = document.getElementById('offers');
-                if (data.length > 0) {
-                    data.forEach(offer => {
-                        offersDiv.innerHTML += `<p>Offer #${offer.id}: ${offer.amount} ${offer.currency} (${offer.fiat_amount} ${offer.fiat})</p>`;
-                    });
-                } else {
-                    offersDiv.innerHTML = '<p>No active offers found.</p>';
-                }
-            })
-            .catch(error => console.error('Error loading offers:', error));
-
-        // Загрузка статистики
-        fetch('/admin-stats')
-            .then(response => response.json())
-            .then(data => {
-                const statsDiv = document.getElementById('stats');
-                statsDiv.innerHTML = `
-                    <p>Earnings Today: ${data.earnings_today} USDT</p>
-                    <p>Total Earnings: ${data.earnings_total} USDT</p>
-                    <p>Available Earnings: ${data.available_earnings} USDT</p>
-                    <p>Active Users: ${data.active_users.length}</p>
-                `;
-            })
-            .catch(error => console.error('Error loading stats:', error));
-    </script>
+        <div class="section">
+            <h2>Admin Stats</h2>
+            <div class="stat">
+                <p><strong>Earnings Today:</strong> {{ earnings_today }} USDT</p>
+                <p><strong>Total Earnings:</strong> {{ total_earnings }} USDT</p>
+                <p><strong>Available Earnings:</strong> {{ available_earnings }} USDT</p>
+                <p><strong>Active Users:</strong> {{ active_users_count }}</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
