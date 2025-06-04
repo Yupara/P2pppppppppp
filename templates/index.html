@@ -6,12 +6,16 @@
     <title>Green P2P Exchange</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Roboto', sans-serif;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
             background-color: #1a3c2e;
             color: #d3d3d3;
+            font-size: 14px;
         }
         .container {
             max-width: 400px;
@@ -25,6 +29,13 @@
             padding: 10px 0;
             border-bottom: 1px solid #2e5a47;
         }
+        .header button {
+            background: none;
+            border: none;
+            color: #d3d3d3;
+            font-size: 20px;
+            cursor: pointer;
+        }
         .user-info {
             display: flex;
             align-items: center;
@@ -35,6 +46,13 @@
             height: 40px;
             border-radius: 50%;
         }
+        .user-info p {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+        .time {
+            font-size: 12px;
+        }
         .investment {
             background-color: #224d3a;
             padding: 15px;
@@ -44,14 +62,7 @@
         }
         .investment p {
             margin: 5px 0;
-        }
-        .investment button {
-            background-color: #f1c40f;
-            color: #1a3c2e;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
+            font-size: 12px;
         }
         .progress {
             display: flex;
@@ -60,8 +71,8 @@
             margin-top: 10px;
         }
         .progress-bar {
-            width: 60%;
-            height: 10px;
+            width: 70%;
+            height: 8px;
             background-color: #2e5a47;
             border-radius: 5px;
         }
@@ -71,11 +82,36 @@
             border-radius: 5px;
             width: {{ user.vip_progress }}%;
         }
+        .progress span {
+            font-size: 12px;
+        }
+        .investment form {
+            margin-top: 10px;
+        }
+        .investment input {
+            width: 60%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #2e5a47;
+            background-color: #1a3c2e;
+            color: #d3d3d3;
+            font-size: 12px;
+        }
+        .investment button {
+            background-color: #f1c40f;
+            color: #1a3c2e;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
         .nav {
             display: flex;
             justify-content: space-around;
-            padding: 10px 0;
             background-color: #224d3a;
+            padding: 10px;
             border-radius: 10px;
             margin: 10px 0;
         }
@@ -83,8 +119,8 @@
             background: none;
             border: none;
             color: #d3d3d3;
+            font-size: 14px;
             cursor: pointer;
-            font-size: 16px;
         }
         .balance {
             background-color: #224d3a;
@@ -95,14 +131,29 @@
         }
         .balance p {
             margin: 5px 0;
+            font-size: 14px;
+        }
+        .balance form {
+            margin-top: 10px;
+        }
+        .balance input {
+            width: 60%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #2e5a47;
+            background-color: #1a3c2e;
+            color: #d3d3d3;
+            font-size: 12px;
         }
         .balance button {
             background-color: #f1c40f;
             color: #1a3c2e;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
         }
         .offers {
             background-color: #224d3a;
@@ -110,23 +161,38 @@
             border-radius: 10px;
             margin: 10px 0;
         }
+        .offers h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
         .offer {
             margin: 10px 0;
         }
         .offer p {
-            margin: 5px 0;
+            font-size: 12px;
+            margin: 2px 0;
         }
         form {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        input, select {
-            padding: 10px;
+        .offers select, .offers input {
+            padding: 8px;
             border-radius: 5px;
             border: 1px solid #2e5a47;
             background-color: #1a3c2e;
             color: #d3d3d3;
+            font-size: 12px;
+        }
+        .offers button {
+            background-color: #f1c40f;
+            color: #1a3c2e;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -141,12 +207,12 @@
                     <p>UID: {{ user.id }}123456</p>
                 </div>
             </div>
-            <span>06:55</span>
+            <span class="time">{{ 'now'|strftime('%H:%M') }}</span>
         </div>
 
         <div class="investment">
             <p>Invest 50,000 USDT and receive VIP {{ user.vip_level + 1 }} with daily earnings!</p>
-            <p>Progress: {{ user.vip_progress }}%</p>
+            <p>Progress: {{ user.vip_progress|round(2) }}%</p>
             <div class="progress">
                 <div class="progress-bar">
                     <div class="progress-fill"></div>
@@ -166,7 +232,7 @@
         </div>
 
         <div class="balance">
-            <p>Balance: ${{ user.balance }}</p>
+            <p>Balance: ${{ user.balance|round(2) }}</p>
             <p>1 polsTko(wa) Available</p>
             <form action="/deposit" method="post">
                 <input type="number" name="amount" step="0.01" placeholder="Amount to Deposit" required>
@@ -203,16 +269,20 @@
             </form>
 
             <h3>Active Offers</h3>
-            {% for offer in offers %}
-                <div class="offer">
-                    <p>ID: {{ offer.id }}</p>
-                    <p>Type: {{ offer.offer_type }}</p>
-                    <p>Amount: {{ offer.amount }} {{ offer.currency }}</p>
-                    <p>Fiat: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Method: {{ offer.payment_method }}</p>
-                    <p>Contact: {{ offer.contact }}</p>
-                </div>
-            {% endfor %}
+            {% if offers %}
+                {% for offer in offers %}
+                    <div class="offer">
+                        <p>ID: {{ offer.id }}</p>
+                        <p>Type: {{ offer.offer_type }}</p>
+                        <p>Amount: {{ offer.amount }} {{ offer.currency }}</p>
+                        <p>Fiat: {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+                        <p>Method: {{ offer.payment_method }}</p>
+                        <p>Contact: {{ offer.contact }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No active offers.</p>
+            {% endif %}
         </div>
     </div>
 </body>
