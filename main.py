@@ -4,12 +4,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -25,19 +21,24 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
+    phone = Column(String, unique=True)
     balance = Column(Float, default=0.0)
-    total_trades = Column(Integer, default=0)
+    verified = Column(Boolean, default=False)
+    notifications = Column(Boolean, default=True)
+    preferred_currency = Column(String, default="RUB")
+    preferred_payment = Column(String, default="SBP")
 
-class Order(Base):
-    __tablename__ = "orders"
+class Offer(Base):
+    __tablename__ = "offers"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    order_type = Column(String)  # "buy" или "sell"
-    currency = Column(String)    # "USDT"
+    offer_type = Column(String)
+    currency = Column(String)
     amount = Column(Float)
-    fiat = Column(String)        # "RUB"
+    fiat = Column(String)
     fiat_amount = Column(Float)
     payment_method = Column(String)
+    contact = Column(String)
     status = Column(String, default="active")
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -48,21 +49,16 @@ def add_test_data():
     try:
         test_user = db.query(User).filter(User.id == 1).first()
         if not test_user:
-            new_user = User(id=1, email="test@example.com", balance=1000.0)
+            new_user = User(id=1, email="para1333@example.com", phone="1234567890", balance=70.96, verified=True)
             db.add(new_user)
-        test_order = db.query(Order).filter(Order.id == 1).first()
-        if not test_order:
-            new_order = Order(
-                id=1,
-                user_id=1,
-                order_type="sell",
-                currency="USDT",
-                amount=100.0,
-                fiat="RUB",
-                fiat_amount=9500.0,
-                payment_method="Local Card"
-            )
-            db.add(new_order)
+        other_user = db.query(User).filter(User.id == 2).first()
+        if not other_user:
+            other_user = User(id=2, email="user2@example.com", phone="0987654321", balance=100.0, verified=True)
+            db.add(other_user)
+        existing_offer = db.query(Offer).filter(Offer.user_id == 2).first()
+        if not existing_offer:
+            offer = Offer(user_id=2, offer_type="sell", currency="USDT", amount=50.0, fiat="RUB", fiat_amount=5000.0, payment_method="Local Card(Yellow)", contact="Telegram: @user2")
+            db.add(offer)
         db.commit()
     finally:
         db.close()
@@ -81,36 +77,29 @@ async def read_root(request: Request):
     db = next(get_db())
     try:
         user = db.query(User).filter(User.id == 1).first()
-        orders = db.query(Order).filter(Order.status == "active").all()
+        offers = db.query(Offer).filter(Offer.status == "active").all()
+        other_offers = db.query(Offer).filter(Offer.user_id != 1, Offer.status == "active").all()
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
-            "orders": orders
+            "offers": offers,
+            "other_offers": other_offers
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/create-order")
-async def create_order(order_type: str = Form(...), amount: float = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...)):
+@app.post("/create-offer")
+async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
     db = next(get_db())
     try:
         user = db.query(User).filter(User.id == 1).first()
-        if order_type == "sell" and user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        if order_type == "sell":
-            user.balance -= amount
-        order = Order(
-            user_id=1,
-            order_type=order_type,
-            currency="USDT",
-            amount=amount,
-            fiat="RUB",
-            fiat_amount=fiat_amount,
-            payment_method=payment_method
-        )
-        db.add(order)
+        if not user or user.balance < amount or amount < 500 or amount > 5000:
+            raise HTTPException(status_code=400, detail="Insufficient balance or amount out of range (500-5000)")
+        user.balance -= amount
+        offer = Offer(user_id=1, offer_type=offer_type, currency=currency, amount=amount, fiat=fiat, fiat_amount=fiat_amount, payment_method=payment_method, contact=contact)
+        db.add(offer)
         db.commit()
-        return {"message": "Order created", "balance": user.balance}
+        return {"message": "Offer created", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -124,6 +113,19 @@ async def deposit(amount: float = Form(...)):
         user.balance += amount
         db.commit()
         return {"message": "Deposit successful", "balance": user.balance}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/update-settings")
+async def update_settings(notifications: bool = Form(...), preferred_currency: str = Form(...), preferred_payment: str = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        user.notifications = notifications
+        user.preferred_currency = preferred_currency
+        user.preferred_payment = preferred_payment
+        db.commit()
+        return {"message": "Settings updated"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
