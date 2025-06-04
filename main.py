@@ -4,10 +4,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from passlib.context import CryptContext
 from aiosmtplib import SMTP
 from datetime import datetime, timedelta
-import jwt
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -99,9 +97,6 @@ class AdminWithdrawal(Base):
     amount = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Хэширование паролей
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # Настройка email
 email_sender = SMTP(
     hostname="smtp.gmail.com",
@@ -111,6 +106,10 @@ email_sender = SMTP(
     username=os.getenv("EMAIL_USER"),
     password=os.getenv("EMAIL_PASS")
 )
+
+# Отключение Twilio
+twilio_client = None
+print("Twilio is disabled. SMS notifications will not be sent.")
 
 # CORS
 app.add_middleware(
@@ -124,6 +123,75 @@ app.add_middleware(
 # Создание таблиц
 Base.metadata.create_all(bind=engine)
 
+# Добавление тестовых данных
+def add_test_data():
+    db = SessionLocal()
+    try:
+        # Тестовый пользователь
+        test_user = db.query(User).filter(User.id == 1).first()
+        if not test_user:
+            new_user = User(
+                id=1,
+                email="test@example.com",
+                phone="1234567890",
+                password="test",
+                referral_code="TEST123",
+                balance=1000.0,
+                btc_balance=0.5,
+                eth_balance=2.0,
+                verified=True
+            )
+            db.add(new_user)
+
+        # Тестовые офферы
+        test_offer1 = db.query(Offer).filter(Offer.id == 1).first()
+        if not test_offer1:
+            offer1 = Offer(
+                id=1,
+                user_id=1,
+                offer_type="sell",
+                currency="USDT",
+                amount=100.0,
+                fiat="USD",
+                fiat_amount=100.0,
+                payment_method="Bank Transfer",
+                contact="testuser@example.com"
+            )
+            db.add(offer1)
+        
+        test_offer2 = db.query(Offer).filter(Offer.id == 2).first()
+        if not test_offer2:
+            offer2 = Offer(
+                id=2,
+                user_id=1,
+                offer_type="buy",
+                currency="BTC",
+                amount=0.01,
+                fiat="RUB",
+                fiat_amount=7000.0,
+                payment_method="Crypto Wallet",
+                contact="testuser@example.com"
+            )
+            db.add(offer2)
+
+        # Тестовая транзакция
+        test_transaction = db.query(Transaction).filter(Transaction.id == 1).first()
+        if not test_transaction:
+            transaction = Transaction(
+                id=1,
+                offer_id=1,
+                commission=0.5
+            )
+            db.add(transaction)
+
+        db.commit()
+        print("Test data added: user_id=1, offers=2, transaction=1")
+    finally:
+        db.close()
+
+# Вызываем функцию для добавления тестовых данных
+add_test_data()
+
 def get_db():
     db = SessionLocal()
     try:
@@ -136,69 +204,12 @@ def convert_to_usdt(currency: str, amount: float) -> float:
     rates = {"USDT": 1.0, "BTC": 70000, "ETH": 3500}  # Примерные курсы
     return amount * rates.get(currency, 1.0)
 
+# Главная страница с открытым доступом
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "user_id": None})
-
-@app.get("/offers")
-async def get_offers(offer_type: str = None, currency: str = None, fiat: str = None, payment_method: str = None, amount: float = None):
     db = next(get_db())
     try:
-        query = db.query(Offer).filter(Offer.status == "active")
-        if offer_type:
-            query = query.filter(Offer.offer_type == offer_type)
-        if currency:
-            query = query.filter(Offer.currency == currency)
-        if fiat:
-            query = query.filter(Offer.fiat == fiat)
-        if payment_method and payment_method != "all":
-            query = query.filter(Offer.payment_method == payment_method)
-        if amount:
-            query = query.filter(Offer.amount >= amount)
-        offers = query.all()
-        return [{
-            "id": o.id,
-            "user_id": o.user_id,
-            "offer_type": o.offer_type,
-            "currency": o.currency,
-            "amount": o.amount,
-            "fiat": o.fiat,
-            "fiat_amount": o.fiat_amount,
-            "payment_method": o.payment_method,
-            "contact": o.contact,
-            "status": o.status,
-            "created_at": o.created_at
-        } for o in offers]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
-@app.get("/my-offers")
-async def get_my_offers():
-    db = next(get_db())
-    try:
-        offers = db.query(Offer).filter(Offer.status == "active").all()  # Показываем все активные офферы без авторизации
-        return [{
-            "id": o.id,
-            "user_id": o.user_id,
-            "offer_type": o.offer_type,
-            "currency": o.currency,
-            "amount": o.amount,
-            "fiat": o.fiat,
-            "fiat_amount": o.fiat_amount,
-            "payment_method": o.payment_method,
-            "contact": o.contact,
-            "status": o.status,
-            "created_at": o.created_at,
-            "buyer_id": o.buyer_id,
-            "frozen_amount": o.frozen_amount
-        } for o in offers]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
-@app.get("/admin-stats")
-async def admin_stats():
-    db = next(get_db())
-    try:
+        offers = db.query(Offer).filter(Offer.status == "active").all()
         today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         transactions = db.query(Transaction).filter(Transaction.created_at >= today).all()
         total_earnings_today = sum(t.commission for t in transactions)
@@ -206,27 +217,139 @@ async def admin_stats():
         withdrawals = sum(w.amount for w in db.query(AdminWithdrawal).all())
         available_earnings = total_earnings - withdrawals
         active_users = db.query(User).filter(User.verified == True, User.blocked_until == None).all()
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        weekly_transactions = db.query(Transaction).filter(Transaction.created_at >= week_ago).all()
-        daily_stats = {i: 0 for i in range(7)}
-        for t in weekly_transactions:
-            day_index = (datetime.utcnow() - t.created_at).days
-            if day_index < 7:
-                daily_stats[day_index] += t.commission
-        weekly_stats = [daily_stats[i] for i in range(6, -1, -1)]
-        large_trades = db.query(Offer).filter(Offer.status == "completed").all()
-        large_trades = [
-            {"id": o.id, "fiat_amount": o.fiat_amount, "fiat": o.fiat, "created_at": o.created_at}
-            for o in large_trades if o.fiat_amount * convert_to_usdt(o.currency, 1) >= 10000
-        ]
-        return {
+
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "offers": [{
+                "id": o.id,
+                "user_id": o.user_id,
+                "offer_type": o.offer_type,
+                "currency": o.currency,
+                "amount": o.amount,
+                "fiat": o.fiat,
+                "fiat_amount": o.fiat_amount,
+                "payment_method": o.payment_method,
+                "contact": o.contact,
+                "status": o.status,
+                "created_at": o.created_at
+            } for o in offers],
             "earnings_today": total_earnings_today,
-            "earnings_total": total_earnings,
+            "total_earnings": total_earnings,
             "available_earnings": available_earnings,
-            "active_users": [{"id": u.id, "email": u.email, "trades_completed": u.trades_completed} for u in active_users],
-            "weekly_stats": weekly_stats,
-            "large_trades": large_trades
-        }
+            "active_users_count": len(active_users)
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/create-offer")
+async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
+    db = next(get_db())
+    try:
+        user_id = 1  # Используем тестового пользователя
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="User not found")
+        if currency == "USDT" and user.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient USDT balance")
+        elif currency == "BTC" and user.btc_balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient BTC balance")
+        elif currency == "ETH" and user.eth_balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient ETH balance")
+        if currency == "USDT":
+            user.balance -= amount
+        elif currency == "BTC":
+            user.btc_balance -= amount
+        elif currency == "ETH":
+            user.eth_balance -= amount
+        offer = Offer(
+            user_id=user_id,
+            offer_type=offer_type,
+            currency=currency,
+            amount=amount,
+            fiat=fiat,
+            fiat_amount=fiat_amount,
+            payment_method=payment_method,
+            contact=contact
+        )
+        db.add(offer)
+        db.commit()
+        return {"message": "Offer created", "usdt_balance": user.balance, "btc_balance": user.btc_balance, "eth_balance": user.eth_balance}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/buy-offer")
+async def buy_offer(offer_id: int = Form(...)):
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id, Offer.status == "active").first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Offer unavailable")
+        buyer_id = 1  # Тестовый пользователь
+        buyer = db.query(User).filter(User.id == buyer_id).first()
+        if offer.currency == "USDT" and buyer.balance < offer.amount:
+            raise HTTPException(status_code=400, detail="Insufficient USDT balance")
+        elif offer.currency == "BTC" and buyer.btc_balance < offer.amount:
+            raise HTTPException(status_code=400, detail="Insufficient BTC balance")
+        elif offer.currency == "ETH" and buyer.eth_balance < offer.amount:
+            raise HTTPException(status_code=400, detail="Insufficient ETH balance")
+        offer.buyer_id = buyer_id
+        offer.status = "pending"
+        offer.frozen_amount = offer.amount
+        if offer.currency == "USDT":
+            buyer.balance -= offer.amount
+        elif offer.currency == "BTC":
+            buyer.btc_balance -= offer.amount
+        elif offer.currency == "ETH":
+            buyer.eth_balance -= offer.amount
+        db.commit()
+        seller = db.query(User).filter(User.id == offer.user_id).first()
+        async with email_sender as server:
+            message = f"Subject: New Trade Started\n\nYour offer #{offer.id} has been accepted by a buyer."
+            await server.sendmail(os.getenv("EMAIL_USER"), seller.email, message)
+        return {"message": "Offer bought, awaiting confirmation"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/confirm-offer")
+async def confirm_offer(offer_id: int = Form(...)):
+    db = next(get_db())
+    try:
+        offer = db.query(Offer).filter(Offer.id == offer_id).first()
+        if not offer:
+            raise HTTPException(status_code=400, detail="Offer not found")
+        if offer.user_id == 1:
+            offer.seller_confirmed = True
+        elif offer.buyer_id == 1:
+            offer.buyer_confirmed = True
+        if offer.seller_confirmed and offer.buyer_confirmed:
+            seller = db.query(User).filter(User.id == offer.user_id).first()
+            buyer = db.query(User).filter(User.id == offer.buyer_id).first()
+            commission_rate = 0.005
+            commission = offer.fiat_amount * commission_rate * 2
+            usdt_commission = convert_to_usdt(offer.currency, commission)
+            amount_to_buyer = offer.amount
+            amount_to_seller = offer.fiat_amount - commission
+            if offer.currency == "USDT":
+                buyer.balance += amount_to_buyer
+            elif offer.currency == "BTC":
+                buyer.btc_balance += amount_to_buyer
+            elif offer.currency == "ETH":
+                buyer.eth_balance += amount_to_buyer
+            seller.balance += amount_to_seller
+            offer.status = "completed"
+            transaction = Transaction(offer_id=offer_id, commission=usdt_commission)
+            db.add(transaction)
+            offer.frozen_amount = 0
+            buyer.trades_completed += 1
+            seller.trades_completed += 1
+            async with email_sender as server:
+                message = f"Subject: Trade Completed\n\nYour trade #{offer_id} has been completed."
+                await server.sendmail(os.getenv("EMAIL_USER"), seller.email, message)
+                await server.sendmail(os.getenv("EMAIL_USER"), buyer.email, message)
+            db.commit()
+            return {"message": "Trade completed", "usdt_balance": buyer.balance, "btc_balance": buyer.btc_balance, "eth_balance": buyer.eth_balance}
+        db.commit()
+        return {"message": "Confirmation received, awaiting other party"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
