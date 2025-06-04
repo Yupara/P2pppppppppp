@@ -1,7 +1,10 @@
 fastapi
 uvicorn
 sqlalchemy
-aiosmtplib
 python-dotenv
 jinja2
 python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
+fastapi-csrf-protect
+fastapi-websocket-pubsub
