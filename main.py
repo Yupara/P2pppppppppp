@@ -25,23 +25,19 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    phone = Column(String, unique=True)
     balance = Column(Float, default=0.0)
-    vip_level = Column(Integer, default=0)
-    vip_progress = Column(Float, default=0.0)
-    total_invested = Column(Float, default=0.0)
+    total_trades = Column(Integer, default=0)
 
-class Offer(Base):
-    __tablename__ = "offers"
+class Order(Base):
+    __tablename__ = "orders"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    offer_type = Column(String)
-    currency = Column(String)
+    order_type = Column(String)  # "buy" или "sell"
+    currency = Column(String)    # "USDT"
     amount = Column(Float)
-    fiat = Column(String)
+    fiat = Column(String)        # "RUB"
     fiat_amount = Column(Float)
     payment_method = Column(String)
-    contact = Column(String)
     status = Column(String, default="active")
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -52,8 +48,21 @@ def add_test_data():
     try:
         test_user = db.query(User).filter(User.id == 1).first()
         if not test_user:
-            new_user = User(id=1, email="test@example.com", phone="1234567890", balance=1717.0)
+            new_user = User(id=1, email="test@example.com", balance=1000.0)
             db.add(new_user)
+        test_order = db.query(Order).filter(Order.id == 1).first()
+        if not test_order:
+            new_order = Order(
+                id=1,
+                user_id=1,
+                order_type="sell",
+                currency="USDT",
+                amount=100.0,
+                fiat="RUB",
+                fiat_amount=9500.0,
+                payment_method="Local Card"
+            )
+            db.add(new_order)
         db.commit()
     finally:
         db.close()
@@ -72,12 +81,36 @@ async def read_root(request: Request):
     db = next(get_db())
     try:
         user = db.query(User).filter(User.id == 1).first()
-        offers = db.query(Offer).filter(Offer.status == "active").all()
+        orders = db.query(Order).filter(Order.status == "active").all()
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user": user,
-            "offers": offers
+            "orders": orders
         })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/create-order")
+async def create_order(order_type: str = Form(...), amount: float = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if order_type == "sell" and user.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+        if order_type == "sell":
+            user.balance -= amount
+        order = Order(
+            user_id=1,
+            order_type=order_type,
+            currency="USDT",
+            amount=amount,
+            fiat="RUB",
+            fiat_amount=fiat_amount,
+            payment_method=payment_method
+        )
+        db.add(order)
+        db.commit()
+        return {"message": "Order created", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -91,52 +124,6 @@ async def deposit(amount: float = Form(...)):
         user.balance += amount
         db.commit()
         return {"message": "Deposit successful", "balance": user.balance}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/withdraw")
-async def withdraw(amount: float = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        user.balance -= amount
-        db.commit()
-        return {"message": "Withdrawal successful", "balance": user.balance}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/invest")
-async def invest(amount: float = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if not user or user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        user.balance -= amount
-        user.total_invested += amount
-        user.vip_progress += amount / 50000.0 * 100  # 50,000 USD for next VIP level
-        if user.vip_progress >= 100:
-            user.vip_level += 1
-            user.vip_progress = 0.0
-        db.commit()
-        return {"message": "Investment successful", "balance": user.balance, "vip_level": user.vip_level, "vip_progress": user.vip_progress}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/create-offer")
-async def create_offer(offer_type: str = Form(...), currency: str = Form(...), amount: float = Form(...), fiat: str = Form(...), fiat_amount: float = Form(...), payment_method: str = Form(...), contact: str = Form(...)):
-    db = next(get_db())
-    try:
-        user = db.query(User).filter(User.id == 1).first()
-        if not user or user.balance < amount:
-            raise HTTPException(status_code=400, detail="Insufficient balance")
-        user.balance -= amount
-        offer = Offer(user_id=1, offer_type=offer_type, currency=currency, amount=amount, fiat=fiat, fiat_amount=fiat_amount, payment_method=payment_method, contact=contact)
-        db.add(offer)
-        db.commit()
-        return {"message": "Offer created", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
