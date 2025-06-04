@@ -4,7 +4,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from aiosmtplib import SMTP
 from datetime import datetime, timedelta
 import os
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,7 +52,7 @@ def add_test_data():
     try:
         test_user = db.query(User).filter(User.id == 1).first()
         if not test_user:
-            new_user = User(id=1, email="test@example.com", phone="1234567890", balance=1000.0)
+            new_user = User(id=1, email="test@example.com", phone="1234567890", balance=1717.0)
             db.add(new_user)
         db.commit()
     finally:
@@ -79,6 +78,32 @@ async def read_root(request: Request):
             "user": user,
             "offers": offers
         })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/deposit")
+async def deposit(amount: float = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+        user.balance += amount
+        db.commit()
+        return {"message": "Deposit successful", "balance": user.balance}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/withdraw")
+async def withdraw(amount: float = Form(...)):
+    db = next(get_db())
+    try:
+        user = db.query(User).filter(User.id == 1).first()
+        if user.balance < amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+        user.balance -= amount
+        db.commit()
+        return {"message": "Withdrawal successful", "balance": user.balance}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
