@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Green P2P Exchange</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Повторяем стили из index.html */
+        .chat { max-height: 400px; overflow-y: auto; }
+        .message { padding: 10px; border-bottom: 1px solid #2e5a47; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button onclick="history.back()">←</button>
+            <div class="user-info">
+                <img src="https://via.placeholder.com/40" alt="User Avatar">
+                <div>
+                    <p>{{ user.email[:3] }}****@*****.com</p>
+                    <p>UID: {{ user.id }}123456</p>
+                </div>
+            </div>
+            <span>{{ now.strftime('%H:%M') }}</span>
+        </div>
+
+        <div class="chat">
+            <div id="messages">
+                {% for message in messages %}
+                    <div class="message">
+                        <p><strong>user{{ message.sender_id }}:</strong> {{ message.message }}</p>
+                        <p>{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            <form id="chat-form">
+                <input type="text" id="message" placeholder="Сообщение" required>
+                <button type="submit">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button onclick="window.location.href='/'">P2P</button>
+        <button onclick="window.location.href='/orders'">Orders</button>
+        <button onclick="window.location.href='/ads'">Ads</button>
+        <button class="active" onclick="window.location.href='/profile'">Profile</button>
+    </div>
+
+    <script>
+        const ws = new WebSocket(`ws://${window.location.host}/ws/chat/{{ transaction_id }}`);
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const messages = document.getElementById('messages');
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.innerHTML = `<p><strong>user${data.sender_id}:</strong> ${data.message}</p><p>${new Date(data.created_at).toLocaleString()}</p>`;
+            messages.appendChild(message);
+            messages.scrollTop = messages.scrollHeight;
+        };
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = document.getElementById('message').value;
+            ws.send(JSON.stringify({ user_id: {{ user.id }}, message }));
+            document.getElementById('message').value = '';
+        });
+    </script>
+</body>
+</html>
