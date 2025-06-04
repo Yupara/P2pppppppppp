@@ -12,6 +12,7 @@ from fastapi_websocket_pubsub import PubSubClient
 import os
 import logging
 from typing import Optional
+from pydantic_settings import BaseSettings
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -46,21 +47,21 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     phone = Column(String, unique=True)
     hashed_password = Column(String)
-    balance = Column(Float, default=0.0)
-    escrow_balance = Column(Float, default=0.0)
+    balance = Column(Integer, default=0.0)
+    escrow_balance = Column(Integer, default=0.0)
     verified_email = Column(Boolean, default=False)
     verified_phone = Column(Boolean, default=False)
     verified_identity = Column(Boolean, default=False)
-    is_merchant = Column(Boolean, default=False)
-    is_admin = Column(Boolean, default=False)
+    is_merchant = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=True)
     vip_level = Column(Integer, default=0)
-    vip_progress = Column(Float, default=0.0)
-    total_invested = Column(Float, default=0.0)
+    vip_progress = Column(Integer, default=0.0)
+    total_invested = Column(Integer, default=0.0)
     notifications_enabled = Column(Boolean, default=True)
     referral_code = Column(String, unique=True)
     referred_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     orders_completed = Column(Integer, default=0)
-    rating = Column(Float, default=0.0)
+    rating = Column(Integer, default=0.0)
     avg_transfer_time = Column(Float, default=0.0)
     last_seen = Column(DateTime, default=datetime.utcnow)
 
@@ -70,9 +71,9 @@ class Offer(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     offer_type = Column(String)
     currency = Column(String)
-    amount = Column(Float)
+    amount = Column(Integer)
     fiat = Column(String)
-    fiat_amount = Column(Float)
+    fiat_amount = Column(Integer)
     payment_method = Column(String)
     contact = Column(String)
     status = Column(String, default="active")
@@ -89,8 +90,8 @@ class Transaction(Base):
     offer_id = Column(Integer, ForeignKey("offers.id"))
     buyer_id = Column(Integer, ForeignKey("users.id"))
     seller_id = Column(Integer, ForeignKey("users.id"))
-    amount = Column(Float)
-    fiat_amount = Column(Float)
+    amount = Column(Integer)
+    fiat_amount = Column(Integer)
     status = Column(String, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
@@ -119,7 +120,7 @@ class Referral(Base):
     id = Column(Integer, primary_key=True, index=True)
     referrer_id = Column(Integer, ForeignKey("users.id"))
     referred_id = Column(Integer, ForeignKey("users.id"))
-    bonus_amount = Column(Float, default=0.0)
+    bonus_amount = Column(Integer, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
@@ -145,10 +146,13 @@ def add_test_data():
 
 add_test_data()
 
-# CSRF
-class CsrfSettings:
-    secret_key = CSRF_SECRET_KEY
-    cookie_samesite = "lax"
+# CSRF конфигурация с использованием pydantic
+class CsrfSettings(BaseSettings):
+    secret_key: str = CSRF_SECRET_KEY
+    cookie_samesite: str = "lax"
+    cookie_secure: bool = False
+    cookie_httponly: bool = True
+    token_location: str = "header"
 
 @CsrfProtect.load_config
 def get_csrf_config():
