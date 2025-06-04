@@ -10,430 +10,147 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .light-theme {
-            background-color: #f5f6fa;
-            color: #2d3436;
-        }
-        .dark-theme {
-            background-color: #1e272e;
-            color: #dfe6e9;
+            background-color: #1a3c2e;
+            color: #d3d3d3;
         }
         .container {
-            max-width: 1200px;
+            max-width: 400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
         }
-        header {
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #dfe6e9;
+            padding: 10px 0;
+            border-bottom: 1px solid #2e5a47;
         }
-        header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: #0984e3;
-        }
-        .theme-toggle {
+        .user-info {
             display: flex;
+            align-items: center;
             gap: 10px;
         }
-        .theme-toggle button {
-            padding: 8px 15px;
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .investment {
+            background-color: #224d3a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .investment button {
+            background-color: #f1c40f;
+            color: #1a3c2e;
             border: none;
+            padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
-        .theme-toggle .light-btn {
-            background-color: #74b9ff;
-            color: white;
-        }
-        .theme-toggle .dark-btn {
-            background-color: #2d3436;
-            color: white;
-        }
-        .section {
-            margin: 30px 0;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        .light-theme .section {
-            background-color: white;
-        }
-        .dark-theme .section {
-            background-color: #2f3640;
-        }
-        h2 {
-            margin-top: 0;
-            color: #0984e3;
-        }
-        .filters {
+        .progress {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
         }
-        .filters select, .filters input {
-            padding: 10px;
-            border: 1px solid #dfe6e9;
+        .progress-bar {
+            width: 60%;
+            height: 10px;
+            background-color: #2e5a47;
             border-radius: 5px;
-            background-color: transparent;
-            color: inherit;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #f1c40f;
+            border-radius: 5px;
+            width: {{ user.vip_progress }}%;
+        }
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            background-color: #224d3a;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .nav button {
+            background: none;
+            border: none;
+            color: #d3d3d3;
+            cursor: pointer;
+        }
+        .balance {
+            background-color: #224d3a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .offers {
+            background-color: #224d3a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
         }
         .offer {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            transition: transform 0.2s;
-        }
-        .light-theme .offer {
-            background-color: #f1f2f6;
-        }
-        .dark-theme .offer {
-            background-color: #353b48;
-        }
-        .offer:hover {
-            transform: scale(1.02);
-        }
-        .offer p {
-            margin: 5px 0;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        input, select, button {
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #dfe6e9;
-            background-color: transparent;
-            color: inherit;
-        }
-        button {
-            background-color: #0984e3;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #74b9ff;
-        }
-        .chat-box {
-            height: 200px;
-            overflow-y: auto;
-            padding: 10px;
-            border: 1px solid #dfe6e9;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .light-theme .chat-box {
-            background-color: #f1f2f6;
-        }
-        .dark-theme .chat-box {
-            background-color: #353b48;
-        }
-        .chat-message {
-            margin: 5px 0;
+            margin: 10px 0;
         }
     </style>
 </head>
-<body class="{{ user.theme }}-theme">
+<body>
     <div class="container">
-        <header>
-            <h1>P2P Exchange</h1>
-            <div class="theme-toggle">
-                <form action="/update-theme" method="post">
-                    <input type="hidden" name="theme" value="light">
-                    <button type="submit" class="light-btn">Light Theme</button>
-                </form>
-                <form action="/update-theme" method="post">
-                    <input type="hidden" name="theme" value="dark">
-                    <button type="submit" class="dark-btn">Dark Theme</button>
-                </form>
+        <div class="header">
+            <button onclick="history.back()">←</button>
+            <div class="user-info">
+                <img src="https://via.placeholder.com/40" alt="User Avatar">
+                <div>
+                    <p>usu****@*****.com</p>
+                    <p>UID: 123456789</p>
+                </div>
             </div>
-        </header>
+            <span>06:33</span>
+        </div>
 
-        <div class="section">
-            <h2>Your Balance</h2>
-            <p><strong>USDT:</strong> {{ user.balance }}</p>
-            <p><strong>BTC:</strong> {{ user.btc_balance }}</p>
-            <p><strong>ETH:</strong> {{ user.eth_balance }}</p>
-            <h3>Deposit Funds</h3>
-            <form action="/deposit" method="post">
-                <select name="currency" required>
-                    <option value="USDT">USDT</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                </select>
+        <div class="investment">
+            <p>Invest 50,000 USDT and receive VIP 1 with daily earnings!</p>
+            <p>Progress: {{ user.vip_progress }}%</p>
+            <div class="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <span>VIP {{ user.vip_level }}</span>
+            </div>
+            <form action="/invest" method="post">
                 <input type="number" name="amount" step="0.01" placeholder="Amount" required>
-                <button type="submit">Deposit</button>
+                <button type="submit">Invest</button>
             </form>
         </div>
 
-        <div class="section">
-            <h2>Active Offers</h2>
-            <div class="filters">
-                <form action="/" method="get">
-                    <select name="offer_type">
-                        <option value="">All Types</option>
-                        <option value="sell">Sell</option>
-                        <option value="buy">Buy</option>
-                    </select>
-                    <select name="currency">
-                        <option value="">All Currencies</option>
-                        <option value="USDT">USDT</option>
-                        <option value="BTC">BTC</option>
-                        <option value="ETH">ETH</option>
-                    </select>
-                    <select name="fiat">
-                        <option value="">All Fiat</option>
-                        <option value="USD">USD</option>
-                        <option value="RUB">RUB</option>
-                        <option value="EUR">EUR</option>
-                    </select>
-                    <input type="number" name="amount" step="0.01" placeholder="Min Amount">
-                    <button type="submit">Filter</button>
-                </form>
-            </div>
-            {% if offers %}
-                {% for offer in offers %}
-                    <div class="offer">
-                        <p><strong>ID:</strong> {{ offer.id }}</p>
-                        <p><strong>Type:</strong> {{ offer.offer_type }}</p>
-                        <p><strong>Currency:</strong> {{ offer.currency }} ({{ offer.amount }})</p>
-                        <p><strong>Fiat:</strong> {{ offer.fiat }} ({{ offer.fiat_amount }})</p>
-                        <p><strong>Method:</strong> {{ offer.payment_method }}</p>
-                        <p><strong>Contact:</strong> {{ offer.contact }}</p>
-                        <p><strong>Status:</strong> {{ offer.status }}</p>
-                        {% if offer.status == "active" %}
-                            <form action="/buy-offer" method="post">
-                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                                <button type="submit">Buy Offer</button>
-                            </form>
-                        {% endif %}
-                        {% if offer.status in ["active", "pending"] %}
-                            <form action="/cancel-offer" method="post">
-                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                                <button type="submit">Cancel Offer</button>
-                            </form>
-                        {% endif %}
-                        {% if offer.status == "pending" %}
-                            <form action="/confirm-offer" method="post">
-                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                                <button type="submit">Confirm Offer</button>
-                            </form>
-                        {% endif %}
-                        {% if offer.status == "pending" %}
-                            <form action="/create-dispute" method="post" enctype="multipart/form-data">
-                                <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                                <input type="file" name="screenshot" accept="image/*">
-                                <input type="file" name="video" accept="video/*">
-                                <button type="submit">Create Dispute</button>
-                            </form>
-                        {% endif %}
-                        <h3>Chat for Offer #{{ offer.id }}</h3>
-                        <div class="chat-box" id="chat-{{ offer.id }}">
-                            <!-- Messages will be loaded dynamically -->
-                        </div>
-                        <form action="/send-message" method="post" onsubmit="return sendMessage(event, {{ offer.id }})">
-                            <input type="hidden" name="offer_id" value="{{ offer.id }}">
-                            <input type="text" name="text" placeholder="Type a message..." required>
-                            <button type="submit">Send</button>
-                        </form>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No active offers found.</p>
-            {% endif %}
+        <div class="nav">
+            <button>💰 Balance</button>
+            <button>📊 My Trades</button>
+            <button>🔒 Security</button>
         </div>
 
-        <div class="section">
-            <h2>My Offers</h2>
-            <div id="my-offers">
-                <!-- Offers will be loaded dynamically -->
-            </div>
+        <div class="balance">
+            <p>Balance: $1,717</p>
+            <p>1 polsTko(wa) Available</p>
+            <button>Withdraw</button>
         </div>
 
-        <div class="section">
-            <h2>Create Offer</h2>
-            <form action="/create-offer" method="post">
-                <select name="offer_type" required>
-                    <option value="sell">Sell</option>
-                    <option value="buy">Buy</option>
-                </select>
-                <select name="currency" required>
-                    <option value="USDT">USDT</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                </select>
-                <input type="number" name="amount" step="0.01" placeholder="Amount" required>
-                <select name="fiat" required>
-                    <option value="USD">USD</option>
-                    <option value="RUB">RUB</option>
-                    <option value="EUR">EUR</option>
-                </select>
-                <input type="number" name="fiat_amount" step="0.01" placeholder="Fiat Amount" required>
-                <input type="text" name="payment_method" placeholder="Payment Method" required>
-                <input type="text" name="contact" placeholder="Contact Info" required>
-                <button type="submit">Create Offer</button>
-            </form>
-        </div>
-
-        <div class="section">
-            <h2>Admin Stats</h2>
-            {% if is_admin %}
-                <div id="admin-stats">
-                    <!-- Stats will be loaded dynamically -->
-                </div>
-                <form action="/withdraw-earnings" method="post">
-                    <button type="submit">Withdraw Earnings</button>
-                </form>
-                <form action="/reset-db" method="post">
-                    <button type="submit">Reset Database</button>
-                </form>
-            {% else %}
-                <p>Admin access required.</p>
-            {% endif %}
-        </div>
-
-        {% if is_admin %}
-            <div class="section">
-                <h2>Disputes</h2>
-                <div id="disputes">
-                    <!-- Disputes will be loaded dynamically -->
-                </div>
-            </div>
-        {% endif %}
-    </div>
-
-    <script>
-        async function loadMessages(offerId) {
-            const response = await fetch(`/get-messages?offer_id=${offerId}`);
-            const messages = await response.json();
-            const chatBox = document.getElementById(`chat-${offerId}`);
-            chatBox.innerHTML = '';
-            messages.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'chat-message';
-                msgDiv.textContent = `${msg.user_email}: ${msg.text} (${new Date(msg.created_at).toLocaleString()})`;
-                chatBox.appendChild(msgDiv);
-            });
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function sendMessage(event, offerId) {
-            event.preventDefault();
-            const form = event.target;
-            fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form)
-            }).then(() => {
-                form.reset();
-                loadMessages(offerId);
-            });
-            return false;
-        }
-
-        async function loadMyOffers() {
-            const response = await fetch('/my-offers');
-            const offers = await response.json();
-            const container = document.getElementById('my-offers');
-            container.innerHTML = '';
-            offers.forEach(offer => {
-                const div = document.createElement('div');
-                div.className = 'offer';
-                div.innerHTML = `
-                    <p><strong>ID:</strong> ${offer.id}</p>
-                    <p><strong>Type:</strong> ${offer.offer_type}</p>
-                    <p><strong>Currency:</strong> ${offer.currency} (${offer.amount})</p>
-                    <p><strong>Fiat:</strong> ${offer.fiat} (${offer.fiat_amount})</p>
-                    <p><strong>Method:</strong> ${offer.payment_method}</p>
-                    <p><strong>Contact:</strong> ${offer.contact}</p>
-                    <p><strong>Status:</strong> ${offer.status}</p>
-                    ${offer.status === 'pending' ? `
-                        <form action="/confirm-offer" method="post">
-                            <input type="hidden" name="offer_id" value="${offer.id}">
-                            <button type="submit">Confirm Offer</button>
-                        </form>
-                        <form action="/create-dispute" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="offer_id" value="${offer.id}">
-                            <input type="file" name="screenshot" accept="image/*">
-                            <input type="file" name="video" accept="video/*">
-                            <button type="submit">Create Dispute</button>
-                        </form>
-                    ` : ''}
-                    ${offer.status === 'active' || offer.status === 'pending' ? `
-                        <form action="/cancel-offer" method="post">
-                            <input type="hidden" name="offer_id" value="${offer.id}">
-                            <button type="submit">Cancel Offer</button>
-                        </form>
-                    ` : ''}
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        async function loadAdminStats() {
-            const response = await fetch('/admin-stats');
-            const stats = await response.json();
-            const container = document.getElementById('admin-stats');
-            container.innerHTML = `
-                <p><strong>Earnings Today:</strong> ${stats.earnings_today} USDT</p>
-                <p><strong>Total Earnings:</strong> ${stats.earnings_total} USDT</p>
-                <p><strong>Available Earnings:</strong> ${stats.available_earnings} USDT</p>
-                <p><strong>Active Users:</strong> ${stats.active_users.length}</p>
-                <h3>Weekly Stats</h3>
-                <p>${stats.weekly_stats.join(', ')}</p>
-                <h3>Large Trades</h3>
-                ${stats.large_trades.map(trade => `<p>Trade #${trade.id}: ${trade.fiat_amount} ${trade.fiat} (${new Date(trade.created_at).toLocaleString()})</p>`).join('')}
-            `;
-        }
-
-        async function loadDisputes() {
-            const response = await fetch('/get-disputes');
-            const disputes = await response.json();
-            const container = document.getElementById('disputes');
-            container.innerHTML = '';
-            disputes.forEach(dispute => {
-                const div = document.createElement('div');
-                div.className = 'offer';
-                div.innerHTML = `
-                    <p><strong>Dispute ID:</strong> ${dispute.id}</p>
-                    <p><strong>Offer ID:</strong> ${dispute.offer_id}</p>
-                    <p><strong>User ID:</strong> ${dispute.user_id}</p>
-                    <p><strong>Status:</strong> ${dispute.status}</p>
-                    <p><strong>Resolution:</strong> ${dispute.resolution || 'N/A'}</p>
-                    ${dispute.status === 'open' ? `
-                        <form action="/resolve-dispute" method="post">
-                            <input type="hidden" name="dispute_id" value="${dispute.id}">
-                            <input type="text" name="resolution" placeholder="Resolution" required>
-                            <select name="action" required>
-                                <option value="resolve">Resolve Trade</option>
-                                <option value="cancel">Cancel Trade</option>
-                            </select>
-                            <button type="submit">Resolve Dispute</button>
-                        </form>
-                    ` : ''}
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
+        <div class="offers">
+            <h3>Active Offers</h3>
             {% for offer in offers %}
-                loadMessages({{ offer.id }});
+                <div class="offer">
+                    <p>ID: {{ offer.id }}</p>
+                    <p>Type: {{ offer.offer_type }}</p>
+                    <p>Amount: {{ offer.amount }} {{ offer.currency }}</p>
+                </div>
             {% endfor %}
-            loadMyOffers();
-            {% if is_admin %}
-                loadAdminStats();
-                loadDisputes();
-            {% endif %}
-        });
-    </script>
+        </div>
+    </div>
 </body>
 </html>
