@@ -27,6 +27,28 @@
             padding: 10px 0;
             border-bottom: 1px solid #2e2e2e;
         }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-info div {
+            background: #f1c40f;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .stats {
+            background-color: #2e2e2e;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
         .nav-item {
             background-color: #2e2e2e;
             padding: 10px;
@@ -79,8 +101,23 @@
     <div class="container">
         <div class="header">
             <button onclick="window.location.href='/'">←</button>
-            <h2>Настройки</h2>
-            <span></span>
+            <h2>Профиль</h2>
+            <span>Help & Support</span>
+        </div>
+
+        <div class="user-info">
+            <div>Р</div>
+            <div>
+                <p>para1333</p>
+                <p>✓ Email ✓ SMS ✓ Verified</p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <p>Исполнено ордеров за 30 дней: 8 ордеров</p>
+            <p>Исполнено за 30 мин: 100%</p>
+            <p>Средн. время перевода: 1 мин</p>
+            <p>Средн. время оплаты: 4 мин</p>
         </div>
 
         <form action="/update-settings" method="post">
