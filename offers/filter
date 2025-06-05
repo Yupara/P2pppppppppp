@@ -1,0 +1,19 @@
+@app.get("/offers/filter", response_class=HTMLResponse)
+async def filter_offers(request: Request, offer_type: str, currency: str = None, fiat: str = None, amount: float = None, payment_method: str = None, only_verified: bool = False, only_online: bool = False, only_merchants: bool = False):
+    tab = "buy" if offer_type == "buy" else "sell"
+    url = f"/?tab={tab}"
+    if currency:
+        url += f"&currency={currency}"  # Исправлено: заменил "¤cy" на "currency"
+    if fiat:
+        url += f"&fiat={fiat}"
+    if amount:
+        url += f"&amount={amount}"
+    if payment_method:
+        url += f"&payment_method={payment_method}"
+    if only_verified:
+        url += f"&only_verified={only_verified}"
+    if only_online:
+        url += f"&only_online={only_online}"
+    if only_merchants:
+        url += f"&only_merchants={only_merchants}"
+    return RedirectResponse(url)
