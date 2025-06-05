@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green P2P Exchange</title>
+    <title>Green P2P Exchange - Покупка/Продажа</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #1A3C34;
-            color: #A9CBA2;
+            background-color: #1C2526;
+            color: #D3D3D3;
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
@@ -24,102 +24,108 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .tabs {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 10px;
-        }
-        .tabs button {
+        .header button {
             background: none;
             border: none;
-            color: #A9CBA2;
+            color: #D3D3D3;
             font-size: 16px;
-            padding: 10px;
             cursor: pointer;
         }
-        .tabs button.active {
-            color: #FFCA28;
-            border-bottom: 2px solid #FFCA28;
-        }
-        .filters {
-            background: #1E4A40;
+        .offer-details {
+            background: #2A3438;
             padding: 10px;
             border-radius: 10px;
             margin-bottom: 10px;
         }
-        .filters form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .filters select, .filters input[type="number"] {
-            background: #2A5D50;
-            border: none;
-            color: #A9CBA2;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .filters button {
-            background: #2E7D32;
-            border: none;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .offers {
-            margin-bottom: 10px;
-        }
-        .offer {
-            background: #1E4A40;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        .offer p {
+        .offer-details p {
             margin: 5px 0;
         }
-        .offer .status {
-            color: #FFCA28;
+        .offer-details .price {
+            color: #F4A261;
+            font-size: 18px;
         }
-        .offer button {
-            background: #2E7D32;
+        .offer-details .timer {
+            color: #F4A261;
+        }
+        .offer-details .methods {
+            color: #A9CBA2;
+        }
+        .amount-section {
+            background: #2A3438;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .amount-section select, .amount-section input {
+            background: #3A4448;
+            border: none;
+            color: #D3D3D3;
+            padding: 5px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .amount-section button {
+            background: #F4A261;
             border: none;
             color: white;
-            padding: 5px 10px;
+            padding: 10px;
             border-radius: 5px;
+            width: 100%;
             cursor: pointer;
         }
-        .create-offer {
-            background: #1E4A40;
+        .seller-info {
+            background: #2A3438;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .seller-info p {
+            margin: 5px 0;
+        }
+        .seller-info .bank-select {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .seller-info .bank-select select {
+            background: #3A4448;
+            border: none;
+            color: #D3D3D3;
+            padding: 5px;
+            border-radius: 5px;
+            flex-grow: 1;
+        }
+        .seller-info .bank-select button {
+            background: none;
+            border: none;
+            color: #F4A261;
+            cursor: pointer;
+        }
+        .transaction-details {
+            background: #2A3438;
             padding: 10px;
             border-radius: 10px;
         }
-        .create-offer form {
+        .transaction-details a {
+            color: #F4A261;
+            text-decoration: none;
+        }
+        .transaction-details .stats {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 10px;
         }
-        .create-offer select, .create-offer input, .create-offer textarea {
-            background: #2A5D50;
-            border: none;
-            color: #A9CBA2;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .create-offer button {
-            background: #2E7D32;
-            border: none;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
+        .transaction-details .stats div {
+            flex: 1 1 45%;
+            margin-bottom: 5px;
         }
         .footer {
             display: flex;
             justify-content: space-around;
             padding: 10px;
-            background: #1A3C34;
+            background: #1C2526;
             position: fixed;
             bottom: 0;
             width: 100%;
@@ -129,566 +135,123 @@
         .footer button {
             background: none;
             border: none;
-            color: #A9CBA2;
+            color: #D3D3D3;
             font-size: 16px;
             cursor: pointer;
         }
         .footer button.active {
-            color: #FFCA28;
-        }
-        /* Новый стиль для блока деталей сделки */
-        .trade-details {
-            background: #1C2526;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: none; /* Скрыт по умолчанию, показывается при выборе */
-        }
-        .trade-details.active {
-            display: block;
-        }
-        .trade-details .price {
-            color: #F4A261;
-            font-size: 18px;
-        }
-        .trade-details .timer {
             color: #F4A261;
         }
-        .trade-details .methods {
-            color: #A9CBA2;
-        }
-        .trade-details select, .trade-details input {
-            background: #2A3438;
-            border: none;
-            color: #D3D3D3;
-            padding: 5px;
-            border-radius: 5px;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        .trade-details button {
-            background: #F4A261;
-            border: none;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            width: 100%;
-            cursor: pointer;
-        }
-        .trade-details .seller-info .bank-select {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .trade-details .seller-info .bank-select select {
-            background: #2A3438;
-            border: none;
-            color: #D3D3D3;
-            padding: 5px;
-            border-radius: 5px;
-            flex-grow: 1;
-        }
-        .trade-details .seller-info .bank-select button {
-            background: none;
-            border: none;
-            color: #F4A261;
-            cursor: pointer;
-        }
-        .trade-details .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
+        .error {
+            color: #FF5555;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        {% if offer %}
         <div class="header">
-            <button onclick="history.back()">←</button>
-            <div class="tabs">
-                <button class="{% if tab == 'buy' %}active{% endif %}" onclick="window.location.href='/?tab=buy'">Покупка</button>
-                <button class="{% if tab == 'sell' %}active{% endif %}" onclick="window.location.href='/?tab=sell'">Продажа</button>
-            </div>
+            <button onclick="window.location.href='/'">←</button>
+            <h2>{{ "Покупка" if offer.offer_type == "sell" else "Продажа" }} {{ offer.currency }}</h2>
             <span>{{ now.strftime('%H:%M') }}</span>
         </div>
 
-        <div class="filters">
-            <form action="/offers/filter" method="get">
-                <input type="hidden" name="offer_type" value="{{ tab }}">
-                <select name="currency">
-                    <option value="USDT" {% if not currency %}selected{% endif %}>USDT</option>
-                    <option value="BTC" {% if currency == 'BTC' %}selected{% endif %}>BTC</option>
-                    <option value="ETH" {% if currency == 'ETH' %}selected{% endif %}>ETH</option>
-                    <option value="TON" {% if currency == 'TON' %}selected{% endif %}>TON</option>
-                </select>
-                <select name="fiat">
-                    <option value="RUB" {% if not fiat %}selected{% endif %}>RUB</option>
-                    <option value="USD" {% if fiat == 'USD' %}selected{% endif %}>USD</option>
-                    <option value="EUR" {% if fiat == 'EUR' %}selected{% endif %}>EUR</option>
-                    <option value="KZT" {% if fiat == 'KZT' %}selected{% endif %}>KZT</option>
-                    <option value="UAH" {% if fiat == 'UAH' %}selected{% endif %}>UAH</option>
-                    <option value="TRY" {% if fiat == 'TRY' %}selected{% endif %}>TRY</option>
-                    <option value="CNY" {% if fiat == 'CNY' %}selected{% endif %}>CNY</option>
-                    <option value="INR" {% if fiat == 'INR' %}selected{% endif %}>INR</option>
-                    <option value="BRL" {% if fiat == 'BRL' %}selected{% endif %}>BRL</option>
-                    <option value="AED" {% if fiat == 'AED' %}selected{% endif %}>AED</option>
-                    <option value="JPY" {% if fiat == 'JPY' %}selected{% endif %}>JPY</option>
-                    <option value="KRW" {% if fiat == 'KRW' %}selected{% endif %}>KRW</option>
-                    <option value="THB" {% if fiat == 'THB' %}selected{% endif %}>THB</option>
-                    <option value="SGD" {% if fiat == 'SGD' %}selected{% endif %}>SGD</option>
-                    <option value="MYR" {% if fiat == 'MYR' %}selected{% endif %}>MYR</option>
-                    <option value="IDR" {% if fiat == 'IDR' %}selected{% endif %}>IDR</option>
-                    <option value="PHP" {% if fiat == 'PHP' %}selected{% endif %}>PHP</option>
-                    <option value="VND" {% if fiat == 'VND' %}selected{% endif %}>VND</option>
-                    <option value="ZAR" {% if fiat == 'ZAR' %}selected{% endif %}>ZAR</option>
-                    <option value="NGN" {% if fiat == 'NGN' %}selected{% endif %}>NGN</option>
-                    <option value="EGP" {% if fiat == 'EGP' %}selected{% endif %}>EGP</option>
-                    <option value="KES" {% if fiat == 'KES' %}selected{% endif %}>KES</option>
-                    <option value="MXN" {% if fiat == 'MXN' %}selected{% endif %}>MXN</option>
-                    <option value="ARS" {% if fiat == 'ARS' %}selected{% endif %}>ARS</option>
-                    <option value="COP" {% if fiat == 'COP' %}selected{% endif %}>COP</option>
-                    <option value="CLP" {% if fiat == 'CLP' %}selected{% endif %}>CLP</option>
-                    <option value="SAR" {% if fiat == 'SAR' %}selected{% endif %}>SAR</option>
-                    <option value="QAR" {% if fiat == 'QAR' %}selected{% endif %}>QAR</option>
-                    <option value="GBP" {% if fiat == 'GBP' %}selected{% endif %}>GBP</option>
-                    <option value="AUD" {% if fiat == 'AUD' %}selected{% endif %}>AUD</option>
-                    <option value="CAD" {% if fiat == 'CAD' %}selected{% endif %}>CAD</option>
-                    <option value="CHF" {% if fiat == 'CHF' %}selected{% endif %}>CHF</option>
-                    <option value="SEK" {% if fiat == 'SEK' %}selected{% endif %}>SEK</option>
-                    <option value="NOK" {% if fiat == 'NOK' %}selected{% endif %}>NOK</option>
-                    <option value="DKK" {% if fiat == 'DKK' %}selected{% endif %}>DKK</option>
-                    <option value="PLN" {% if fiat == 'PLN' %}selected{% endif %}>PLN</option>
-                </select>
-                <input type="number" name="amount" placeholder="Сумма" value="{{ amount if amount else '' }}">
-                <select name="payment_method">
-                    <option value="" {% if not payment_method %}selected{% endif %}>SBP</option>
-                    <option value="Sberbank" {% if payment_method == 'Sberbank' %}selected{% endif %}>Sberbank</option>
-                    <option value="Tinkoff" {% if payment_method == 'Tinkoff' %}selected{% endif %}>Tinkoff</option>
-                    <option value="YooMoney" {% if payment_method == 'YooMoney' %}selected{% endif %}>YooMoney</option>
-                    <option value="Cash" {% if payment_method == 'Cash' %}selected{% endif %}>Cash</option>
-                    <option value="QIWI" {% if payment_method == 'QIWI' %}selected{% endif %}>QIWI</option>
-                    <option value="Payeer" {% if payment_method == 'Payeer' %}selected{% endif %}>Payeer</option>
-                    <option value="AdvCash" {% if payment_method == 'AdvCash' %}selected{% endif %}>AdvCash</option>
-                    <option value="Perfect Money" {% if payment_method == 'Perfect Money' %}selected{% endif %}>Perfect Money</option>
-                    <option value="PayPal" {% if payment_method == 'PayPal' %}selected{% endif %}>PayPal</option>
-                    <option value="WebMoney" {% if payment_method == 'WebMoney' %}selected{% endif %}>WebMoney</option>
-                    <option value="Skrill" {% if payment_method == 'Skrill' %}selected{% endif %}>Skrill</option>
-                    <option value="Binance Pay" {% if payment_method == 'Binance Pay' %}selected{% endif %}>Binance Pay</option>
-                    <option value="Revolut" {% if payment_method == 'Revolut' %}selected{% endif %}>Revolut</option>
-                    <option value="Wise" {% if payment_method == 'Wise' %}selected{% endif %}>Wise</option>
-                    <option value="Alfa-Bank" {% if payment_method == 'Alfa-Bank' %}selected{% endif %}>Alfa-Bank</option>
-                    <option value="VTB" {% if payment_method == 'VTB' %}selected{% endif %}>VTB</option>
-                    <option value="Gazprombank" {% if payment_method == 'Gazprombank' %}selected{% endif %}>Gazprombank</option>
-                    <option value="Rosbank" {% if payment_method == 'Rosbank' %}selected{% endif %}>Rosbank</option>
-                    <option value="Raiffeisenbank" {% if payment_method == 'Raiffeisenbank' %}selected{% endif %}>Raiffeisenbank</option>
-                    <option value="Kaspi Bank" {% if payment_method == 'Kaspi Bank' %}selected{% endif %}>Kaspi Bank</option>
-                    <option value="Halyk Bank" {% if payment_method == 'Halyk Bank' %}selected{% endif %}>Halyk Bank</option>
-                    <option value="PrivatBank" {% if payment_method == 'PrivatBank' %}selected{% endif %}>PrivatBank</option>
-                    <option value="Monobank" {% if payment_method == 'Monobank' %}selected{% endif %}>Monobank</option>
-                    <option value="Oschadbank" {% if payment_method == 'Oschadbank' %}selected{% endif %}>Oschadbank</option>
-                    <option value="Ziraat Bankası" {% if payment_method == 'Ziraat Bankası' %}selected{% endif %}>Ziraat Bankası</option>
-                    <option value="Garanti Bankası" {% if payment_method == 'Garanti Bankası' %}selected{% endif %}>Garanti Bankası</option>
-                    <option value="Papara" {% if payment_method == 'Papara' %}selected{% endif %}>Papara</option>
-                    <option value="WeChat Pay" {% if payment_method == 'WeChat Pay' %}selected{% endif %}>WeChat Pay</option>
-                    <option value="Alipay" {% if payment_method == 'Alipay' %}selected{% endif %}>Alipay</option>
-                    <option value="UnionPay" {% if payment_method == 'UnionPay' %}selected{% endif %}>UnionPay</option>
-                    <option value="Paytm" {% if payment_method == 'Paytm' %}selected{% endif %}>Paytm</option>
-                    <option value="UPI" {% if payment_method == 'UPI' %}selected{% endif %}>UPI</option>
-                    <option value="PhonePe" {% if payment_method == 'PhonePe' %}selected{% endif %}>PhonePe</option>
-                    <option value="Google Pay" {% if payment_method == 'Google Pay' %}selected{% endif %}>Google Pay</option>
-                    <option value="Pix" {% if payment_method == 'Pix' %}selected{% endif %}>Pix</option>
-                    <option value="Boleto" {% if payment_method == 'Boleto' %}selected{% endif %}>Boleto</option>
-                    <option value="Nubank" {% if payment_method == 'Nubank' %}selected{% endif %}>Nubank</option>
-                    <option value="Emirates NBD" {% if payment_method == 'Emirates NBD' %}selected{% endif %}>Emirates NBD</option>
-                    <option value="ADCB" {% if payment_method == 'ADCB' %}selected{% endif %}>ADCB</option>
-                    <option value="Noon Payments" {% if payment_method == 'Noon Payments' %}selected{% endif %}>Noon Payments</option>
-                    <option value="LINE Pay" {% if payment_method == 'LINE Pay' %}selected{% endif %}>LINE Pay</option>
-                    <option value="Rakuten Pay" {% if payment_method == 'Rakuten Pay' %}selected{% endif %}>Rakuten Pay</option>
-                    <option value="Suica" {% if payment_method == 'Suica' %}selected{% endif %}>Suica</option>
-                    <option value="KakaoPay" {% if payment_method == 'KakaoPay' %}selected{% endif %}>KakaoPay</option>
-                    <option value="Naver Pay" {% if payment_method == 'Naver Pay' %}selected{% endif %}>Naver Pay</option>
-                    <option value="Samsung Pay" {% if payment_method == 'Samsung Pay' %}selected{% endif %}>Samsung Pay</option>
-                    <option value="PromptPay" {% if payment_method == 'PromptPay' %}selected{% endif %}>PromptPay</option>
-                    <option value="TrueMoney" {% if payment_method == 'TrueMoney' %}selected{% endif %}>TrueMoney</option>
-                    <option value="PayNow" {% if payment_method == 'PayNow' %}selected{% endif %}>PayNow</option>
-                    <option value="DBS PayLah!" {% if payment_method == 'DBS PayLah!' %}selected{% endif %}>DBS PayLah!</option>
-                    <option value="Maybank2u" {% if payment_method == 'Maybank2u' %}selected{% endif %}>Maybank2u</option>
-                    <option value="GrabPay" {% if payment_method == 'GrabPay' %}selected{% endif %}>GrabPay</option>
-                    <option value="GoPay" {% if payment_method == 'GoPay' %}selected{% endif %}>GoPay</option>
-                    <option value="OVO" {% if payment_method == 'OVO' %}selected{% endif %}>OVO</option>
-                    <option value="DANA" {% if payment_method == 'DANA' %}selected{% endif %}>DANA</option>
-                    <option value="GCash" {% if payment_method == 'GCash' %}selected{% endif %}>GCash</option>
-                    <option value="PayMaya" {% if payment_method == 'PayMaya' %}selected{% endif %}>PayMaya</option>
-                    <option value="MoMo" {% if payment_method == 'MoMo' %}selected{% endif %}>MoMo</option>
-                    <option value="ZaloPay" {% if payment_method == 'ZaloPay' %}selected{% endif %}>ZaloPay</option>
-                    <option value="Vietcombank" {% if payment_method == 'Vietcombank' %}selected{% endif %}>Vietcombank</option>
-                    <option value="Capitec Pay" {% if payment_method == 'Capitec Pay' %}selected{% endif %}>Capitec Pay</option>
-                    <option value="FNB eWallet" {% if payment_method == 'FNB eWallet' %}selected{% endif %}>FNB eWallet</option>
-                    <option value="Opay" {% if payment_method == 'Opay' %}selected{% endif %}>Opay</option>
-                    <option value="Paga" {% if payment_method == 'Paga' %}selected{% endif %}>Paga</option>
-                    <option value="Flutterwave" {% if payment_method == 'Flutterwave' %}selected{% endif %}>Flutterwave</option>
-                    <option value="Fawry" {% if payment_method == 'Fawry' %}selected{% endif %}>Fawry</option>
-                    <option value="Vodafone Cash" {% if payment_method == 'Vodafone Cash' %}selected{% endif %}>Vodafone Cash</option>
-                    <option value="M-Pesa" {% if payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
-                    <option value="Airtel Money" {% if payment_method == 'Airtel Money' %}selected{% endif %}>Airtel Money</option>
-                    <option value="Oxxo" {% if payment_method == 'Oxxo' %}selected{% endif %}>Oxxo</option>
-                    <option value="SPEI" {% if payment_method == 'SPEI' %}selected{% endif %}>SPEI</option>
-                    <option value="BBVA" {% if payment_method == 'BBVA' %}selected{% endif %}>BBVA</option>
-                    <option value="Mercado Pago" {% if payment_method == 'Mercado Pago' %}selected{% endif %}>Mercado Pago</option>
-                    <option value="Ualá" {% if payment_method == 'Ualá' %}selected{% endif %}>Ualá</option>
-                    <option value="Nequi" {% if payment_method == 'Nequi' %}selected{% endif %}>Nequi</option>
-                    <option value="DaviPlata" {% if payment_method == 'DaviPlata' %}selected{% endif %}>DaviPlata</option>
-                    <option value="WebPay" {% if payment_method == 'WebPay' %}selected{% endif %}>WebPay</option>
-                    <option value="Servipag" {% if payment_method == 'Servipag' %}selected{% endif %}>Servipag</option>
-                    <option value="STC Pay" {% if payment_method == 'STC Pay' %}selected{% endif %}>STC Pay</option>
-                    <option value="Mada" {% if payment_method == 'Mada' %}selected{% endif %}>Mada</option>
-                    <option value="QNB Mobile Pay" {% if payment_method == 'QNB Mobile Pay' %}selected{% endif %}>QNB Mobile Pay</option>
-                    <option value="Vodafone Qatar" {% if payment_method == 'Vodafone Qatar' %}selected{% endif %}>Vodafone Qatar</option>
-                    <option value="Monzo" {% if payment_method == 'Monzo' %}selected{% endif %}>Monzo</option>
-                    <option value="Starling Bank" {% if payment_method == 'Starling Bank' %}selected{% endif %}>Starling Bank</option>
-                    <option value="BACS" {% if payment_method == 'BACS' %}selected{% endif %}>BACS</option>
-                    <option value="BPAY" {% if payment_method == 'BPAY' %}selected{% endif %}>BPAY</option>
-                    <option value="POLi" {% if payment_method == 'POLi' %}selected{% endif %}>POLi</option>
-                    <option value="Interac" {% if payment_method == 'Interac' %}selected{% endif %}>Interac</option>
-                    <option value="Wealthsimple" {% if payment_method == 'Wealthsimple' %}selected{% endif %}>Wealthsimple</option>
-                    <option value="TWINT" {% if payment_method == 'TWINT' %}selected{% endif %}>TWINT</option>
-                    <option value="PostFinance" {% if payment_method == 'PostFinance' %}selected{% endif %}>PostFinance</option>
-                    <option value="Swish" {% if payment_method == 'Swish' %}selected{% endif %}>Swish</option>
-                    <option value="Vipps" {% if payment_method == 'Vipps' %}selected{% endif %}>Vipps</option>
-                    <option value="MobilePay" {% if payment_method == 'MobilePay' %}selected{% endif %}>MobilePay</option>
-                    <option value="BLIK" {% if payment_method == 'BLIK' %}selected{% endif %}>BLIK</option>
-                    <option value="Przelewy24" {% if payment_method == 'Przelewy24' %}selected{% endif %}>Przelewy24</option>
-                </select>
-                <label><input type="checkbox" name="only_verified" {% if only_verified %}checked{% endif %}> Только с верификацией</label>
-                <label><input type="checkbox" name="only_online" {% if only_online %}checked{% endif %}> Только онлайн</label>
-                <label><input type="checkbox" name="only_merchants" {% if only_merchants %}checked{% endif %}> Только мерчанты</label>
-                <button type="submit">Фильтровать</button>
+        <div class="offer-details">
+            <p class="price">Цена {{ (offer.fiat_amount / offer.amount) | round(2) }} {{ offer.fiat }} <span class="timer">40с</span></p>
+            <p>Количество {{ offer.amount }} {{ offer.currency }}</p>
+            <p class="methods">Способы оплаты | {{ offer.payment_method }} {% if offer.payment_method == 'Sberbank' %}| Совкомбанк{% endif %}</p>
+            <p>Лимиты оплаты {{ (offer.amount * 0.5) | round(2) }} – {{ offer.fiat_amount }} {{ offer.fiat }}</p>
+            <p>За флат <span class="timer">3а критиювалюту</span></p>
+        </div>
+
+        <div class="amount-section">
+            <select name="fiat">
+                <option value="RUB" {% if offer.fiat == 'RUB' %}selected{% endif %}>RUB</option>
+                <option value="USD" {% if offer.fiat == 'USD' %}selected{% endif %}>USD</option>
+                <option value="EUR" {% if offer.fiat == 'EUR' %}selected{% endif %}>EUR</option>
+                <option value="KZT" {% if offer.fiat == 'KZT' %}selected{% endif %}>KZT</option>
+                <option value="UAH" {% if offer.fiat == 'UAH' %}selected{% endif %}>UAH</option>
+                <option value="TRY" {% if offer.fiat == 'TRY' %}selected{% endif %}>TRY</option>
+                <option value="CNY" {% if offer.fiat == 'CNY' %}selected{% endif %}>CNY</option>
+                <option value="INR" {% if offer.fiat == 'INR' %}selected{% endif %}>INR</option>
+                <option value="BRL" {% if offer.fiat == 'BRL' %}selected{% endif %}>BRL</option>
+                <option value="AED" {% if offer.fiat == 'AED' %}selected{% endif %}>AED</option>
+                <option value="JPY" {% if offer.fiat == 'JPY' %}selected{% endif %}>JPY</option>
+                <option value="KRW" {% if offer.fiat == 'KRW' %}selected{% endif %}>KRW</option>
+                <option value="THB" {% if offer.fiat == 'THB' %}selected{% endif %}>THB</option>
+                <option value="SGD" {% if offer.fiat == 'SGD' %}selected{% endif %}>SGD</option>
+                <option value="MYR" {% if offer.fiat == 'MYR' %}selected{% endif %}>MYR</option>
+                <option value="IDR" {% if offer.fiat == 'IDR' %}selected{% endif %}>IDR</option>
+                <option value="PHP" {% if offer.fiat == 'PHP' %}selected{% endif %}>PHP</option>
+                <option value="VND" {% if offer.fiat == 'VND' %}selected{% endif %}>VND</option>
+                <option value="ZAR" {% if offer.fiat == 'ZAR' %}selected{% endif %}>ZAR</option>
+                <option value="NGN" {% if offer.fiat == 'NGN' %}selected{% endif %}>NGN</option>
+                <option value="EGP" {% if offer.fiat == 'EGP' %}selected{% endif %}>EGP</option>
+                <option value="KES" {% if offer.fiat == 'KES' %}selected{% endif %}>KES</option>
+                <option value="MXN" {% if offer.fiat == 'MXN' %}selected{% endif %}>MXN</option>
+                <option value="ARS" {% if offer.fiat == 'ARS' %}selected{% endif %}>ARS</option>
+                <option value="COP" {% if offer.fiat == 'COP' %}selected{% endif %}>COP</option>
+                <option value="CLP" {% if offer.fiat == 'CLP' %}selected{% endif %}>CLP</option>
+                <option value="SAR" {% if offer.fiat == 'SAR' %}selected{% endif %}>SAR</option>
+                <option value="QAR" {% if offer.fiat == 'QAR' %}selected{% endif %}>QAR</option>
+                <option value="GBP" {% if offer.fiat == 'GBP' %}selected{% endif %}>GBP</option>
+                <option value="AUD" {% if offer.fiat == 'AUD' %}selected{% endif %}>AUD</option>
+                <option value="CAD" {% if offer.fiat == 'CAD' %}selected{% endif %}>CAD</option>
+                <option value="CHF" {% if offer.fiat == 'CHF' %}selected{% endif %}>CHF</option>
+                <option value="SEK" {% if offer.fiat == 'SEK' %}selected{% endif %}>SEK</option>
+                <option value="NOK" {% if offer.fiat == 'NOK' %}selected{% endif %}>NOK</option>
+                <option value="DKK" {% if offer.fiat == 'DKK' %}selected{% endif %}>DKK</option>
+                <option value="PLN" {% if offer.fiat == 'PLN' %}selected{% endif %}>PLN</option>
+            </select>
+            <input type="number" name="amount" placeholder="Введите сумму" step="0.01" required>
+            <form action="/buy-offer/{{ offer.id }}" method="post">
+                <button type="submit">{{ "Покупка" if offer.offer_type == "sell" else "Продажа" }}</button>
             </form>
         </div>
 
-        <div class="offers">
-            <h3>Объявления</h3>
-            {% for offer in offers %}
-                <div class="offer">
-                    <p>Пользователь: {{ offer.user.email.split('@')[0] }} <span class="status" style="color: {{ '#2E7D32' if offer.user.last_seen > now - timedelta(minutes=15) else '#FFCA28' }}">●</span> <span class="status">{{ offer.user.orders_completed }} Ордеров | {{ '10%' }}</span></p>
-                    <p>Курс: {{ (offer.fiat_amount / offer.amount) | round(2) }} {{ offer.fiat }}/{{ offer.currency }}</p>
-                    <p>Количество: {{ offer.amount }} {{ offer.currency }}</p>
-                    <p>Лимиты: {{ (offer.amount * 0.5) | round(2) }} – {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                    <p>Метод: {{ offer.payment_method }} {% if offer.payment_method == 'SBP' %}<span>💳</span>{% elif offer.payment_method in ['Sberbank', 'Tinkoff', 'YooMoney', 'PayPal', 'Revolut', 'Wise', 'Binance Pay'] %}<span>🏦</span>{% else %}<span>⚙️</span>{% endif %}</p>
-                    <a href="#" onclick="showTradeDetails({{ offer.id }})">Подробнее</a>
-                </div>
-            {% endfor %}
+        <div class="seller-info">
+            <p>Условия мейкера</p>
+            <div class="bank-select">
+                <select name="bank">
+                    <option value="T-Bank">Т-Банк</option>
+                    <option value="Sberbank">Сбербанк</option>
+                    <option value="Tinkoff">Тинькофф</option>
+                    <option value="Alfa-Bank">Альфа-Банк</option>
+                    <option value="VTB">ВТБ</option>
+                    <option value="Gazprombank">Газпромбанк</option>
+                    <option value="Rosbank">Росбанк</option>
+                    <option value="Raiffeisenbank">Райффайзенбанк</option>
+                </select>
+                <button>→</button>
+            </div>
+            <p>Принимаю оплату от {{ offer.payment_method }}, перевод по номеру карты!</p>
         </div>
 
-        <div class="create-offer">
-            <h3>Создать объявление</h3>
-            <form action="/create-offer" method="post">
-                <select name="offer_type" required>
-                    <option value="buy">Покупка</option>
-                    <option value="sell">Продажа</option>
-                </select>
-                <select name="currency" required>
-                    <option value="USDT">USDT</option>
-                    <option value="BTC">BTC</option>
-                    <option value="ETH">ETH</option>
-                    <option value="TON">TON</option>
-                </select>
-                <input type="number" name="amount" step="0.01" placeholder="Количество (500-5000)" min="500" max="5000" required>
-                <select name="fiat" required>
-                    <option value="RUB">RUB</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="KZT">KZT</option>
-                    <option value="UAH">UAH</option>
-                    <option value="TRY">TRY</option>
-                    <option value="CNY">CNY</option>
-                    <option value="INR">INR</option>
-                    <option value="BRL">BRL</option>
-                    <option value="AED">AED</option>
-                    <option value="JPY">JPY</option>
-                    <option value="KRW">KRW</option>
-                    <option value="THB">THB</option>
-                    <option value="SGD">SGD</option>
-                    <option value="MYR">MYR</option>
-                    <option value="IDR">IDR</option>
-                    <option value="PHP">PHP</option>
-                    <option value="VND">VND</option>
-                    <option value="ZAR">ZAR</option>
-                    <option value="NGN">NGN</option>
-                    <option value="EGP">EGP</option>
-                    <option value="KES">KES</option>
-                    <option value="MXN">MXN</option>
-                    <option value="ARS">ARS</option>
-                    <option value="COP">COP</option>
-                    <option value="CLP">CLP</option>
-                    <option value="SAR">SAR</option>
-                    <option value="QAR">QAR</option>
-                    <option value="GBP">GBP</option>
-                    <option value="AUD">AUD</option>
-                    <option value="CAD">CAD</option>
-                    <option value="CHF">CHF</option>
-                    <option value="SEK">SEK</option>
-                    <option value="NOK">NOK</option>
-                    <option value="DKK">DKK</option>
-                    <option value="PLN">PLN</option>
-                </select>
-                <input type="number" name="fiat_amount" step="0.01" placeholder="Фиатная сумма" required>
-                <select name="payment_method" required>
-                    <option value="SBP">SBP</option>
-                    <option value="Sberbank">Sberbank</option>
-                    <option value="Tinkoff">Tinkoff</option>
-                    <option value="YooMoney">YooMoney</option>
-                    <option value="Cash">Cash</option>
-                    <option value="QIWI">QIWI</option>
-                    <option value="Payeer">Payeer</option>
-                    <option value="AdvCash">AdvCash</option>
-                    <option value="Perfect Money">Perfect Money</option>
-                    <option value="PayPal">PayPal</option>
-                    <option value="WebMoney">WebMoney</option>
-                    <option value="Skrill">Skrill</option>
-                    <option value="Binance Pay">Binance Pay</option>
-                    <option value="Revolut">Revolut</option>
-                    <option value="Wise">Wise</option>
-                    <option value="Alfa-Bank">Alfa-Bank</option>
-                    <option value="VTB">VTB</option>
-                    <option value="Gazprombank">Gazprombank</option>
-                    <option value="Rosbank">Rosbank</option>
-                    <option value="Raiffeisenbank">Raiffeisenbank</option>
-                    <option value="Kaspi Bank">Kaspi Bank</option>
-                    <option value="Halyk Bank">Halyk Bank</option>
-                    <option value="PrivatBank">PrivatBank</option>
-                    <option value="Monobank">Monobank</option>
-                    <option value="Oschadbank">Oschadbank</option>
-                    <option value="Ziraat Bankası">Ziraat Bankası</option>
-                    <option value="Garanti Bankası">Garanti Bankası</option>
-                    <option value="Papara">Papara</option>
-                    <option value="WeChat Pay">WeChat Pay</option>
-                    <option value="Alipay">Alipay</option>
-                    <option value="UnionPay">UnionPay</option>
-                    <option value="Paytm">Paytm</option>
-                    <option value="UPI">UPI</option>
-                    <option value="PhonePe">PhonePe</option>
-                    <option value="Google Pay">Google Pay</option>
-                    <option value="Pix">Pix</option>
-                    <option value="Boleto">Boleto</option>
-                    <option value="Nubank">Nubank</option>
-                    <option value="Emirates NBD">Emirates NBD</option>
-                    <option value="ADCB">ADCB</option>
-                    <option value="Noon Payments">Noon Payments</option>
-                    <option value="LINE Pay">LINE Pay</option>
-                    <option value="Rakuten Pay">Rakuten Pay</option>
-                    <option value="Suica">Suica</option>
-                    <option value="KakaoPay">KakaoPay</option>
-                    <option value="Naver Pay">Naver Pay</option>
-                    <option value="Samsung Pay">Samsung Pay</option>
-                    <option value="PromptPay">PromptPay</option>
-                    <option value="TrueMoney">TrueMoney</option>
-                    <option value="PayNow">PayNow</option>
-                    <option value="DBS PayLah!">DBS PayLah!</option>
-                    <option value="Maybank2u">Maybank2u</option>
-                    <option value="GrabPay">GrabPay</option>
-                    <option value="GoPay">GoPay</option>
-                    <option value="OVO">OVO</option>
-                    <option value="DANA">DANA</option>
-                    <option value="GCash">GCash</option>
-                    <option value="PayMaya">PayMaya</option>
-                    <option value="MoMo">MoMo</option>
-                    <option value="ZaloPay">ZaloPay</option>
-                    <option value="Vietcombank">Vietcombank</option>
-                    <option value="Capitec Pay">Capitec Pay</option>
-                    <option value="FNB eWallet">FNB eWallet</option>
-                    <option value="Opay">Opay</option>
-                    <option value="Paga">Paga</option>
-                    <option value="Flutterwave">Flutterwave</option>
-                    <option value="Fawry">Fawry</option>
-                    <option value="Vodafone Cash">Vodafone Cash</option>
-                    <option value="M-Pesa">M-Pesa</option>
-                    <option value="Airtel Money">Airtel Money</option>
-                    <option value="Oxxo">Oxxo</option>
-                    <option value="SPEI">SPEI</option>
-                    <option value="BBVA">BBVA</option>
-                    <option value="Mercado Pago">Mercado Pago</option>
-                    <option value="Ualá">Ualá</option>
-                    <option value="Nequi">Nequi</option>
-                    <option value="DaviPlata">DaviPlata</option>
-                    <option value="WebPay">WebPay</option>
-                    <option value="Servipag">Servipag</option>
-                    <option value="STC Pay">STC Pay</option>
-                    <option value="Mada">Mada</option>
-                    <option value="QNB Mobile Pay">QNB Mobile Pay</option>
-                    <option value="Vodafone Qatar">Vodafone Qatar</option>
-                    <option value="Monzo">Monzo</option>
-                    <option value="Starling Bank">Starling Bank</option>
-                    <option value="BACS">BACS</option>
-                    <option value="BPAY">BPAY</option>
-                    <option value="POLi">POLi</option>
-                    <option value="Interac">Interac</option>
-                    <option value="Wealthsimple">Wealthsimple</option>
-                    <option value="TWINT">TWINT</option>
-                    <option value="PostFinance">PostFinance</option>
-                    <option value="Swish">Swish</option>
-                    <option value="Vipps">Vipps</option>
-                    <option value="MobilePay">MobilePay</option>
-                    <option value="BLIK">BLIK</option>
-                    <option value="Przelewy24">Przelewy24</option>
-                </select>
-                <input type="text" name="contact" placeholder="Контактная информация" required>
-                <input type="number" name="payment_window" placeholder="Время оплаты (минуты)" value="15" required>
-                <label><input type="checkbox" name="only_verified"> Только для верифицированных</label>
-                <label><input type="checkbox" name="only_vip"> Только для VIP</label>
-                <textarea name="description" placeholder="Описание объявления"></textarea>
-                <button type="submit">Создать объявление</button>
-            </form>
-        </div>
-
-        <!-- Новый блок для деталей сделки -->
-        <div class="trade-details" id="trade-details-{{ offer.id if offer else 'default' }}">
-            <div class="header">
-                <button onclick="hideTradeDetails()">←</button>
-                <h2>Покупка {{ offer.currency if offer else 'USDT' }}</h2>
-                <span>{{ now.strftime('%H:%M') }}</span>
-            </div>
-            {% if offer %}
-            <div class="offer-details">
-                <p class="price">Цена {{ (offer.fiat_amount / offer.amount) | round(2) }} {{ offer.fiat }} <span class="timer">40с</span></p>
-                <p>Количество {{ offer.amount }} {{ offer.currency }}</p>
-                <p class="methods">Способы оплаты | {{ offer.payment_method }} {% if offer.payment_method == 'Sberbank' %}| Совкомбанк{% endif %}</p>
-                <p>Лимиты оплаты {{ (offer.amount * 0.5) | round(2) }} – {{ offer.fiat_amount }} {{ offer.fiat }}</p>
-                <p>За флат <span class="timer">За криптовалюту</span></p>
-                <form action="/buy-offer/{{ offer.id }}" method="post">
-                    <button type="submit">Покупка</button>
-                </form>
-            </div>
-            {% endif %}
-
-            <div class="amount-section">
-                <select name="currency">
-                    <option value="RUB" {% if not fiat %}selected{% endif %}>RUB</option>
-                    <option value="USD" {% if fiat == 'USD' %}selected{% endif %}>USD</option>
-                    <option value="EUR" {% if fiat == 'EUR' %}selected{% endif %}>EUR</option>
-                    <!-- Другие валюты можно добавить -->
-                </select>
-                <input type="number" name="amount" placeholder="Введите сумму" step="0.01" required>
-                <button type="submit">Покупка</button>
-            </div>
-
-            <div class="seller-info">
-                <p>Условия мейкера</p>
-                <div class="bank-select">
-                    <select name="bank">
-                        <option value="T-Bank">Т-Банк</option>
-                        <option value="Sberbank">Сбербанк</option>
-                        <option value="Tinkoff">Тинькофф</option>
-                    </select>
-                    <button>→</button>
-                </div>
-                <p>Принимаю оплату от Т-БАНК, ПС на почту от имени БАНКА!</p>
-            </div>
-
-            <div class="transaction-details">
-                <p>Сведения о транзакции</p>
-                <a href="/profile">{{ offer.user.email.split('@')[0] if offer else 'Kulich' }} <span>→</span></a>
-                <div class="stats">
-                    <p>Высокий рейтинг %</p><p>99%</p>
-                    <p>Исполненные ордера за 30 дней</p><p>{{ offer.user.orders_completed if offer else '2426' }} Ордера</p>
-                    <p>Процент исполнения за 30 дней (%)</p><p>100%</p>
-                    <p>Средн. время перевода</p><p>2 мин.</p>
-                </div>
+        <div class="transaction-details">
+            <p>Сведения о транзакции</p>
+            <a href="/profile/{{ offer.user.id }}">{{ offer.user.email.split('@')[0] }} <span>→</span></a>
+            <div class="stats">
+                <div><p>Высокий рейтинг %</p><p>{{ offer.user.rating if offer.user.rating else '99%' }}</p></div>
+                <div><p>Исполненные ордера за 30 дней</p><p>{{ offer.user.orders_completed }} Ордера</p></div>
+                <div><p>Процент исполнения за 30 дней (%)</p><p>{{ offer.user.completion_rate if offer.user.completion_rate else '100%' }}</p></div>
+                <div><p>Средн. время перевода</p><p>{{ offer.user.avg_transfer_time if offer.user.avg_transfer_time else '2 мин.' }}</p></div>
             </div>
         </div>
+        {% else %}
+        <div class="error">
+            <h2>Ошибка</h2>
+            <p>Объявление не найдено.</p>
+            <button onclick="window.location.href='/'">Вернуться на главную</button>
+        </div>
+        {% endif %}
     </div>
 
     <div class="footer">
-        <button class="{% if request.path == '/' %}active{% endif %}" onclick="window.location.href='/'">P2P</button>
-        <button class="{% if request.path == '/orders' %}active{% endif %}" onclick="window.location.href='/orders'">Orders</button>
-        <button class="{% if request.path == '/ads' %}active{% endif %}" onclick="window.location.href='/ads'">Ads</button>
-        <button class="{% if request.path == '/profile' %}active{% endif %}" onclick="window.location.href='/profile'">Profile</button>
+        <button onclick="window.location.href='/'">P2P</button>
+        <button onclick="window.location.href='/orders'">Orders</button>
+        <button onclick="window.location.href='/ads'">Ads</button>
+        <button onclick="window.location.href='/profile'">Profile</button>
     </div>
-
-    <script>
-        function showTradeDetails(offerId) {
-            document.getElementById('trade-details-' + offerId).classList.add('active');
-        }
-        function hideTradeDetails() {
-            document.querySelectorAll('.trade-details').forEach(el => el.classList.remove('active'));
-        }
-    </script>
 </body>
 </html>
-<div class="create-offer">
-    <h3>Создать объявление</h3>
-    <form action="/create-offer" method="post">
-        <select name="offer_type" required>
-            <option value="buy">Покупка</option>
-            <option value="sell">Продажа</option>
-        </select>
-        <select name="currency" required>
-            <option value="USDT">USDT</option>
-            <option value="BTC">BTC</option>
-            <option value="ETH">ETH</option>
-            <option value="TON">TON</option>
-        </select>
-        <input type="number" name="amount" step="0.01" placeholder="Количество (500-5000)" min="500" max="5000" required>
-        <select name="fiat" required>
-            <option value="RUB">RUB</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="KZT">KZT</option>
-            <option value="UAH">UAH</option>
-            <option value="TRY">TRY</option>
-            <option value="CNY">CNY</option>
-            <option value="INR">INR</option>
-            <option value="BRL">BRL</option>
-            <option value="AED">AED</option>
-        </select>
-        <select name="rate" id="rate" required onchange="updateFiatAmount()">
-            <option value="77.10">77.10 RUB/USDT</option>
-            <option value="60000.00">60000.00 USD/BTC</option>
-            <option value="3000.00">3000.00 RUB/ETH</option>
-            <option value="200.00">200.00 RUB/TON</option>
-            <option value="85.00">85.00 KZT/USDT</option>
-            <option value="40.00">40.00 UAH/USDT</option>
-            <option value="30.00">30.00 TRY/USDT</option>
-            <option value="7.00">7.00 CNY/USDT</option>
-            <option value="83.00">83.00 INR/USDT</option>
-            <option value="5.50">5.50 BRL/USDT</option>
-            <option value="3.67">3.67 AED/USDT</option>
-        </select>
-        <input type="number" name="fiat_amount" id="fiat_amount" step="0.01" placeholder="Фиатная сумма" required readonly>
-        <select name="payment_method" required>
-            <option value="SBP">SBP</option>
-            <option value="Sberbank">Sberbank</option>
-            <option value="Tinkoff">Tinkoff</option>
-            <option value="YooMoney">YooMoney</option>
-            <option value="Cash">Cash</option>
-            <option value="QIWI">QIWI</option>
-            <option value="Payeer">Payeer</option>
-            <option value="AdvCash">AdvCash</option>
-            <option value="Perfect Money">Perfect Money</option>
-            <option value="PayPal">PayPal</option>
-            <option value="WebMoney">WebMoney</option>
-            <option value="Skrill">Skrill</option>
-            <option value="Binance Pay">Binance Pay</option>
-            <option value="Revolut">Revolut</option>
-            <option value="Wise">Wise</option>
-        </select>
-        <input type="text" name="contact" placeholder="Контактная информация" required>
-        <input type="number" name="payment_window" placeholder="Время оплаты (минуты)" value="15" required>
-        <label><input type="checkbox" name="only_verified"> Только для верифицированных</label>
-        <label><input type="checkbox" name="only_vip"> Только для VIP</label>
-        <textarea name="description" placeholder="Описание объявления"></textarea>
-        <button type="submit">Создать объявление</button>
-    </form>
-    <script>
-        function updateFiatAmount() {
-            const amount = document.querySelector('input[name="amount"]').value;
-            const rate = document.querySelector('#rate').value;
-            if (amount && rate) {
-                const fiatAmount = (amount * rate).toFixed(2);
-                document.querySelector('#fiat_amount').value = fiatAmount;
-            }
-        }
-        document.querySelector('input[name="amount"]').addEventListener('input', updateFiatAmount);
-        document.querySelector('#rate').addEventListener('change', updateFiatAmount);
-    </script>
-</div>
