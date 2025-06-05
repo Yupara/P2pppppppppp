@@ -1,0 +1,165 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #1a2a2a;
+    color: #e0e0e0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: #2a3a3a;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 20px;
+    display: inline;
+    margin-right: 10px;
+    color: #e0e0e0;
+}
+
+header .inactive {
+    color: #666;
+}
+
+.header-right span {
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filters select,
+.filters button {
+    padding: 10px;
+    background-color: #3a4a4a;
+    border: none;
+    border-radius: 5px;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.filters button {
+    background-color: #4a5a5a;
+}
+
+.cta {
+    background-color: #3a4a4a;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.cta p {
+    margin-bottom: 10px;
+}
+
+.cta button {
+    background-color: #5a6a6a;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.offers {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.offer {
+    background-color: #3a4a4a;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.offer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.avatar {
+    font-size: 20px;
+}
+
+.username {
+    font-weight: bold;
+}
+
+.badge {
+    font-size: 12px;
+}
+
+.stats {
+    font-size: 14px;
+    color: #aaa;
+}
+
+.offer-details {
+    margin-bottom: 10px;
+}
+
+.price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #e0e0e0;
+}
+
+.offer-details p {
+    font-size: 14px;
+    color: #aaa;
+    margin: 5px 0;
+}
+
+.payment-methods {
+    display: flex;
+    gap: 5px;
+}
+
+.method {
+    background-color: #4a5a5a;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+.buy-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #5a6a6a;
+    border: none;
+    border-radius: 5px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-weight: bold;
+}
