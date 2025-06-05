@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey, DateTime
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship  # Новый импорт
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import pytz
 
 app = FastAPI()
@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Database setup
 engine = create_engine('sqlite:///p2p_exchange.db', echo=True)
-Base = declarative_base()  # Эта строка на 17-й строке теперь будет работать без предупреждения
+Base = declarative_base()
 
 class User(Base):
     __tablename__ = 'users'
@@ -26,4 +26,8 @@ class User(Base):
     avg_transfer_time = Column(String, default="2 мин.")
     offers = relationship("Offer", back_populates="user")
 
-# (остальной код остаётся без изменений)
+@app.get("/")
+async def read_root():
+    return {"message": "Server is running"}
+
+# (остальной код, включая маршруты и модели)
