@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Обменник</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Заголовок и фильтры -->
+        <header>
+            <div class="header-left">
+                <h1>Покупка</h1>
+                <h1 class="inactive">Продажа</h1>
+            </div>
+            <div class="header-right">
+                <span>🔊</span>
+            </div>
+        </header>
+
+        <!-- Фильтры -->
+        <div class="filters">
+            <select id="currency">
+                <option>USDT</option>
+                <option>BTC</option>
+                <option>ETH</option>
+            </select>
+            <select id="payment-method">
+                <option>Сумма</option>
+                <option>500 RUB</option>
+                <option>1000 RUB</option>
+            </select>
+            <button>Все способы оплаты</button>
+            <button>ФИЛЬТР</button>
+        </div>
+
+        <!-- Призыв к действию -->
+        <div class="cta">
+            <p>Попробуйте P2P HotSwap — лучшие ставки и более ликвидности!</p>
+            <button>Узнать волю</button>
+        </div>
+
+        <!-- Список предложений -->
+        <div class="offers">
+            <!-- Предложение 1 -->
+            <div class="offer">
+                <div class="offer-header">
+                    <div class="user">
+                        <span class="avatar">🟢</span>
+                        <span class="username">Savak</span>
+                    </div>
+                    <div class="stats">
+                        <span>40 Ордеров</span> | <span>10%</span>
+                    </div>
+                </div>
+                <div class="offer-details">
+                    <p class="price">₽ 70,96</p>
+                    <p>Количество 304,7685 USDT</p>
+                    <p>Лимиты 500 – 500 000 RUB</p>
+                    <div class="payment-methods">
+                        <span class="method">🥇</span>
+                        <span class="method">SBP</span>
+                        <span class="method">ЮMoney</span>
+                    </div>
+                </div>
+                <button class="buy-button">Покупка</button>
+            </div>
+
+            <!-- Предложение 2 -->
+            <div class="offer">
+                <div class="offer-header">
+                    <div class="user">
+                        <span class="avatar">🟡</span>
+                        <span class="username">Шулу_Партнеров</span>
+                        <span class="badge">🔴</span>
+                    </div>
+                    <div class="stats">
+                        <span>15 Ордеров</span> | <span>10%</span>
+                    </div>
+                </div>
+                <div class="offer-details">
+                    <p class="price">₽ 71,03</p>
+                    <p>Количество 128,8821 USDT</p>
+                    <p>Лимиты 500 – 500 000 RUB</p>
+                    <div class="payment-methods">
+                        <span class="method">🥇</span>
+                        <span class="method">Платежи</span>
+                        <span class="method">Обмены</span>
+                    </div>
+                </div>
+                <button class="buy-button">Покупка</button>
+            </div>
+
+            <!-- Предложение 3 -->
+            <div class="offer">
+                <div class="offer-header">
+                    <div class="user">
+                        <span class="avatar">🟢</span>
+                        <span class="username">ПродавоМенкеров</span>
+                    </div>
+                    <div class="stats">
+                        <span>11 Ордеров</span> | <span>10%</span>
+                    </div>
+                </div>
+                <div class="offer-details">
+                    <p class="price">₽ 71,03</p>
+                    <p>Количество 128,8821 USDT</p>
+                    <p>Лимиты 500 – 500 000 RUB</p>
+                    <div class="payment-methods">
+                        <span class="method">🥇</span>
+                        <span class="method">Платежи</span>
+                        <span class="method">Обмены</span>
+                    </div>
+                </div>
+                <button class="buy-button">Покупка</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
