@@ -103,7 +103,7 @@ async def filter_offers(request: Request, offer_type: str, currency: str = None,
     tab = "buy" if offer_type == "buy" else "sell"
     url = f"/?tab={tab}"
     if currency:
-        url += f"&currency={currency}"  # Исправлено
+        url += f"&currency={currency}"  # Исправлено с "¤cy" на "currency"
     if fiat:
         url += f"&fiat={fiat}"
     if amount:
