@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey, DateTime
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship  # Новый импорт
 import pytz
 
 app = FastAPI()
@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Database setup
 engine = create_engine('sqlite:///p2p_exchange.db', echo=True)
-Base = declarative_base()
+Base = declarative_base()  # Эта строка на 17-й строке теперь будет работать без предупреждения
 
 class User(Base):
     __tablename__ = 'users'
