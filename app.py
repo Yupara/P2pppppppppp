@@ -13,6 +13,8 @@ from routes.referral_payouts import referral_payouts_bp
 from routes.profile import profile_bp
 from routes.public_ads import public_ads_bp
 from routes.currencies import currencies_bp
+from routes.webhooks import webhooks_bp
+from routes.analytics import analytics_bp
 
 app = Flask(__name__)
 
@@ -31,6 +33,8 @@ app.register_blueprint(referral_payouts_bp, url_prefix="/referral_payouts")  # �
 app.register_blueprint(profile_bp, url_prefix="/profile")  # Управление профилем пользователя
 app.register_blueprint(public_ads_bp, url_prefix="/public_ads")  # Публичные объявления
 app.register_blueprint(currencies_bp, url_prefix="/currencies")  # Управление валютами
+app.register_blueprint(webhooks_bp, url_prefix="/webhooks")  # Управление вебхуками
+app.register_blueprint(analytics_bp, url_prefix="/analytics")  # Аналитика
 
 if __name__ == "__main__":
     app.run(debug=True)
