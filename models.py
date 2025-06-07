@@ -1,5 +1,11 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey
-from database import Base
+from sqlalchemy import Enum as PgEnum
+import enum
+
+class TradeStatus(str, enum.Enum):
+    pending = "pending"
+    paid = "paid"
+    completed = "completed"
+    canceled = "canceled"
 
 class Trade(Base):
     __tablename__ = "trades"
@@ -7,3 +13,6 @@ class Trade(Base):
     ad_id = Column(Integer, ForeignKey("ads.id"))
     buyer_id = Column(Integer, ForeignKey("users.id"))
     amount = Column(Float)
+    status = Column(PgEnum(TradeStatus), default=TradeStatus.pending)
+
+    # ... другие связи
