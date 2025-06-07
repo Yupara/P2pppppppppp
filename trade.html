@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Оформление сделки</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Оформление сделки</h1>
+
+    <div class="trade-details" id="tradeBox">
+        <!-- JS подставит данные -->
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const seller = params.get("seller");
+        const currency = params.get("currency");
+        const price = params.get("price");
+        const method = params.get("method");
+
+        document.getElementById("tradeBox").innerHTML = `
+            <p>Продавец: <strong>${seller}</strong></p>
+            <p>Валюта: <strong>${currency}</strong></p>
+            <p>Цена: <strong>₽${price}</strong></p>
+            <p>Метод оплаты: <strong>${method}</strong></p>
+            <button onclick="confirmTrade()">Подтвердить покупку</button>
+        `;
+
+        function confirmTrade() {
+            alert("Сделка успешно создана! Скоро добавим реальные переводы.");
+        }
+    </script>
+</body>
+</html>
