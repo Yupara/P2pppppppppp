@@ -72,3 +72,24 @@ function TradePage() {
 }
 
 export default TradePage;
+
+{trade.status === "pending" && (
+  <button
+    onClick={handleMarkPaid}
+    style={{ padding: "10px 20px", backgroundColor: "gold", border: "none", cursor: "pointer" }}
+  >
+    Я оплатил
+  </button>
+)}
+
+const handleMarkPaid = async () => {
+  const token = localStorage.getItem("token");
+  await fetch(`http://localhost:8000/trades/${id}/mark_paid`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  alert("Статус обновлён. Ожидайте подтверждения продавца.");
+  window.location.reload();
+};
