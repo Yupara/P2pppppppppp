@@ -1,118 +1,85 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Сделка P2P</title>
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .status-box {
-            background-color: #003f35;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 10px;
-            color: #fff;
-        }
-
-        .status {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #90EE90;
-        }
-
-        .timer {
-            font-size: 1.5rem;
-            margin: 10px 0;
-        }
-
-        .actions {
-            margin-top: 20px;
-        }
-
-        .actions button {
-            background-color: #90EE90;
-            color: #003300;
-            padding: 10px 20px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-
-        .actions button:hover {
-            background-color: #70c070;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Сделка</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <style>
+    body {
+      background-color: #002b26;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .trade-box {
+      background: #003f35;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .trade-box h2 {
+      color: #90ee90;
+    }
+    .chat-box {
+      border-top: 1px solid #90ee90;
+      margin-top: 20px;
+      padding-top: 20px;
+    }
+    .btn {
+      margin-top: 10px;
+      background-color: #005f4a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <h1>Оформление сделки</h1>
+  <div class="trade-box">
+    <h2>Сделка #<span id="orderId"></span></h2>
+    <p><strong>Тип:</strong> <span id="orderType"></span></p>
+    <p><strong>Сумма:</strong> <span id="orderAmount"></span> USDT</p>
+    <p><strong>Цена:</strong> <span id="orderPrice"></span> ₽</p>
+    <p><strong>Статус:</strong> <span id="orderStatus"></span></p>
 
-    <div class="status-box" id="statusBox">
-        <p>Продавец: <strong id="sellerName"></strong></p>
-        <p>Валюта: <strong id="currency"></strong></p>
-        <p>Цена: ₽<strong id="price"></strong></p>
-        <p>Метод оплаты: <strong id="method"></strong></p>
-        <p>Сумма: <strong id="amountCrypto">0</strong> <span id="currCode"></span> (₽<span id="amountFiat">0</span>)</p>
-        <hr>
-        <p class="status">Статус: Ожидается перевод покупателя</p>
-        <p class="timer">Оставшееся время: <span id="countdown">15:00</span></p>
+    <button class="btn" id="actionButton">Я отправил(а) платёж</button>
 
-        <div class="actions">
-            <button onclick="confirmPayment()">Я оплатил</button>
-            <button onclick="cancelTrade()">Отменить</button>
-        </div>
+    <div class="chat-box">
+      <h3>Чат</h3>
+      <div id="chatMessages" style="height: 150px; overflow-y: auto; border: 1px solid #666; padding: 10px; background-color: #001f1a;"></div>
+      <input type="text" id="chatInput" placeholder="Введите сообщение..." style="width: 80%;" />
+      <button class="btn" onclick="sendMessage()">Отправить</button>
     </div>
+  </div>
 
-    <script>
-        // Получаем данные из URL
-        const params = new URLSearchParams(window.location.search);
-        const seller = params.get("seller");
-        const currency = params.get("currency");
-        const price = parseFloat(params.get("price"));
-        const method = params.get("method");
+  <script>
+    const orderId = window.location.pathname.split("/").pop();
+    document.getElementById('orderId').innerText = orderId;
 
-        document.getElementById("sellerName").innerText = seller;
-        document.getElementById("currency").innerText = currency;
-        document.getElementById("currCode").innerText = currency;
-        document.getElementById("price").innerText = price.toFixed(2);
-        document.getElementById("method").innerText = method;
+    fetch(`/api/orders/${orderId}`)
+      .then(res => res.json())
+      .then(order => {
+        document.getElementById('orderType').innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
+        document.getElementById('orderAmount').innerText = order.amount;
+        document.getElementById('orderPrice').innerText = order.price;
+        document.getElementById('orderStatus').innerText = order.status;
+      });
 
-        // Пример: сумма сделки
-        const amount = 100;
-        document.getElementById("amountCrypto").innerText = amount;
-        document.getElementById("amountFiat").innerText = (amount * price).toFixed(2);
+    document.getElementById('actionButton').addEventListener('click', () => {
+      fetch(`/api/orders/${orderId}/confirm_payment`, { method: 'POST' })
+        .then(() => alert('Платёж помечен как отправленный!'));
+    });
 
-        // Таймер 15 минут
-        let seconds = 15 * 60;
-        const countdown = document.getElementById("countdown");
-
-        function updateTimer() {
-            const min = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const sec = (seconds % 60).toString().padStart(2, '0');
-            countdown.innerText = `${min}:${sec}`;
-            if (seconds > 0) {
-                seconds--;
-            } else {
-                clearInterval(timer);
-                alert("Время сделки истекло.");
-            }
-        }
-
-        const timer = setInterval(updateTimer, 1000);
-
-        // Подтверждение оплаты
-        function confirmPayment() {
-            clearInterval(timer);
-            alert("Вы подтвердили оплату. Ожидайте подтверждения продавца.");
-            document.querySelector(".status").innerText = "Ожидается подтверждение продавца";
-        }
-
-        // Отмена сделки
-        function cancelTrade() {
-            clearInterval(timer);
-            alert("Сделка отменена.");
-            document.querySelector(".status").innerText = "Сделка отменена";
-        }
-    </script>
+    function sendMessage() {
+      const msg = document.getElementById('chatInput').value;
+      if (!msg) return;
+      const chat = document.getElementById('chatMessages');
+      chat.innerHTML += `<div><b>Вы:</b> ${msg}</div>`;
+      document.getElementById('chatInput').value = '';
+    }
+  </script>
 </body>
 </html>
