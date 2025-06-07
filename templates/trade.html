@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Детали сделки</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Сделка № <span id="tradeId"></span></h1>
+    <div id="tradeInfo">
+      <!-- Здесь появятся данные о сделке -->
+    </div>
+    <div id="chatBox">
+      <h3>Чат</h3>
+      <div id="messages" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc;"></div>
+      <input type="text" id="messageInput" placeholder="Введите сообщение...">
+      <button onclick="sendMessage()">Отправить</button>
+    </div>
+    <div id="actions">
+      <button onclick="markAsPaid()">Я оплатил</button>
+      <button onclick="openDispute()">Открыть спор</button>
+    </div>
+  </div>
+
+  <script>
+    const tradeId = new URLSearchParams(window.location.search).get('id');
+    document.getElementById('tradeId').textContent = tradeId;
+
+    fetch(`/api/orders/${tradeId}`, {
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token')
+      }
+    })
+    .then(res => res.json())
+    .then(order => {
+      document.getElementById('tradeInfo').innerHTML = `
+        <p><b>Тип:</b> ${order.type}</p>
+        <p><b>Сумма:</b> ${order.amount} USDT</p>
+        <p><b>Цена:</b> ${order.price} ₽</p>
+        <p><b>Статус:</b> ${order.status}</p>
+      `;
+    });
+
+    function sendMessage() {
+      const text = document.getElementById('messageInput').value;
+      fetch(`/api/chat/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify({ trade_id: tradeId, text })
+      });
+    }
+
+    function markAsPaid() {
+      fetch(`/api/orders/${tradeId}/mark_paid`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(() => alert('Статус обновлен на: ОПЛАЧЕНО'));
+    }
+
+    function openDispute() {
+      fetch(`/api/orders/${tradeId}/dispute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(() => alert('Спор открыт.'));
+    }
+  </script>
+</body>
+</html>
