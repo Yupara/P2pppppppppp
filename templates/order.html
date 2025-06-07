@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Сделка</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    body {
+      background-color: #002b26;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .deal-container {
+      background-color: #003f35;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .info-block {
+      margin-bottom: 15px;
+    }
+    .btn {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      background-color: #00b894;
+      color: white;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #009c7b;
+    }
+  </style>
+</head>
+<body>
+  <div class="deal-container">
+    <h2>Сделка #<span id="orderId"></span></h2>
+    <div class="info-block">
+      <strong>Тип:</strong> <span id="orderType"></span><br>
+      <strong>Сумма:</strong> <span id="orderAmount"></span> USDT<br>
+      <strong>Цена:</strong> <span id="orderPrice"></span> ₽<br>
+      <strong>Статус:</strong> <span id="orderStatus"></span><br>
+    </div>
+
+    <div class="info-block" id="timerBlock" style="color: #ffcc00;"></div>
+
+    <div class="info-block">
+      <button class="btn" onclick="markPaid()">Отметить как оплачено</button>
+      <button class="btn" onclick="openDispute()">Открыть спор</button>
+      <button class="btn" onclick="openChat()">Открыть чат</button>
+    </div>
+  </div>
+
+  <script>
+    const orderId = new URLSearchParams(window.location.search).get("id");
+    document.getElementById("orderId").innerText = orderId;
+
+    fetch(`/api/orders/${orderId}`, {
+      headers: {
+        "Authorization": "Bearer " + localStorage.getItem("token")
+      }
+    })
+    .then(res => res.json())
+    .then(order => {
+      document.getElementById("orderType").innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
+      document.getElementById("orderAmount").innerText = order.amount;
+      document.getElementById("orderPrice").innerText = order.price;
+      document.getElementById("orderStatus").innerText = order.status;
+
+      startTimer(order.created_at);
+    });
+
+    function markPaid() {
+      fetch(`/api/orders/${orderId}/mark_paid`, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + localStorage.getItem("token")
+        }
+      }).then(() => location.reload());
+    }
+
+    function openDispute() {
+      fetch(`/api/orders/${orderId}/dispute`, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + localStorage.getItem("token")
+        }
+      }).then(() => alert("Спор открыт"));
+    }
+
+    function openChat() {
+      window.location.href = `/chat.html?order_id=${orderId}`;
+    }
+
+    function startTimer(createdAt) {
+      const end = new Date(createdAt);
+      end.setMinutes(end.getMinutes() + 15);
+
+      const interval = setInterval(() => {
+        const now = new Date();
+        const diff = Math.floor((end - now) / 1000);
+        if (diff <= 0) {
+          document.getElementById("timerBlock").innerText = "Время на оплату истекло.";
+          clearInterval(interval);
+          return;
+        }
+        const mins = Math.floor(diff / 60);
+        const secs = diff % 60;
+        document.getElementById("timerBlock").innerText = `Осталось времени на оплату: ${mins} мин ${secs} сек`;
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
