@@ -1,25 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from models.message import Message
-from schemas.message import MessageCreate, MessageOut
-from utils.auth import get_current_user
 from database import get_db
+from models.user import User
+from models.order import Order
+from utils.auth import get_current_user
 
-router = APIRouter(prefix="/api/chat", tags=["chat"])
+router = APIRouter()
 
-@router.post("/", response_model=MessageOut)
-def send_message(msg: MessageCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    message = Message(
-        order_id=msg.order_id,
-        sender_id=user.id,
-        content=msg.content
-    )
-    db.add(message)
-    db.commit()
-    db.refresh(message)
-    return message
+class ChatMessage(BaseModel):
+    trade_id: int
+    text: str
 
-@router.get("/{order_id}", response_model=list[MessageOut])
-def get_messages(order_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    messages = db.query(Message).filter(Message.order_id == order_id).order_by(Message.timestamp).all()
-    return messages
+@router.post("/chat/send")
+def send_chat_message(msg: ChatMessage, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == msg.trade_id).first()
+    if not order or (order.buyer_id != user.id and order.seller_id != user.id):
+        raise HTTPException(status_code=403, detail="Нет доступа к сделке")
+    # Можно сохранить в таблицу messages, пока просто печатаем
+    print(f"[Чат {msg.trade_id}] {user.username}: {msg.text}")
+    return {"message": "Сообщение отправлено"}
