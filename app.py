@@ -1,68 +1,90 @@
-import os
-from flask import Flask, redirect
-from flask_socketio import SocketIO
-
-# Импортируем маршруты
-from routes.auth import auth_bp
-from routes.trades import trades_bp
-from routes.admin import admin_bp
-from routes.disputes import disputes_bp
-from routes.referrals import referrals_bp
-from routes.user_management import user_management_bp
-from routes.large_trades import large_trades_bp
-from routes.auto_cancel import auto_cancel_bp
-from routes.balance import balance_bp
-from routes.auth_verification import auth_verification_bp
-from routes.referral_payouts import referral_payouts_bp
-from routes.profile import profile_bp
-from routes.public_ads import public_ads_bp
-from routes.currencies import currencies_bp
-from routes.webhooks import webhooks_bp
-from routes.analytics import analytics_bp
-from routes.notifications import notifications_bp
-from routes.roles import roles_bp
-from routes.tasks import tasks_bp
-from routes.events import events_bp
-from routes.audit_logs import audit_logs_bp
-from routes.realtime_notifications import realtime_notifications_bp
-from routes.files import files_bp
-from routes.email_notifications import email_notifications_bp
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+app.secret_key = "your_secret_key"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///p2p_platform.db'
+db = SQLAlchemy(app)
 
-# Регистрируем маршруты
-app.register_blueprint(auth_bp, url_prefix="/auth")
-app.register_blueprint(trades_bp, url_prefix="/trades")
-app.register_blueprint(admin_bp, url_prefix="/admin")
-app.register_blueprint(disputes_bp, url_prefix="/disputes")
-app.register_blueprint(referrals_bp, url_prefix="/referrals")
-app.register_blueprint(user_management_bp, url_prefix="/user_management")
-app.register_blueprint(large_trades_bp, url_prefix="/large_trades")
-app.register_blueprint(auto_cancel_bp, url_prefix="/auto_cancel")
-app.register_blueprint(balance_bp, url_prefix="/balance")
-app.register_blueprint(auth_verification_bp, url_prefix="/auth_verification")
-app.register_blueprint(referral_payouts_bp, url_prefix="/referral_payouts")
-app.register_blueprint(profile_bp, url_prefix="/profile")
-app.register_blueprint(public_ads_bp, url_prefix="/public_ads")
-app.register_blueprint(currencies_bp, url_prefix="/currencies")
-app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
-app.register_blueprint(analytics_bp, url_prefix="/analytics")
-app.register_blueprint(notifications_bp, url_prefix="/notifications")
-app.register_blueprint(roles_bp, url_prefix="/roles")
-app.register_blueprint(tasks_bp, url_prefix="/tasks")
-app.register_blueprint(events_bp, url_prefix="/events")
-app.register_blueprint(audit_logs_bp, url_prefix="/audit_logs")
-app.register_blueprint(realtime_notifications_bp, url_prefix="/realtime_notifications")
-app.register_blueprint(files_bp, url_prefix="/files")
-app.register_blueprint(email_notifications_bp, url_prefix="/email_notifications")
+# Модель пользователя
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False, unique=True)
+    password = db.Column(db.String(50), nullable=False)
 
-# Главная страница перенаправляет сразу на ваш сайт
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def redirect_to_external(path):
-    return redirect("https://p2pppppppppp-production.up.railway.app/", code=302)
+# Модель объявления
+class Ad(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    currency = db.Column(db.String(10), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    payment_methods = db.Column(db.String(100), nullable=False)
+    limits = db.Column(db.String(100), nullable=False)
+
+# Маршруты приложения
+@app.route("/")
+def index():
+    ads = Ad.query.all()
+    return render_template("index.html", ads=ads)
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        user = User(username=username, password=password)
+        db.session.add(user)
+        db.session.commit()
+        return redirect(url_for("login"))
+    return render_template("register.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        user = User.query.filter_by(username=username, password=password).first()
+        if user:
+            session["user_id"] = user.id
+            return redirect(url_for("dashboard"))
+        else:
+            return "Неверные данные"
+    return render_template("login.html")
+
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" in session:
+        ads = Ad.query.filter_by(user_id=session["user_id"]).all()
+        return render_template("dashboard.html", ads=ads)
+    return redirect(url_for("login"))
+
+@app.route("/create_ad", methods=["GET", "POST"])
+def create_ad():
+    if "user_id" in session:
+        if request.method == "POST":
+            currency = request.form["currency"]
+            amount = request.form["amount"]
+            price = request.form["price"]
+            payment_methods = request.form["payment_methods"]
+            limits = request.form["limits"]
+            ad = Ad(user_id=session["user_id"], currency=currency, amount=amount,
+                    price=price, payment_methods=payment_methods, limits=limits)
+            db.session.add(ad)
+            db.session.commit()
+            return redirect(url_for("dashboard"))
+        return render_template("create_ad.html")
+    return redirect(url_for("login"))
+
+@app.route("/buy/<int:ad_id>")
+def buy(ad_id):
+    if "user_id" in session:
+        ad = Ad.query.get(ad_id)
+        if ad:
+            return f"Вы покупаете {ad.amount} {ad.currency} по цене {ad.price}"
+        return "Объявление не найдено"
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port)
+    db.create_all()
+    app.run(debug=True)
