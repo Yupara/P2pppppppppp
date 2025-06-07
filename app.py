@@ -24,6 +24,7 @@ from routes.realtime_notifications import realtime_notifications_bp
 from routes.files import files_bp
 from routes.email_notifications import email_notifications_bp
 from flask_socketio import SocketIO
+from flask import redirect
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -53,6 +54,11 @@ app.register_blueprint(audit_logs_bp, url_prefix="/audit_logs")  # Управл�
 app.register_blueprint(realtime_notifications_bp, url_prefix="/realtime_notifications")  # Уведомления в реальном времени
 app.register_blueprint(files_bp, url_prefix="/files")  # Управление файлами
 app.register_blueprint(email_notifications_bp, url_prefix="/email_notifications")  # Уведомления через email
+
+# Главная страница перенаправляет на ваш сайт
+@app.route("/")
+def home():
+    return redirect("https://p2pppppppppp-production.up.railway.app/")
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
