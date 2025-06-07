@@ -57,3 +57,35 @@ def mark_trade_paid(trade_id: int, db: Session = Depends(get_db), user: User = D
     trade.status = "paid"
     db.commit()
     return {"message": "Статус сделки обновлён на 'paid'"}
+
+@router.post("/{trade_id}/complete")
+def complete_trade(trade_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    trade = db.query(Trade).filter(Trade.id == trade_id).first()
+    if not trade:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    ad = db.query(Ad).filter(Ad.id == trade.ad_id).first()
+    if ad.owner_id != user.id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
+
+    if trade.status != "paid":
+        raise HTTPException(status_code=400, detail="Сделка ещё не оплачена")
+
+    trade.status = "completed"
+    db.commit()
+    return {"message": "Сделка завершена"}
+
+@router.post("/{trade_id}/cancel")
+def cancel_trade(trade_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    trade = db.query(Trade).filter(Trade.id == trade_id).first()
+    if not trade:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    ad = db.query(Ad).filter(Ad.id == trade.ad_id).first()
+    if ad.owner_id != user.id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
+
+    if trade.status in ["completed", "canceled"]:
+        raise HTTPException(status_code=400, detail="Сделка уже завершена или отменена")
+
+    trade.status = "canceled"
+    db.commit()
+    return {"message": "Сделка отменена"}
