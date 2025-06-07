@@ -1,85 +1,68 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Сделка</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <meta charset="UTF-8">
+  <title>Детали сделки</title>
   <style>
-    body {
-      background-color: #002b26;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    .trade-box {
-      background: #003f35;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .trade-box h2 {
-      color: #90ee90;
-    }
-    .chat-box {
-      border-top: 1px solid #90ee90;
-      margin-top: 20px;
-      padding-top: 20px;
-    }
-    .btn {
-      margin-top: 10px;
-      background-color: #005f4a;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+    body { background: #002b26; color: white; font-family: sans-serif; padding: 20px; }
+    .chat { background: #004d3f; padding: 15px; border-radius: 10px; max-width: 600px; margin: auto; }
+    .message { margin: 10px 0; }
+    .me { color: #90ee90; }
+    .other { color: #fff; }
   </style>
 </head>
 <body>
-  <div class="trade-box">
-    <h2>Сделка #<span id="orderId"></span></h2>
-    <p><strong>Тип:</strong> <span id="orderType"></span></p>
-    <p><strong>Сумма:</strong> <span id="orderAmount"></span> USDT</p>
-    <p><strong>Цена:</strong> <span id="orderPrice"></span> ₽</p>
-    <p><strong>Статус:</strong> <span id="orderStatus"></span></p>
+  <h1>Сделка #<span id="orderIdText"></span></h1>
+  <div class="chat" id="chatBox"></div>
 
-    <button class="btn" id="actionButton">Я отправил(а) платёж</button>
-
-    <div class="chat-box">
-      <h3>Чат</h3>
-      <div id="chatMessages" style="height: 150px; overflow-y: auto; border: 1px solid #666; padding: 10px; background-color: #001f1a;"></div>
-      <input type="text" id="chatInput" placeholder="Введите сообщение..." style="width: 80%;" />
-      <button class="btn" onclick="sendMessage()">Отправить</button>
-    </div>
-  </div>
+  <textarea id="msgInput" placeholder="Введите сообщение..." rows="3" cols="50"></textarea><br>
+  <button onclick="send()">Отправить</button>
 
   <script>
-    const orderId = window.location.pathname.split("/").pop();
-    document.getElementById('orderId').innerText = orderId;
+    const orderId = new URLSearchParams(window.location.search).get('id');
+    document.getElementById('orderIdText').innerText = orderId;
 
-    fetch(`/api/orders/${orderId}`)
+    const token = localStorage.getItem("token");
+
+    function load() {
+      fetch(`/api/chat/${orderId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       .then(res => res.json())
-      .then(order => {
-        document.getElementById('orderType').innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
-        document.getElementById('orderAmount').innerText = order.amount;
-        document.getElementById('orderPrice').innerText = order.price;
-        document.getElementById('orderStatus').innerText = order.status;
+      .then(data => {
+        const box = document.getElementById("chatBox");
+        box.innerHTML = "";
+        data.forEach(msg => {
+          const div = document.createElement("div");
+          div.className = "message " + (msg.sender_id === getUserId() ? "me" : "other");
+          div.innerText = msg.content;
+          box.appendChild(div);
+        });
       });
-
-    document.getElementById('actionButton').addEventListener('click', () => {
-      fetch(`/api/orders/${orderId}/confirm_payment`, { method: 'POST' })
-        .then(() => alert('Платёж помечен как отправленный!'));
-    });
-
-    function sendMessage() {
-      const msg = document.getElementById('chatInput').value;
-      if (!msg) return;
-      const chat = document.getElementById('chatMessages');
-      chat.innerHTML += `<div><b>Вы:</b> ${msg}</div>`;
-      document.getElementById('chatInput').value = '';
     }
+
+    function send() {
+      const content = document.getElementById("msgInput").value;
+      fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ order_id: Number(orderId), content })
+      }).then(() => {
+        document.getElementById("msgInput").value = "";
+        load();
+      });
+    }
+
+    function getUserId() {
+      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+      return tokenPayload.sub;
+    }
+
+    load();
+    setInterval(load, 3000);  // обновлять каждые 3 секунды
   </script>
 </body>
 </html>
