@@ -93,3 +93,44 @@ const handleMarkPaid = async () => {
   alert("Статус обновлён. Ожидайте подтверждения продавца.");
   window.location.reload();
 };
+
+{trade.status === "paid" && user.id === adOwnerId && (
+  <>
+    <button
+      onClick={handleComplete}
+      style={{ padding: "10px 20px", backgroundColor: "green", color: "white", marginRight: "10px" }}
+    >
+      Подтвердить получение
+    </button>
+    <button
+      onClick={handleCancel}
+      style={{ padding: "10px 20px", backgroundColor: "red", color: "white" }}
+    >
+      Отменить сделку
+    </button>
+  </>
+)}
+
+const handleComplete = async () => {
+  const token = localStorage.getItem("token");
+  await fetch(`http://localhost:8000/trades/${trade.id}/complete`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  alert("Сделка завершена.");
+  window.location.reload();
+};
+
+const handleCancel = async () => {
+  const token = localStorage.getItem("token");
+  await fetch(`http://localhost:8000/trades/${trade.id}/cancel`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  alert("Сделка отменена.");
+  window.location.reload();
+};
