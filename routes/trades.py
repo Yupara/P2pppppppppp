@@ -45,3 +45,15 @@ def get_my_trades(db: Session = Depends(get_db), user: User = Depends(get_curren
         }
         for t in trades
     ]
+
+@router.post("/{trade_id}/mark_paid")
+def mark_trade_paid(trade_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    trade = db.query(Trade).filter(Trade.id == trade_id).first()
+    if not trade:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    if trade.buyer_id != user.id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
+
+    trade.status = "paid"
+    db.commit()
+    return {"message": "Статус сделки обновлён на 'paid'"}
