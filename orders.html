@@ -1,53 +1,26 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Мои сделки</title>
   <style>
     body {
       background-color: #002b26;
-      color: #fff;
+      color: white;
       font-family: Arial, sans-serif;
       padding: 20px;
     }
 
     h1 {
       text-align: center;
-      color: #FFD700;
-    }
-
-    .tabs {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .tabs button {
-      padding: 10px 20px;
-      background-color: #003f35;
-      color: #fff;
-      border: none;
-      margin: 0 5px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .tabs button.active {
-      background-color: #90EE90;
-      color: #003300;
-    }
-
-    .order-list {
-      max-width: 800px;
-      margin: auto;
+      color: #90EE90;
     }
 
     .order {
       background-color: #003f35;
-      padding: 15px;
-      margin-bottom: 10px;
       border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
     }
 
     .order p {
@@ -56,86 +29,44 @@
 
     .status {
       font-weight: bold;
+      color: #ffd700;
     }
-
-    .status.active { color: #FFD700; }
-    .status.complete { color: #90EE90; }
-    .status.dispute { color: #FF6347; }
   </style>
 </head>
 <body>
   <h1>Мои сделки</h1>
-
-  <div class="tabs">
-    <button class="active" onclick="showTab('active')">Активные</button>
-    <button onclick="showTab('history')">История</button>
+  <div id="ordersContainer">
+    <!-- Здесь будут загружены сделки -->
   </div>
 
-  <div class="order-list" id="order-list"></div>
-
   <script>
-    const orders = [
-      {
-        id: 1,
-        role: 'Покупатель',
-        user: 'Savak',
-        amount: 100,
-        price: 70.5,
-        method: 'SBP',
-        status: 'active'
-      },
-      {
-        id: 2,
-        role: 'Продавец',
-        user: 'CryptoMan',
-        amount: 200,
-        price: 71.1,
-        method: 'Банк',
-        status: 'complete'
-      },
-      {
-        id: 3,
-        role: 'Покупатель',
-        user: 'BestBuyer',
-        amount: 50,
-        price: 69.9,
-        method: 'SBP',
-        status: 'dispute'
-      }
-    ];
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/orders/mine', {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')  // вставь токен если есть авторизация
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('ordersContainer');
+        if (!data.length) {
+          container.innerHTML = '<p>У вас пока нет сделок.</p>';
+          return;
+        }
 
-    function showTab(tab) {
-      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.tabs button[onclick*="${tab}"]`).classList.add('active');
-
-      const container = document.getElementById('order-list');
-      container.innerHTML = '';
-
-      const filtered = orders.filter(o => 
-        (tab === 'active' && o.status === 'active') ||
-        (tab === 'history' && (o.status === 'complete' || o.status === 'dispute'))
-      );
-
-      if (filtered.length === 0) {
-        container.innerHTML = '<p style="text-align:center;">Нет сделок</p>';
-        return;
-      }
-
-      filtered.forEach(order => {
-        const div = document.createElement('div');
-        div.className = 'order';
-        div.innerHTML = `
-          <p><strong>${order.role}:</strong> ${order.user}</p>
-          <p>Количество: ${order.amount} USDT</p>
-          <p>Цена: ${order.price} ₽</p>
-          <p>Метод: ${order.method}</p>
-          <p class="status ${order.status}">Статус: ${order.status}</p>
-        `;
-        container.appendChild(div);
+        data.forEach(order => {
+          const div = document.createElement('div');
+          div.className = 'order';
+          div.innerHTML = `
+            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
+            <p><strong>Сумма:</strong> ${order.amount} USDT</p>
+            <p><strong>Цена:</strong> ${order.price} ₽</p>
+            <p><strong>Статус:</strong> <span class="status">${order.status}</span></p>
+          `;
+          container.appendChild(div);
+        });
       });
-    }
-
-    showTab('active');
+    });
   </script>
 </body>
 </html>
