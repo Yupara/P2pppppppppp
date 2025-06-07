@@ -16,3 +16,11 @@ class Trade(Base):
     status = Column(PgEnum(TradeStatus), default=TradeStatus.pending)
 
     # ... другие связи
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trade_id = Column(Integer, ForeignKey("trades.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(Text)
+    timestamp = Column(DateTime, default=datetime.utcnow)
