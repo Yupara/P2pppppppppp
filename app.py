@@ -1,60 +1,38 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from typing import List
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
+from fastapi.staticfiles import StaticFiles
+from database import Base, engine
+from routes import auth, orders, chat
+import uvicorn
 
-# Мокаем базу данных
-fake_orders_db = [
-    {"user_id": 1, "type": "buy", "amount": 100, "price": 95_000, "status": "в ожидании"},
-    {"user_id": 1, "type": "sell", "amount": 50, "price": 96_500, "status": "завершено"},
-    {"user_id": 2, "type": "buy", "amount": 75, "price": 94_000, "status": "отменено"},
-]
+# Инициализация базы данных
+Base.metadata.create_all(bind=engine)
 
-# Пример токен-авторизации
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Приложение FastAPI
+app = FastAPI(title="P2P Platform", version="1.0")
 
-app = FastAPI()
-
-# CORS (разрешаем запросы с фронтенда)
+# Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разреши нужный домен
+    allow_origins=["*"],  # Можно ограничить до фронта
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-templates = Jinja2Templates(directory="templates")
+# Подключение роутеров
+app.include_router(auth.router)
+app.include_router(orders.router)
+app.include_router(chat.router)
 
-class Order(BaseModel):
-    type: str
-    amount: float
-    price: float
-    status: str
+# Отдача статики (HTML, JS, CSS)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Простая фейковая функция получения пользователя
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    # токен = "user1token" -> user_id = 1
-    # токен = "user2token" -> user_id = 2
-    if token == "user1token":
-        return {"user_id": 1}
-    elif token == "user2token":
-        return {"user_id": 2}
-    else:
-        raise HTTPException(status_code=401, detail="Неверный токен")
+# Корневая страница (например, index.html)
+@app.get("/")
+def root():
+    return {"message": "Добро пожаловать в P2P платформу!"}
 
-# API: Вернуть сделки текущего пользователя
-@app.get("/api/orders/mine", response_model=List[Order])
-def get_my_orders(current_user: dict = Depends(get_current_user)):
-    user_id = current_user["user_id"]
-    user_orders = [order for order in fake_orders_db if order["user_id"] == user_id]
-    return user_orders
-
-# HTML: Страница истории сделок
-@app.get("/orders", response_class=HTMLResponse)
-def orders_page(request: Request):
-    return templates.TemplateResponse("orders.html", {"request": request})
+# Запуск сервера локально
+# if __name__ == "__main__":
+#     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
