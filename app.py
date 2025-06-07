@@ -12,6 +12,7 @@ from routes.auth_verification import auth_verification_bp
 from routes.referral_payouts import referral_payouts_bp
 from routes.profile import profile_bp
 from routes.public_ads import public_ads_bp
+from routes.currencies import currencies_bp
 
 app = Flask(__name__)
 
@@ -29,6 +30,7 @@ app.register_blueprint(auth_verification_bp, url_prefix="/auth_verification")  #
 app.register_blueprint(referral_payouts_bp, url_prefix="/referral_payouts")  # Реферальные выплаты
 app.register_blueprint(profile_bp, url_prefix="/profile")  # Управление профилем пользователя
 app.register_blueprint(public_ads_bp, url_prefix="/public_ads")  # Публичные объявления
+app.register_blueprint(currencies_bp, url_prefix="/currencies")  # Управление валютами
 
 if __name__ == "__main__":
     app.run(debug=True)
