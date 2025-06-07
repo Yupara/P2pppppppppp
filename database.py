@@ -1,8 +1,14 @@
-user = User(username="TestUser", password="12345")
-db.session.add(user)
-db.session.commit()
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-ad = Ad(user_id=user.id, currency="USDT", amount=1000, price=70.96,
-        payment_methods="SBP, Тинькофф", limits="500 — 500000")
-db.session.add(ad)
-db.session.commit()
+# SQLite база
+SQLALCHEMY_DATABASE_URL = "sqlite:///./p2p.db"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
