@@ -1,16 +1,9 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, Float, ForeignKey
 from database import Base
 
-class Ad(Base):
-    __tablename__ = "ads"
-
+class Trade(Base):
+    __tablename__ = "trades"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    currency = Column(String, nullable=False)
-    amount = Column(Float, nullable=False)
-    price = Column(Float, nullable=False)
-    payment_methods = Column(String, nullable=False)
-    limits = Column(String, nullable=False)
-
-    user = relationship("User", back_populates="ads")
+    ad_id = Column(Integer, ForeignKey("ads.id"))
+    buyer_id = Column(Integer, ForeignKey("users.id"))
+    amount = Column(Float)
