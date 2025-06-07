@@ -17,6 +17,8 @@ from routes.webhooks import webhooks_bp
 from routes.analytics import analytics_bp
 from routes.notifications import notifications_bp
 from routes.roles import roles_bp
+from routes.tasks import tasks_bp
+from routes.events import events_bp
 
 app = Flask(__name__)
 
@@ -39,6 +41,8 @@ app.register_blueprint(webhooks_bp, url_prefix="/webhooks")  # Управлен�
 app.register_blueprint(analytics_bp, url_prefix="/analytics")  # Аналитика
 app.register_blueprint(notifications_bp, url_prefix="/notifications")  # Управление уведомлениями
 app.register_blueprint(roles_bp, url_prefix="/roles")  # Управление ролями и разрешениями
+app.register_blueprint(tasks_bp, url_prefix="/tasks")  # Управление задачами
+app.register_blueprint(events_bp, url_prefix="/events")  # Управление событиями
 
 if __name__ == "__main__":
     app.run(debug=True)
