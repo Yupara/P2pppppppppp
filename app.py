@@ -1,30 +1,42 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth, orders, chat
-from database import Base, engine
 
-# Создание таблиц в БД (если ещё не созданы)
-Base.metadata.create_all(bind=engine)
+from routes import orders, auth
+from database import create_db_and_tables
 
-app = FastAPI(
-    title="P2P Crypto Exchange",
-    version="1.0.0"
-)
+app = FastAPI()
 
-# Разрешаем CORS (если фронтенд на другом домене)
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Укажи домен фронтенда для безопасности
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Подключение маршрутов
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(orders.router, prefix="/api", tags=["orders"])
-app.include_router(chat.router, prefix="/api", tags=["chat"])
+# Статические файлы и шаблоны
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-@app.get("/")
-def root():
-    return {"message": "P2P API работает"}
+# Инициализация базы данных
+@app.on_event("startup")
+async def on_startup():
+    await create_db_and_tables()
+
+# Главная страница
+@app.get("/", response_class=HTMLResponse)
+async def homepage(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+# Мои сделки
+@app.get("/myorders", response_class=HTMLResponse)
+async def my_orders_page(request: Request):
+    return templates.TemplateResponse("orders.html", {"request": request})
+
+# Подключение роутов
+app.include_router(orders.router, prefix="/api/orders", tags=["orders"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
