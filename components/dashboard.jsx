@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-
 function Dashboard() {
-    const [ads, setAds] = useState([]);
+    const [ads, setAds] = React.useState([]);
 
-    useEffect(() => {
-        axios.get("/api/ads").then((response) => {
-            setAds(response.data);
-        });
+    React.useEffect(() => {
+        // Получаем объявления с сервера
+        fetch("http://localhost:8000/api/ads")
+            .then((response) => response.json())
+            .then((data) => setAds(data))
+            .catch((error) => console.error("Ошибка:", error));
     }, []);
 
     const handleBuy = (adId) => {
-        axios.post("/api/buy", { adId }).then((response) => {
-            alert(response.data.message);
-        });
+        fetch("http://localhost:8000/api/buy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ adId }),
+        })
+            .then((response) => response.json())
+            .then((data) => alert(data.message))
+            .catch((error) => alert("Ошибка: " + error.message));
     };
 
     return (
@@ -30,5 +34,3 @@ function Dashboard() {
         </div>
     );
 }
-
-export default Dashboard;
