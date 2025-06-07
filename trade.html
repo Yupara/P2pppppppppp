@@ -22,13 +22,30 @@
         document.getElementById("tradeBox").innerHTML = `
             <p>Продавец: <strong>${seller}</strong></p>
             <p>Валюта: <strong>${currency}</strong></p>
-            <p>Цена: <strong>₽${price}</strong></p>
+            <p>Цена за 1 ${currency}: <strong>₽${price}</strong></p>
             <p>Метод оплаты: <strong>${method}</strong></p>
+            <hr>
+            <label>Введите сумму в ${currency}:</label><br/>
+            <input type="number" id="cryptoAmount" placeholder="например, 100"><br/><br/>
+            <label>Вы заплатите (₽):</label>
+            <div id="amountFiat">0</div><br/>
             <button onclick="confirmTrade()">Подтвердить покупку</button>
         `;
 
+        document.getElementById("tradeBox").addEventListener("input", () => {
+            const amount = parseFloat(document.getElementById("cryptoAmount").value) || 0;
+            const fiat = (amount * parseFloat(price)).toFixed(2);
+            document.getElementById("amountFiat").innerText = fiat;
+        });
+
         function confirmTrade() {
-            alert("Сделка успешно создана! Скоро добавим реальные переводы.");
+            const amount = parseFloat(document.getElementById("cryptoAmount").value);
+            if (!amount || amount <= 0) {
+                alert("Введите корректное количество криптовалюты.");
+                return;
+            }
+            const total = (amount * parseFloat(price)).toFixed(2);
+            alert(`Вы купили ${amount} ${currency} за ₽${total}.\n(Псевдо-сделка завершена)`);
         }
     </script>
 </body>
