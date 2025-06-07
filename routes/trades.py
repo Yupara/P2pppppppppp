@@ -28,3 +28,20 @@ def buy_trade(request: BuyRequest, db: Session = Depends(get_db), user: User = D
     db.refresh(trade)
 
     return {"trade_id": trade.id}
+
+@router.get("/my")
+def get_my_trades(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    trades = (
+        db.query(Trade)
+        .filter(Trade.buyer_id == user.id)
+        .all()
+    )
+
+    return [
+        {
+            "trade_id": t.id,
+            "ad_id": t.ad_id,
+            "amount": t.amount,
+        }
+        for t in trades
+    ]
