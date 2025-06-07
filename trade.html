@@ -2,50 +2,116 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Оформление сделки</title>
+    <title>Сделка P2P</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .status-box {
+            background-color: #003f35;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            color: #fff;
+        }
+
+        .status {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #90EE90;
+        }
+
+        .timer {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        .actions {
+            margin-top: 20px;
+        }
+
+        .actions button {
+            background-color: #90EE90;
+            color: #003300;
+            padding: 10px 20px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        .actions button:hover {
+            background-color: #70c070;
+        }
+    </style>
 </head>
 <body>
     <h1>Оформление сделки</h1>
 
-    <div class="trade-details" id="tradeBox">
-        <!-- JS подставит данные -->
+    <div class="status-box" id="statusBox">
+        <p>Продавец: <strong id="sellerName"></strong></p>
+        <p>Валюта: <strong id="currency"></strong></p>
+        <p>Цена: ₽<strong id="price"></strong></p>
+        <p>Метод оплаты: <strong id="method"></strong></p>
+        <p>Сумма: <strong id="amountCrypto">0</strong> <span id="currCode"></span> (₽<span id="amountFiat">0</span>)</p>
+        <hr>
+        <p class="status">Статус: Ожидается перевод покупателя</p>
+        <p class="timer">Оставшееся время: <span id="countdown">15:00</span></p>
+
+        <div class="actions">
+            <button onclick="confirmPayment()">Я оплатил</button>
+            <button onclick="cancelTrade()">Отменить</button>
+        </div>
     </div>
 
     <script>
+        // Получаем данные из URL
         const params = new URLSearchParams(window.location.search);
         const seller = params.get("seller");
         const currency = params.get("currency");
-        const price = params.get("price");
+        const price = parseFloat(params.get("price"));
         const method = params.get("method");
 
-        document.getElementById("tradeBox").innerHTML = `
-            <p>Продавец: <strong>${seller}</strong></p>
-            <p>Валюта: <strong>${currency}</strong></p>
-            <p>Цена за 1 ${currency}: <strong>₽${price}</strong></p>
-            <p>Метод оплаты: <strong>${method}</strong></p>
-            <hr>
-            <label>Введите сумму в ${currency}:</label><br/>
-            <input type="number" id="cryptoAmount" placeholder="например, 100"><br/><br/>
-            <label>Вы заплатите (₽):</label>
-            <div id="amountFiat">0</div><br/>
-            <button onclick="confirmTrade()">Подтвердить покупку</button>
-        `;
+        document.getElementById("sellerName").innerText = seller;
+        document.getElementById("currency").innerText = currency;
+        document.getElementById("currCode").innerText = currency;
+        document.getElementById("price").innerText = price.toFixed(2);
+        document.getElementById("method").innerText = method;
 
-        document.getElementById("tradeBox").addEventListener("input", () => {
-            const amount = parseFloat(document.getElementById("cryptoAmount").value) || 0;
-            const fiat = (amount * parseFloat(price)).toFixed(2);
-            document.getElementById("amountFiat").innerText = fiat;
-        });
+        // Пример: сумма сделки
+        const amount = 100;
+        document.getElementById("amountCrypto").innerText = amount;
+        document.getElementById("amountFiat").innerText = (amount * price).toFixed(2);
 
-        function confirmTrade() {
-            const amount = parseFloat(document.getElementById("cryptoAmount").value);
-            if (!amount || amount <= 0) {
-                alert("Введите корректное количество криптовалюты.");
-                return;
+        // Таймер 15 минут
+        let seconds = 15 * 60;
+        const countdown = document.getElementById("countdown");
+
+        function updateTimer() {
+            const min = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const sec = (seconds % 60).toString().padStart(2, '0');
+            countdown.innerText = `${min}:${sec}`;
+            if (seconds > 0) {
+                seconds--;
+            } else {
+                clearInterval(timer);
+                alert("Время сделки истекло.");
             }
-            const total = (amount * parseFloat(price)).toFixed(2);
-            alert(`Вы купили ${amount} ${currency} за ₽${total}.\n(Псевдо-сделка завершена)`);
+        }
+
+        const timer = setInterval(updateTimer, 1000);
+
+        // Подтверждение оплаты
+        function confirmPayment() {
+            clearInterval(timer);
+            alert("Вы подтвердили оплату. Ожидайте подтверждения продавца.");
+            document.querySelector(".status").innerText = "Ожидается подтверждение продавца";
+        }
+
+        // Отмена сделки
+        function cancelTrade() {
+            clearInterval(timer);
+            alert("Сделка отменена.");
+            document.querySelector(".status").innerText = "Сделка отменена";
         }
     </script>
 </body>
