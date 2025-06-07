@@ -1,25 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 function Dashboard() {
-    const [trades, setTrades] = useState([]);
+    const [ads, setAds] = useState([]);
 
     useEffect(() => {
-        const fetchTrades = async () => {
-            const response = await fetch("/trades/list");
-            const data = await response.json();
-            setTrades(data);
-        };
-        fetchTrades();
+        axios.get("/api/ads").then((response) => {
+            setAds(response.data);
+        });
     }, []);
+
+    const handleBuy = (adId) => {
+        axios.post("/api/buy", { adId }).then((response) => {
+            alert(response.data.message);
+        });
+    };
 
     return (
         <div>
-            <h1>Dashboard</h1>
-            <h2>Open Trades</h2>
+            <h1>Объявления</h1>
             <ul>
-                {trades.map((trade) => (
-                    <li key={trade.id}>
-                        {trade.amount} {trade.currency} via {trade.payment_method}
+                {ads.map((ad) => (
+                    <li key={ad.id}>
+                        {ad.currency} - {ad.amount} по {ad.price}
+                        <button onClick={() => handleBuy(ad.id)}>Купить</button>
                     </li>
                 ))}
             </ul>
