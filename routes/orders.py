@@ -1,34 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from db import get_db
-from schemas.order import OrderCreate, OrderOut
-from models import Order, User
-from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
-from utils.auth import SECRET_KEY, ALGORITHM
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+templates = Jinja2Templates(directory="templates")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = int(payload.get("sub"))
-    except (JWTError, ValueError):
-        raise HTTPException(status_code=401, detail="Неверный токен")
-    user = db.query(User).get(user_id)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Пользователь не найден")
-    return user
+fake_orders = {
+    1: {"type": "buy", "amount": 100, "price": 92.5, "status": "ожидание"},
+    2: {"type": "sell", "amount": 150, "price": 91.0, "status": "оплачено"},
+}
 
-@router.post("/orders", response_model=OrderOut)
-def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    new_order = Order(**order.dict(), owner_id=current_user.id)
-    db.add(new_order)
-    db.commit()
-    db.refresh(new_order)
-    return new_order
+@router.get("/trade/{order_id}", response_class=HTMLResponse)
+async def trade_page(request: Request, order_id: int):
+    if order_id not in fake_orders:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    return templates.TemplateResponse("trade.html", {"request": request, "order_id": order_id})
 
-@router.get("/orders/mine", response_model=list[OrderOut])
-def get_my_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return db.query(Order).filter(Order.owner_id == current_user.id).all()
+@router.get("/api/orders/{order_id}")
+async def get_order(order_id: int):
+    if order_id not in fake_orders:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    return fake_orders[order_id]
+
+@router.post("/api/orders/{order_id}/confirm_payment")
+async def confirm_payment(order_id: int):
+    if order_id not in fake_orders:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    fake_orders[order_id]["status"] = "платёж отправлен"
+    return {"message": "Платёж помечен как отправленный"}
