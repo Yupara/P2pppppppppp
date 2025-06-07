@@ -10,6 +10,8 @@ from routes.auto_cancel import auto_cancel_bp
 from routes.balance import balance_bp
 from routes.auth_verification import auth_verification_bp
 from routes.referral_payouts import referral_payouts_bp
+from routes.profile import profile_bp
+from routes.public_ads import public_ads_bp
 
 app = Flask(__name__)
 
@@ -25,6 +27,8 @@ app.register_blueprint(auto_cancel_bp, url_prefix="/auto_cancel")  # Автом�
 app.register_blueprint(balance_bp, url_prefix="/balance")  # Баланс пользователя
 app.register_blueprint(auth_verification_bp, url_prefix="/auth_verification")  # Верификация через SMS
 app.register_blueprint(referral_payouts_bp, url_prefix="/referral_payouts")  # Реферальные выплаты
+app.register_blueprint(profile_bp, url_prefix="/profile")  # Управление профилем пользователя
+app.register_blueprint(public_ads_bp, url_prefix="/public_ads")  # Публичные объявления
 
 if __name__ == "__main__":
     app.run(debug=True)
