@@ -1,76 +1,72 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
 function TradePage() {
   const { adId } = useParams();
-  const navigate = useNavigate();
+  const [ad, setAd] = useState(null);
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleBuy = () => {
+  useEffect(() => {
+    // Подгрузка инфо объявления по id (опционально)
+    fetch(`http://localhost:8000/ads/${adId}`)
+      .then(res => res.json())
+      .then(data => setAd(data))
+      .catch(() => setAd(null));
+  }, [adId]);
+
+  const handleBuy = async () => {
     if (!amount || isNaN(amount)) {
       setMessage("Введите корректную сумму");
       return;
     }
 
-    // Здесь будет реальный запрос на бекенд
-    setMessage(`Вы отправили заявку на покупку на сумму ₽${amount} для объявления #${adId}`);
+    try {
+      const response = await fetch("http://localhost:8000/trades/buy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          ad_id: parseInt(adId),
+          amount: parseFloat(amount),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(`✅ Успешно! ID сделки: ${data.trade_id}`);
+      } else {
+        setMessage(`❌ Ошибка: ${data.detail || "Произошла ошибка"}`);
+      }
+    } catch (error) {
+      setMessage("❌ Сервер недоступен");
+    }
   };
 
   return (
-    <div style={{ padding: 20, backgroundColor: "#002b26", minHeight: "100vh", color: "#fff" }}>
-      <h2 style={{ color: "#90EE90" }}>Покупка у продавца #{adId}</h2>
-
-      <div style={{ marginTop: 20 }}>
-        <label>Сумма в RUB:</label>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          style={{
-            display: "block",
-            padding: "10px",
-            marginTop: "10px",
-            width: "100%",
-            maxWidth: "300px",
-            backgroundColor: "#003f35",
-            border: "1px solid #90EE90",
-            color: "#fff",
-          }}
-        />
-      </div>
-
-      <button
-        onClick={handleBuy}
-        style={{
-          marginTop: "20px",
-          padding: "10px 20px",
-          backgroundColor: "#90EE90",
-          color: "#003300",
-          border: "none",
-          borderRadius: "5px",
-          fontWeight: "bold",
-          cursor: "pointer",
-        }}
-      >
+    <div style={{ maxWidth: 500, margin: "auto", padding: 20 }}>
+      <h2>Покупка #{adId}</h2>
+      {ad && (
+        <div>
+          <p>Продавец: {ad.owner_name}</p>
+          <p>Цена: ₽{ad.price}</p>
+          <p>Доступно: {ad.amount} USDT</p>
+        </div>
+      )}
+      <input
+        type="number"
+        placeholder="Сумма в USDT"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        style={{ width: "100%", padding: 10, marginTop: 10 }}
+      />
+      <button onClick={handleBuy} style={{ width: "100%", padding: 10, marginTop: 10 }}>
         Подтвердить покупку
       </button>
-
-      {message && <p style={{ marginTop: 20, color: "#FFD700" }}>{message}</p>}
-
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          marginTop: "40px",
-          padding: "8px 16px",
-          backgroundColor: "#444",
-          color: "#fff",
-          border: "none",
-          borderRadius: "5px",
-        }}
-      >
-        Назад
-      </button>
+      {message && <p style={{ marginTop: 10 }}>{message}</p>}
     </div>
   );
 }
