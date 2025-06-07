@@ -19,8 +19,12 @@ from routes.notifications import notifications_bp
 from routes.roles import roles_bp
 from routes.tasks import tasks_bp
 from routes.events import events_bp
+from routes.audit_logs import audit_logs_bp
+from routes.realtime_notifications import realtime_notifications_bp
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # Регистрируем маршруты
 app.register_blueprint(auth_bp, url_prefix="/auth")  # Авторизация и регистрация
@@ -43,6 +47,8 @@ app.register_blueprint(notifications_bp, url_prefix="/notifications")  # Упр�
 app.register_blueprint(roles_bp, url_prefix="/roles")  # Управление ролями и разрешениями
 app.register_blueprint(tasks_bp, url_prefix="/tasks")  # Управление задачами
 app.register_blueprint(events_bp, url_prefix="/events")  # Управление событиями
+app.register_blueprint(audit_logs_bp, url_prefix="/audit_logs")  # Управление журналом аудита
+app.register_blueprint(realtime_notifications_bp, url_prefix="/realtime_notifications")  # Уведомления в реальном времени
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)
