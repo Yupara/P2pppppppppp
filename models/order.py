@@ -25,3 +25,11 @@ class Order(Base):
     status = Column(Enum(OrderStatus), default=OrderStatus.pending)
 
     user = relationship("User", back_populates="orders")
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
