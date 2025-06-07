@@ -3,325 +3,331 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Bybit P2P Demo</title>
+<title>Bybit P2P — Покупка и Продажа</title>
 <style>
-    body {
-        margin: 0; font-family: Arial, sans-serif;
-        background-color: #002b26; color: #e0f2e9;
-    }
-    h1 {
-        text-align: center; margin: 20px 0;
-        color: #90EE90;
-    }
-    /* Меню */
-    .menu {
-        display: flex; justify-content: center; background: #003f35;
-        padding: 10px 0;
-    }
-    .menu button {
-        background: transparent;
-        border: none;
-        color: #a9d6a9;
-        font-size: 1.1rem;
-        padding: 10px 25px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: color 0.3s;
-    }
-    .menu button.active, .menu button:hover {
-        color: #90EE90;
-        border-bottom: 2px solid #90EE90;
-    }
-    /* Контейнер контента */
-    .content {
-        max-width: 900px;
-        margin: 0 auto 40px;
-        padding: 0 10px;
-    }
-    /* Список объявлений */
-    .ads-list {
-        display: flex; flex-direction: column; gap: 20px;
-    }
-    .ad-card {
-        background: #004d40;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 0 8px #007a56aa;
-        display: flex; justify-content: space-between; align-items: center;
-        color: #ccf5d6;
-    }
-    .ad-info {
-        display: flex; align-items: center; gap: 15px;
-    }
-    .ad-info img {
-        width: 50px; height: 50px; border-radius: 50%;
-        border: 2px solid #90EE90;
-    }
-    .ad-details {
-        line-height: 1.2;
-    }
-    .ad-details h3 {
-        margin: 0 0 5px 0; color: #d2f6ca;
-    }
-    .ad-details p {
-        margin: 2px 0;
-        font-size: 0.9rem;
-    }
-    .ad-actions button {
-        background: #90EE90;
-        border: none;
-        border-radius: 5px;
-        padding: 12px 25px;
-        font-weight: 700;
-        color: #003300;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-    .ad-actions button:hover {
-        background-color: #70c070;
-    }
-
-    /* Страница сделки */
-    .trade-page {
-        background: #004d40;
-        border-radius: 10px;
-        padding: 25px;
-        max-width: 600px;
-        margin: 30px auto;
-        box-shadow: 0 0 15px #007a56cc;
-        color: #d2f6ca;
-    }
-    .trade-page h2 {
-        margin-top: 0;
-        color: #90EE90;
-        text-align: center;
-    }
-    .trade-details p {
-        margin: 10px 0;
-        font-size: 1rem;
-    }
-    .trade-actions {
-        text-align: center;
-        margin-top: 20px;
-    }
-    .trade-actions button {
-        background: #90EE90;
-        border: none;
-        padding: 15px 40px;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #003300;
-        border-radius: 7px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-    .trade-actions button:hover {
-        background-color: #70c070;
-    }
-    /* Кнопка возврата */
-    .back-btn {
-        background: transparent;
-        border: none;
-        color: #90EE90;
-        cursor: pointer;
-        font-size: 0.9rem;
-        margin-bottom: 15px;
-        display: inline-block;
-    }
-    .back-btn:hover {
-        text-decoration: underline;
-    }
+  /* Тёмно-зелёная палитра */
+  body {
+    margin: 0; padding: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #002b26;
+    color: #cde8d6;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    padding: 20px 0;
+    color: #90ee90;
+    user-select: none;
+  }
+  .tabs {
+    display: flex;
+    justify-content: center;
+    background: #003f35;
+    padding: 10px 0;
+    user-select: none;
+  }
+  .tabs button {
+    background: transparent;
+    border: none;
+    padding: 12px 30px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: rgba(255 255 255 / 0.7);
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .tabs button.active,
+  .tabs button:hover {
+    color: #90ee90;
+    border-bottom: 2px solid #90ee90;
+  }
+  .filters {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 15px 0;
+  }
+  .filters select,
+  .filters button {
+    background: #004d40;
+    border: 1px solid #90ee90;
+    color: #cde8d6;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+  }
+  .filters button:hover {
+    background: #90ee90;
+    color: #003300;
+  }
+  .banner {
+    max-width: 900px;
+    margin: 20px auto;
+    background: linear-gradient(90deg, #004d00, #006400);
+    padding: 15px 25px;
+    border-radius: 10px;
+    color: #fff200;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+  }
+  .banner button {
+    background: #90ee90;
+    border: none;
+    color: #003300;
+    padding: 10px 20px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .banner button:hover {
+    background: #70c070;
+  }
+  .cards {
+    max-width: 900px;
+    margin: 20px auto 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .card {
+    background: #003f35;
+    border-radius: 10px;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 0.2);
+  }
+  .card .info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .card .info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .card .info .status {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  .status.online {
+    background-color: #90ee90;
+  }
+  .status.offline {
+    background-color: #ff4500;
+  }
+  .card .details {
+    flex-grow: 1;
+    padding-left: 15px;
+    color: #d4ffd4;
+  }
+  .card .details p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+  }
+  .card .actions button {
+    background: #90ee90;
+    border: none;
+    color: #003300;
+    padding: 10px 25px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .card .actions button:hover {
+    background: #70c070;
+  }
 </style>
 </head>
 <body>
 
-<h1>Bybit P2P Demo</h1>
+<h1>Bybit P2P</h1>
 
-<!-- Меню -->
-<div class="menu">
-    <button id="buyTab" class="active">Покупка</button>
-    <button id="sellTab">Продажа</button>
+<div class="tabs">
+  <button id="buyTab" class="active">Покупка</button>
+  <button id="sellTab">Продажа</button>
 </div>
 
-<div class="content">
-    <!-- Списки объявлений -->
-    <div id="adsBuy" class="ads-list">
-        <!-- Покупка объявления -->
-        <div class="ad-card" data-id="101" data-type="buy">
-            <div class="ad-info">
-                <img src="https://via.placeholder.com/50" alt="User Avatar" />
-                <div class="ad-details">
-                    <h3>Savak</h3>
-                    <p>40 ордеров | 90% выполнено</p>
-                    <p>Цена: ₽70,96</p>
-                    <p>Количество: 304,7685 USDT</p>
-                    <p>Лимиты: 500 – 500 000 RUB</p>
-                    <p>Способы оплаты: SBP, Пиметы</p>
-                </div>
-            </div>
-            <div class="ad-actions">
-                <button class="trade-btn">Купить</button>
-            </div>
-        </div>
-        <div class="ad-card" data-id="102" data-type="buy">
-            <div class="ad-info">
-                <img src="https://via.placeholder.com/50" alt="User Avatar" />
-                <div class="ad-details">
-                    <h3>Ищу_Партнеров</h3>
-                    <p>15 ордеров | 10% выполнено</p>
-                    <p>Цена: ₽71,03</p>
-                    <p>Количество: 128,8821 USDT</p>
-                    <p>Лимиты: 500 – 500 000 RUB</p>
-                    <p>Способы оплаты: SBP, Овореол</p>
-                </div>
-            </div>
-            <div class="ad-actions">
-                <button class="trade-btn">Купить</button>
-            </div>
-        </div>
-    </div>
+<div class="filters">
+  <select id="currencySelect">
+    <option value="USDT">USDT</option>
+    <option value="BTC">BTC</option>
+    <option value="ETH">ETH</option>
+  </select>
 
-    <div id="adsSell" class="ads-list" style="display:none;">
-        <!-- Продажа объявления -->
-        <div class="ad-card" data-id="201" data-type="sell">
-            <div class="ad-info">
-                <img src="https://via.placeholder.com/50" alt="User Avatar" />
-                <div class="ad-details">
-                    <h3>Seller_One</h3>
-                    <p>25 ордеров | 95% выполнено</p>
-                    <p>Цена: ₽71,50</p>
-                    <p>Количество: 200,5000 USDT</p>
-                    <p>Лимиты: 1000 – 600 000 RUB</p>
-                    <p>Способы оплаты: Банковский перевод, QIWI</p>
-                </div>
-            </div>
-            <div class="ad-actions">
-                <button class="trade-btn">Продать</button>
-            </div>
-        </div>
-        <div class="ad-card" data-id="202" data-type="sell">
-            <div class="ad-info">
-                <img src="https://via.placeholder.com/50" alt="User Avatar" />
-                <div class="ad-details">
-                    <h3>CryptoKing</h3>
-                    <p>50 ордеров | 80% выполнено</p>
-                    <p>Цена: ₽70,75</p>
-                    <p>Количество: 150,3000 USDT</p>
-                    <p>Лимиты: 500 – 450 000 RUB</p>
-                    <p>Способы оплаты: SBP, PayPal</p>
-                </div>
-            </div>
-            <div class="ad-actions">
-                <button class="trade-btn">Продать</button>
-            </div>
-        </div>
-    </div>
+  <select id="amountSelect">
+    <option value="">Сумма</option>
+    <option value="1000">1000</option>
+    <option value="5000">5000</option>
+    <option value="10000">10000</option>
+  </select>
 
-    <!-- Страница сделки (скрыта по умолчанию) -->
-    <div id="tradePage" class="trade-page" style="display:none;">
-        <button class="back-btn" id="backToAds">&larr; Назад к объявлениям</button>
-        <h2 id="tradeTitle"></h2>
-        <div class="trade-details" id="tradeDetails"></div>
-        <div class="trade-actions">
-            <button id="confirmTradeBtn">Подтвердить сделку</button>
-        </div>
-    </div>
+  <select id="paymentSelect">
+    <option value="all">Все способы оплаты</option>
+    <option value="sbp">SBP</option>
+    <option value="bank">Банковский перевод</option>
+    <option value="qiwi">QIWI</option>
+  </select>
+
+  <button id="filterBtn">Фильтр</button>
+</div>
+
+<div class="banner">
+  <div>Попробуйте P2P HotSwap — лучшие ставки и больше ликвидности!</div>
+  <button id="learnMoreBtn">Узнать больше</button>
+</div>
+
+<div class="cards" id="adsContainer">
+  <!-- Объявления появятся здесь -->
 </div>
 
 <script>
-    // Элементы
-    const buyTab = document.getElementById('buyTab');
-    const sellTab = document.getElementById('sellTab');
-    const adsBuy = document.getElementById('adsBuy');
-    const adsSell = document.getElementById('adsSell');
-    const tradePage = document.getElementById('tradePage');
-    const tradeTitle = document.getElementById('tradeTitle');
-    const tradeDetails = document.getElementById('tradeDetails');
-    const backToAds = document.getElementById('backToAds');
-    const confirmTradeBtn = document.getElementById('confirmTradeBtn');
+  const buyTab = document.getElementById("buyTab");
+  const sellTab = document.getElementById("sellTab");
+  const adsContainer = document.getElementById("adsContainer");
+  const filterBtn = document.getElementById("filterBtn");
+  const currencySelect = document.getElementById("currencySelect");
+  const amountSelect = document.getElementById("amountSelect");
+  const paymentSelect = document.getElementById("paymentSelect");
 
-    // Активная вкладка: "Покупка" или "Продажа"
-    let activeTab = 'buy';
+  let currentTab = "buy";
 
-    // Переключение вкладок
-    buyTab.addEventListener('click', () => {
-        if (activeTab === 'buy') return;
-        activeTab = 'buy';
-        buyTab.classList.add('active');
-        sellTab.classList.remove('active');
-        adsBuy.style.display = 'flex';
-        adsSell.style.display = 'none';
-        tradePage.style.display = 'none';
+  // Пример объявлений (заглушка)
+  const allAds = [
+    {
+      id: 1,
+      type: "buy",
+      user: "Savak",
+      orders: 40,
+      completedPercent: 90,
+      price: "₽70,96",
+      amount: "304,7685 USDT",
+      limits: "500 – 500 000 RUB",
+      paymentMethods: ["SBP", "Pimeta"],
+      online: true,
+    },
+    {
+      id: 2,
+      type: "buy",
+      user: "Ищу_Партнеров",
+      orders: 15,
+      completedPercent: 10,
+      price: "₽71,03",
+      amount: "128,8821 USDT",
+      limits: "500 – 500 000 RUB",
+      paymentMethods: ["SBP", "Овореол"],
+      online: false,
+    },
+    {
+      id: 3,
+      type: "sell",
+      user: "CryptoSeller",
+      orders: 25,
+      completedPercent: 85,
+      price: "₽72,10",
+      amount: "500,00 BTC",
+      limits: "1000 – 1 000 000 RUB",
+      paymentMethods: ["Bank Transfer", "QIWI"],
+      online: true,
+    }
+  ];
+
+  function renderAds() {
+    adsContainer.innerHTML = "";
+    // Фильтры
+    const currencyFilter = currencySelect.value;
+    const amountFilter = amountSelect.value;
+    const paymentFilter = paymentSelect.value;
+
+    const filteredAds = allAds.filter(ad => {
+      if (ad.type !== currentTab) return false;
+      if (currencyFilter && !ad.amount.includes(currencyFilter)) return false;
+      if (paymentFilter !== "all" && !ad.paymentMethods.some(pm => pm.toLowerCase() === paymentFilter)) return false;
+      if (amountFilter) {
+        // Для примера: проверим только по минимальной сумме в limits
+        const limitsParts = ad.limits.match(/(\d[\d\s]*)/g);
+        if (limitsParts) {
+          const minLimit = parseInt(limitsParts[0].replace(/\s/g, ''));
+          if (parseInt(amountFilter) < minLimit) return false;
+        }
+      }
+      return true;
     });
 
-    sellTab.addEventListener('click', () => {
-        if (activeTab === 'sell') return;
-        activeTab = 'sell';
-        sellTab.classList.add('active');
-        buyTab.classList.remove('active');
-        adsBuy.style.display = 'none';
-        adsSell.style.display = 'flex';
-        tradePage.style.display = 'none';
-    });
-
-    // Функция показа страницы сделки
-    function showTradePage(adCard) {
-        const id = adCard.getAttribute('data-id');
-        const type = adCard.getAttribute('data-type');
-        const name = adCard.querySelector('.ad-details h3').textContent;
-        const orders = adCard.querySelector('.ad-details p:nth-child(2)').textContent;
-        const price = adCard.querySelector('.ad-details p:nth-child(3)').textContent;
-        const amount = adCard.querySelector('.ad-details p:nth-child(4)').textContent;
-        const limits = adCard.querySelector('.ad-details p:nth-child(5)').textContent;
-        const payments = adCard.querySelector('.ad-details p:nth-child(6)').textContent;
-
-        // Заголовок
-        tradeTitle.textContent = type === 'buy' ? `Покупка у ${name}` : `Продажа у ${name}`;
-
-        // Детали сделки
-        tradeDetails.innerHTML = `
-            <p><b>Ордеров:</b> ${orders.replace('ордеров |', '').trim()}</p>
-            <p><b>${price}</b></p>
-            <p><b>${amount}</b></p>
-            <p><b>${limits}</b></p>
-            <p><b>Способы оплаты:</b> ${payments.replace('Способы оплаты: ', '')}</p>
-            <p><b>ID сделки:</b> ${id}</p>
-        `;
-
-        // Показываем страницу сделки, скрываем списки объявлений
-        tradePage.style.display = 'block';
-        adsBuy.style.display = 'none';
-        adsSell.style.display = 'none';
-        buyTab.classList.remove('active');
-        sellTab.classList.remove('active');
+    if (filteredAds.length === 0) {
+      adsContainer.innerHTML = "<p style='text-align:center; color:#90ee90;'>Объявления не найдены.</p>";
+      return;
     }
 
-    // Обработка кликов по кнопкам "Купить" и "Продать"
-    document.querySelectorAll('.trade-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const adCard = btn.closest('.ad-card');
-            showTradePage(adCard);
-        });
-    });
+    filteredAds.forEach(ad => {
+      const card = document.createElement("div");
+      card.className = "card";
 
-    // Кнопка "Назад"
-    backToAds.addEventListener('click', () => {
-        tradePage.style.display = 'none';
-        if (activeTab === 'buy') {
-            adsBuy.style.display = 'flex';
-            buyTab.classList.add('active');
-        } else {
-            adsSell.style.display = 'flex';
-            sellTab.classList.add('active');
-        }
-    });
+      card.innerHTML = `
+        <div class="info">
+          <div class="status ${ad.online ? "online" : "offline"}" title="${ad.online ? "Онлайн" : "Оффлайн"}"></div>
+          <img src="https://i.pravatar.cc/50?u=${ad.user}" alt="${ad.user}" />
+          <div>
+            <b>${ad.user}</b><br />
+            <small>Заказов: ${ad.orders} • Завершено: ${ad.completedPercent}%</small>
+          </div>
+        </div>
+        <div class="details">
+          <p><b>Цена:</b> ${ad.price}</p>
+          <p><b>Кол-во:</b> ${ad.amount}</p>
+          <p><b>Лимиты:</b> ${ad.limits}</p>
+          <p><b>Оплата:</b> ${ad.paymentMethods.join(", ")}</p>
+        </div>
+        <div class="actions">
+          <button onclick="startTrade(${ad.id})">${ad.type === "buy" ? "Купить" : "Продать"}</button>
+        </div>
+      `;
 
-    // Подтверждение сделки
-    confirmTradeBtn.addEventListener('click', () => {
-        alert('Сделка подтверждена! (здесь должна быть логика обработки сделки)');
-        // После подтверждения можно возвратиться к спискам объявлений:
-        backToAds.click();
+      adsContainer.appendChild(card);
     });
+  }
+
+  function startTrade(adId) {
+    const ad = allAds.find(a => a.id === adId);
+    if (!ad) return alert("Объявление не найдено");
+
+    alert(`Начинаем сделку:\n\nПользователь: ${ad.user}\nТип: ${ad.type === "buy" ? "Покупка" : "Продажа"}\nЦена: ${ad.price}\nКоличество: ${ad.amount}`);
+    // Здесь будет переход к странице сделки, чату и т.д.
+  }
+
+  buyTab.addEventListener("click", () => {
+    currentTab = "buy";
+    buyTab.classList.add("active");
+    sellTab.classList.remove("active");
+    renderAds();
+  });
+
+  sellTab.addEventListener("click", () => {
+    currentTab = "sell";
+    sellTab.classList.add("active");
+    buyTab.classList.remove("active");
+    renderAds();
+  });
+
+  filterBtn.addEventListener("click", renderAds);
+
+  // Изначально
+  renderAds();
+
+  document.getElementById("learnMoreBtn").addEventListener("click", () => {
+    alert("Функция P2P HotSwap будет реализована в следующих версиях.");
+  });
 </script>
 
 </body>
