@@ -2,115 +2,75 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Открытие сделки | P2P</title>
+  <title>Сделка</title>
   <style>
     body {
       background-color: #002b26;
       color: white;
       font-family: Arial, sans-serif;
-      padding: 30px;
-    }
-
-    .order-box {
-      background-color: #003f35;
       padding: 20px;
-      border-radius: 10px;
-      max-width: 500px;
-      margin: 0 auto;
     }
-
-    h2 {
-      text-align: center;
+    h1 {
       color: #90EE90;
     }
-
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      background-color: #004d44;
-      border: none;
-      border-radius: 5px;
-      color: white;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 20px;
-      padding: 12px;
-      background-color: #90EE90;
-      color: #002b26;
-      border: none;
-      border-radius: 5px;
+    .status {
       font-weight: bold;
+      color: #ffd700;
+    }
+    button {
+      background-color: #00695c;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 5px;
       cursor: pointer;
     }
-
-    .message {
-      margin-top: 15px;
-      text-align: center;
-      color: lightgreen;
+    button:hover {
+      background-color: #00897b;
     }
   </style>
 </head>
 <body>
-  <div class="order-box">
-    <h2>Оформление сделки</h2>
-    <p><strong>Ордер ID:</strong> <span id="orderId"></span></p>
-    <p><strong>Тип:</strong> <span id="orderType"></span></p>
-    <p><strong>Цена:</strong> <span id="orderPrice"></span> ₽</p>
+  <h1>Информация о сделке</h1>
+  <p><strong>Тип:</strong> <span id="orderType">Покупка</span></p>
+  <p><strong>Сумма:</strong> <span id="orderAmount">100 USDT</span></p>
+  <p><strong>Цена:</strong> <span id="orderPrice">92,000 ₽</span></p>
+  <p><strong>Статус:</strong> <span class="status" id="orderStatus">в ожидании</span></p>
 
-    <label for="amount">Введите сумму в USDT:</label>
-    <input type="number" id="amount" placeholder="Например, 100">
-
-    <button onclick="createDeal()">Подтвердить сделку</button>
-
-    <div class="message" id="message"></div>
-  </div>
+  <button onclick="markAsPaid()">Я оплатил</button>
+  <button onclick="markAsConfirmed()">Подтвердить получение</button>
+  <button onclick="openDispute()">Открыть спор</button>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('id');
+    const orderId = new URLSearchParams(window.location.search).get('id');
+    const token = localStorage.getItem('token');
 
-    // Получаем детали ордера
-    fetch(`/api/ads/${orderId}`)
-      .then(res => res.json())
-      .then(order => {
-        document.getElementById('orderId').textContent = order.id;
-        document.getElementById('orderType').textContent = order.type === 'buy' ? 'Покупка' : 'Продажа';
-        document.getElementById('orderPrice').textContent = order.price;
+    async function markAsPaid() {
+      await fetch(`/api/orders/${orderId}/mark-paid`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
       });
-
-    function createDeal() {
-      const amount = document.getElementById("amount").value;
-
-      fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + localStorage.getItem("token")
-        },
-        body: JSON.stringify({
-          ad_id: orderId,
-          amount: parseFloat(amount)
-        })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Ошибка создания сделки");
-        return res.json();
-      })
-      .then(data => {
-        document.getElementById("message").textContent = "Сделка успешно создана!";
-      })
-      .catch(err => {
-        document.getElementById("message").textContent = "Ошибка: " + err.message;
-      });
+      document.getElementById('orderStatus').textContent = 'оплачено';
     }
+
+    async function markAsConfirmed() {
+      await fetch(`/api/orders/${orderId}/confirm-receipt`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      document.getElementById('orderStatus').textContent = 'завершена';
+    }
+
+    async function openDispute() {
+      await fetch(`/api/orders/${orderId}/dispute`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      document.getElementById('orderStatus').textContent = 'спор';
+    }
+
+    // при загрузке подставить реальные данные, если хочешь
   </script>
 </body>
 </html>
