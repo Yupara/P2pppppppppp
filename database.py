@@ -1,16 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+user = User(username="TestUser", password="12345")
+db.session.add(user)
+db.session.commit()
 
-DATABASE_URL = "sqlite:///./p2p_exchange.db"  # Используем SQLite для простоты
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+ad = Ad(user_id=user.id, currency="USDT", amount=1000, price=70.96,
+        payment_methods="SBP, Тинькофф", limits="500 — 500000")
+db.session.add(ad)
+db.session.commit()
