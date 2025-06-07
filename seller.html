@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Подтверждение сделки</title>
+  <style>
+    body {
+      background-color: #002b26;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .box {
+      background-color: #003f35;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #FFD700;
+    }
+
+    .info {
+      margin-bottom: 20px;
+    }
+
+    .info p {
+      margin: 8px 0;
+      font-size: 1rem;
+    }
+
+    .status {
+      font-weight: bold;
+      color: #90EE90;
+      font-size: 1.2rem;
+      margin-top: 20px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .actions button {
+      padding: 10px 20px;
+      background-color: #90EE90;
+      color: #003300;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .actions button:hover {
+      background-color: #70c070;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Подтверждение сделки</h1>
+
+    <div class="info">
+      <p>Покупатель: <strong id="buyer">Неизвестно</strong></p>
+      <p>Сумма: <strong id="amount">0</strong> USDT</p>
+      <p>Сумма в RUB: <strong id="rub">0</strong> ₽</p>
+      <p>Способ оплаты: <strong id="method">-</strong></p>
+    </div>
+
+    <div class="status" id="status">Ожидание подтверждения оплаты от покупателя</div>
+
+    <div class="actions">
+      <button onclick="confirmRelease()">Подтвердить получение</button>
+      <button onclick="cancel()">Оспорить</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const buyer = params.get("buyer") || "User123";
+    const price = parseFloat(params.get("price") || "70.00");
+    const amount = parseFloat(params.get("amount") || "100");
+    const method = params.get("method") || "SBP";
+
+    document.getElementById("buyer").innerText = buyer;
+    document.getElementById("amount").innerText = amount.toFixed(4);
+    document.getElementById("rub").innerText = (amount * price).toFixed(2);
+    document.getElementById("method").innerText = method;
+
+    function confirmRelease() {
+      document.getElementById("status").innerText = "Сделка завершена. USDT отправлены покупателю.";
+      alert("Вы подтвердили сделку. Криптовалюта переведена.");
+    }
+
+    function cancel() {
+      document.getElementById("status").innerText = "Сделка в споре. Ожидается вмешательство поддержки.";
+      alert("Открыт спор. Ожидайте решения.");
+    }
+  </script>
+</body>
+</html>
