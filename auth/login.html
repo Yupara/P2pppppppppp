@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Вход | P2P</title>
+  <style>
+    body {
+      background-color: #002b26;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-box {
+      background-color: #003f35;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+    }
+    h2 {
+      color: #90EE90;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: none;
+      background-color: #004d44;
+      color: white;
+    }
+    button {
+      width: 100%;
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #90EE90;
+      color: #002b26;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #70c070;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>Вход</h2>
+    <input type="text" id="username" placeholder="Логин">
+    <input type="password" id="password" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
+    <div id="error" class="error"></div>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      fetch("/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({ username, password })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Неверные данные");
+        return res.json();
+      })
+      .then(data => {
+        localStorage.setItem("token", data.access_token);
+        window.location.href = "index.html";
+      })
+      .catch(err => {
+        document.getElementById("error").textContent = "Ошибка входа: " + err.message;
+      });
+    }
+  </script>
+</body>
+</html>
