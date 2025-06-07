@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Сделка</title>
+  <title>Детали сделки</title>
   <style>
     body {
       background-color: #002b26;
@@ -10,67 +10,98 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
+
     h1 {
-      color: #90EE90;
+      text-align: center;
+      color: #00ffcc;
     }
-    .status {
-      font-weight: bold;
-      color: #ffd700;
+
+    .info-box {
+      background-color: #004d40;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
     }
-    button {
-      background-color: #00695c;
-      color: white;
+
+    .actions button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #00796b;
       border: none;
-      padding: 10px 15px;
-      margin: 5px;
       border-radius: 5px;
+      color: white;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #00897b;
+
+    .actions button:hover {
+      background-color: #00bfa5;
     }
   </style>
 </head>
 <body>
-  <h1>Информация о сделке</h1>
-  <p><strong>Тип:</strong> <span id="orderType">Покупка</span></p>
-  <p><strong>Сумма:</strong> <span id="orderAmount">100 USDT</span></p>
-  <p><strong>Цена:</strong> <span id="orderPrice">92,000 ₽</span></p>
-  <p><strong>Статус:</strong> <span class="status" id="orderStatus">в ожидании</span></p>
+  <h1>Детали сделки</h1>
 
-  <button onclick="markAsPaid()">Я оплатил</button>
-  <button onclick="markAsConfirmed()">Подтвердить получение</button>
-  <button onclick="openDispute()">Открыть спор</button>
+  <div class="info-box" id="orderInfo">
+    Загрузка информации о сделке...
+  </div>
+
+  <div class="actions">
+    <button onclick="markAsPaid()">Я оплатил</button>
+    <button onclick="markAsConfirmed()">Подтвердить получение</button>
+    <button onclick="openDispute()">Открыть спор</button>
+  </div>
 
   <script>
     const orderId = new URLSearchParams(window.location.search).get('id');
-    const token = localStorage.getItem('token');
 
-    async function markAsPaid() {
-      await fetch(`/api/orders/${orderId}/mark-paid`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      document.getElementById('orderStatus').textContent = 'оплачено';
+    function loadOrder() {
+      fetch(`/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      })
+        .then(res => res.json())
+        .then(order => {
+          const box = document.getElementById('orderInfo');
+          box.innerHTML = `
+            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
+            <p><strong>Сумма:</strong> ${order.amount} USDT</p>
+            <p><strong>Цена:</strong> ${order.price} ₽</p>
+            <p><strong>Статус:</strong> ${order.status}</p>
+            <p><strong>Создано:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+          `;
+        });
     }
 
-    async function markAsConfirmed() {
-      await fetch(`/api/orders/${orderId}/confirm-receipt`, {
+    function markAsPaid() {
+      fetch(`/api/orders/${orderId}/mark_paid`, {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      document.getElementById('orderStatus').textContent = 'завершена';
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(() => alert('Отмечено как оплачено'));
     }
 
-    async function openDispute() {
-      await fetch(`/api/orders/${orderId}/dispute`, {
+    function markAsConfirmed() {
+      fetch(`/api/orders/${orderId}/confirm`, {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      document.getElementById('orderStatus').textContent = 'спор';
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(() => alert('Получение подтверждено'));
     }
 
-    // при загрузке подставить реальные данные, если хочешь
+    function openDispute() {
+      fetch(`/api/orders/${orderId}/dispute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      }).then(() => alert('Спор открыт'));
+    }
+
+    loadOrder();
   </script>
 </body>
 </html>
