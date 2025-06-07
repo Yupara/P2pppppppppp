@@ -15,6 +15,8 @@ from routes.public_ads import public_ads_bp
 from routes.currencies import currencies_bp
 from routes.webhooks import webhooks_bp
 from routes.analytics import analytics_bp
+from routes.notifications import notifications_bp
+from routes.roles import roles_bp
 
 app = Flask(__name__)
 
@@ -35,6 +37,8 @@ app.register_blueprint(public_ads_bp, url_prefix="/public_ads")  # Публич�
 app.register_blueprint(currencies_bp, url_prefix="/currencies")  # Управление валютами
 app.register_blueprint(webhooks_bp, url_prefix="/webhooks")  # Управление вебхуками
 app.register_blueprint(analytics_bp, url_prefix="/analytics")  # Аналитика
+app.register_blueprint(notifications_bp, url_prefix="/notifications")  # Управление уведомлениями
+app.register_blueprint(roles_bp, url_prefix="/roles")  # Управление ролями и разрешениями
 
 if __name__ == "__main__":
     app.run(debug=True)
