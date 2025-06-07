@@ -1,31 +1,35 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from models.order import Order, OrderStatus
+from schemas.order import OrderCreate, OrderOut
+from database import get_db
+from utils.auth import get_current_user
 
-router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+router = APIRouter(prefix="/api/orders", tags=["orders"])
 
-fake_orders = {
-    1: {"type": "buy", "amount": 100, "price": 92.5, "status": "ожидание"},
-    2: {"type": "sell", "amount": 150, "price": 91.0, "status": "оплачено"},
-}
+@router.post("/", response_model=OrderOut)
+def create_order(order_data: OrderCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    order = Order(
+        ad_id=order_data.ad_id,
+        amount=order_data.amount,
+        price=order_data.price,
+        type=order_data.type,
+        user_id=user.id,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return order
 
-@router.get("/trade/{order_id}", response_class=HTMLResponse)
-async def trade_page(request: Request, order_id: int):
-    if order_id not in fake_orders:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    return templates.TemplateResponse("trade.html", {"request": request, "order_id": order_id})
+@router.get("/mine", response_model=list[OrderOut])
+def get_my_orders(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return db.query(Order).filter(Order.user_id == user.id).all()
 
-@router.get("/api/orders/{order_id}")
-async def get_order(order_id: int):
-    if order_id not in fake_orders:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    return fake_orders[order_id]
-
-@router.post("/api/orders/{order_id}/confirm_payment")
-async def confirm_payment(order_id: int):
-    if order_id not in fake_orders:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    fake_orders[order_id]["status"] = "платёж отправлен"
-    return {"message": "Платёж помечен как отправленный"}
+@router.post("/{order_id}/status/{new_status}")
+def update_order_status(order_id: int, new_status: OrderStatus, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id, Order.user_id == user.id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order.status = new_status
+    db.commit()
+    return {"message": "Order status updated"}
