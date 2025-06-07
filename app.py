@@ -1,4 +1,8 @@
-from flask import Flask
+import os
+from flask import Flask, redirect
+from flask_socketio import SocketIO
+
+# Импортируем маршруты
 from routes.auth import auth_bp
 from routes.trades import trades_bp
 from routes.admin import admin_bp
@@ -23,42 +27,42 @@ from routes.audit_logs import audit_logs_bp
 from routes.realtime_notifications import realtime_notifications_bp
 from routes.files import files_bp
 from routes.email_notifications import email_notifications_bp
-from flask_socketio import SocketIO
-from flask import redirect
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 # Регистрируем маршруты
-app.register_blueprint(auth_bp, url_prefix="/auth")  # Авторизация и регистрация
-app.register_blueprint(trades_bp, url_prefix="/trades")  # Работа с объявлениями
-app.register_blueprint(admin_bp, url_prefix="/admin")  # Администраторский кабинет
-app.register_blueprint(disputes_bp, url_prefix="/disputes")  # Система споров
-app.register_blueprint(referrals_bp, url_prefix="/referrals")  # Реферальная программа
-app.register_blueprint(user_management_bp, url_prefix="/user_management")  # Управление пользователями
-app.register_blueprint(large_trades_bp, url_prefix="/large_trades")  # Крупные сделки
-app.register_blueprint(auto_cancel_bp, url_prefix="/auto_cancel")  # Автоматическая отмена сделок
-app.register_blueprint(balance_bp, url_prefix="/balance")  # Баланс пользователя
-app.register_blueprint(auth_verification_bp, url_prefix="/auth_verification")  # Верификация через SMS
-app.register_blueprint(referral_payouts_bp, url_prefix="/referral_payouts")  # Реферальные выплаты
-app.register_blueprint(profile_bp, url_prefix="/profile")  # Управление профилем пользователя
-app.register_blueprint(public_ads_bp, url_prefix="/public_ads")  # Публичные объявления
-app.register_blueprint(currencies_bp, url_prefix="/currencies")  # Управление валютами
-app.register_blueprint(webhooks_bp, url_prefix="/webhooks")  # Управление вебхуками
-app.register_blueprint(analytics_bp, url_prefix="/analytics")  # Аналитика
-app.register_blueprint(notifications_bp, url_prefix="/notifications")  # Управление уведомлениями
-app.register_blueprint(roles_bp, url_prefix="/roles")  # Управление ролями и разрешениями
-app.register_blueprint(tasks_bp, url_prefix="/tasks")  # Управление задачами
-app.register_blueprint(events_bp, url_prefix="/events")  # Управление событиями
-app.register_blueprint(audit_logs_bp, url_prefix="/audit_logs")  # Управление журналом аудита
-app.register_blueprint(realtime_notifications_bp, url_prefix="/realtime_notifications")  # Уведомления в реальном времени
-app.register_blueprint(files_bp, url_prefix="/files")  # Управление файлами
-app.register_blueprint(email_notifications_bp, url_prefix="/email_notifications")  # Уведомления через email
+app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(trades_bp, url_prefix="/trades")
+app.register_blueprint(admin_bp, url_prefix="/admin")
+app.register_blueprint(disputes_bp, url_prefix="/disputes")
+app.register_blueprint(referrals_bp, url_prefix="/referrals")
+app.register_blueprint(user_management_bp, url_prefix="/user_management")
+app.register_blueprint(large_trades_bp, url_prefix="/large_trades")
+app.register_blueprint(auto_cancel_bp, url_prefix="/auto_cancel")
+app.register_blueprint(balance_bp, url_prefix="/balance")
+app.register_blueprint(auth_verification_bp, url_prefix="/auth_verification")
+app.register_blueprint(referral_payouts_bp, url_prefix="/referral_payouts")
+app.register_blueprint(profile_bp, url_prefix="/profile")
+app.register_blueprint(public_ads_bp, url_prefix="/public_ads")
+app.register_blueprint(currencies_bp, url_prefix="/currencies")
+app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
+app.register_blueprint(analytics_bp, url_prefix="/analytics")
+app.register_blueprint(notifications_bp, url_prefix="/notifications")
+app.register_blueprint(roles_bp, url_prefix="/roles")
+app.register_blueprint(tasks_bp, url_prefix="/tasks")
+app.register_blueprint(events_bp, url_prefix="/events")
+app.register_blueprint(audit_logs_bp, url_prefix="/audit_logs")
+app.register_blueprint(realtime_notifications_bp, url_prefix="/realtime_notifications")
+app.register_blueprint(files_bp, url_prefix="/files")
+app.register_blueprint(email_notifications_bp, url_prefix="/email_notifications")
 
-# Главная страница перенаправляет на ваш сайт
-@app.route("/")
-def home():
-    return redirect("https://p2pppppppppp-production.up.railway.app/")
+# Главная страница перенаправляет сразу на ваш сайт
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def redirect_to_external(path):
+    return redirect("https://p2pppppppppp-production.up.railway.app/", code=302)
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port)
