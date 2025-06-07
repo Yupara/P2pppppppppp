@@ -21,6 +21,8 @@ from routes.tasks import tasks_bp
 from routes.events import events_bp
 from routes.audit_logs import audit_logs_bp
 from routes.realtime_notifications import realtime_notifications_bp
+from routes.files import files_bp
+from routes.email_notifications import email_notifications_bp
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
@@ -49,6 +51,8 @@ app.register_blueprint(tasks_bp, url_prefix="/tasks")  # Управление з
 app.register_blueprint(events_bp, url_prefix="/events")  # Управление событиями
 app.register_blueprint(audit_logs_bp, url_prefix="/audit_logs")  # Управление журналом аудита
 app.register_blueprint(realtime_notifications_bp, url_prefix="/realtime_notifications")  # Уведомления в реальном времени
+app.register_blueprint(files_bp, url_prefix="/files")  # Управление файлами
+app.register_blueprint(email_notifications_bp, url_prefix="/email_notifications")  # Уведомления через email
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
