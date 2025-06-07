@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Открытие сделки | P2P</title>
+  <style>
+    body {
+      background-color: #002b26;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+    }
+
+    .order-box {
+      background-color: #003f35;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      text-align: center;
+      color: #90EE90;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      background-color: #004d44;
+      border: none;
+      border-radius: 5px;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #90EE90;
+      color: #002b26;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .message {
+      margin-top: 15px;
+      text-align: center;
+      color: lightgreen;
+    }
+  </style>
+</head>
+<body>
+  <div class="order-box">
+    <h2>Оформление сделки</h2>
+    <p><strong>Ордер ID:</strong> <span id="orderId"></span></p>
+    <p><strong>Тип:</strong> <span id="orderType"></span></p>
+    <p><strong>Цена:</strong> <span id="orderPrice"></span> ₽</p>
+
+    <label for="amount">Введите сумму в USDT:</label>
+    <input type="number" id="amount" placeholder="Например, 100">
+
+    <button onclick="createDeal()">Подтвердить сделку</button>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('id');
+
+    // Получаем детали ордера
+    fetch(`/api/ads/${orderId}`)
+      .then(res => res.json())
+      .then(order => {
+        document.getElementById('orderId').textContent = order.id;
+        document.getElementById('orderType').textContent = order.type === 'buy' ? 'Покупка' : 'Продажа';
+        document.getElementById('orderPrice').textContent = order.price;
+      });
+
+    function createDeal() {
+      const amount = document.getElementById("amount").value;
+
+      fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + localStorage.getItem("token")
+        },
+        body: JSON.stringify({
+          ad_id: orderId,
+          amount: parseFloat(amount)
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Ошибка создания сделки");
+        return res.json();
+      })
+      .then(data => {
+        document.getElementById("message").textContent = "Сделка успешно создана!";
+      })
+      .catch(err => {
+        document.getElementById("message").textContent = "Ошибка: " + err.message;
+      });
+    }
+  </script>
+</body>
+</html>
