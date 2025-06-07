@@ -1,17 +1,12 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./HomePage";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import MyTrades from "./MyTrades";
 import TradePage from "./TradePage";
+// ...
 
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/trade/:adId" element={<TradePage />} />
-      </Routes>
-    </Router>
-  );
-}
-
-export default App;
+<Router>
+  <Routes>
+    <Route path="/trades/:adId" element={<TradePage />} />
+    <Route path="/my-trades" element={<MyTrades />} />
+    {/* другие маршруты */}
+  </Routes>
+</Router>
