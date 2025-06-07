@@ -35,15 +35,13 @@
 </head>
 <body>
   <h1>Мои сделки</h1>
-  <div id="ordersContainer">
-    <!-- Здесь будут загружены сделки -->
-  </div>
+  <div id="ordersContainer"></div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       fetch('/api/orders/mine', {
         headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')  // вставь токен если есть авторизация
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
       })
       .then(res => res.json())
