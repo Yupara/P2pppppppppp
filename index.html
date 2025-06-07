@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Exchange</title>
+    <title>P2P Торговля</title>
     <style>
         /* Основные стили */
         body {
@@ -13,202 +13,133 @@
             color: #ffffff;
         }
 
-        h1 {
+        header {
+            background-color: #004d00; /* Тёмно-зелёный заголовок */
+            padding: 15px;
             text-align: center;
-            margin-top: 20px;
         }
 
-        /* Вкладки */
-        .tabs {
-            display: flex;
-            justify-content: center;
-            background-color: #004d00;
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #90EE90; /* Светло-зелёный акцент */
+        }
+
+        section {
+            margin: 20px auto;
+            max-width: 1200px;
             padding: 10px;
-            margin-bottom: 20px;
         }
 
-        .tabs button {
-            background-color: #004d00;
-            color: #ffffff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-weight: bold;
-            margin: 0 10px;
-            border-radius: 5px;
-        }
-
-        .tabs button.active {
-            background-color: #90EE90; /* Светло-зелёный */
-            color: #003300;
-        }
-
-        .tabs button:hover {
-            background-color: #90EE90;
-        }
-
-        /* Фильтры */
-        .filters {
+        .feature-list {
             display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
             justify-content: center;
-            margin-bottom: 20px;
         }
 
-        .filters select, .filters input, .filters button {
-            padding: 10px;
-            margin: 0 10px;
-            border: 1px solid #90EE90;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-
-        .filters button {
-            background-color: #90EE90; /* Светло-зелёный */
-            color: #003300;
-            cursor: pointer;
-        }
-
-        .filters button:hover {
-            background-color: #70c070;
-        }
-
-        /* Баннер */
-        .banner {
+        .feature {
             background-color: #004d00;
-            text-align: center;
             padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 5px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            flex: 1 1 300px;
         }
 
-        .banner h2 {
+        .feature h2 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            color: #FFD700; /* Жёлтый акцент */
+        }
+
+        .feature p {
             margin: 0;
         }
 
-        .banner button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            background-color: #90EE90;
-            color: #003300;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .banner button:hover {
-            background-color: #70c070;
-        }
-
-        /* Список предложений */
-        .offers {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .offer {
+        .process, .security {
+            margin-top: 30px;
             background-color: #004d00;
             padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            width: 90%;
-            max-width: 800px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
         }
 
-        .offer h3 {
-            margin: 0;
-            font-size: 1.2rem;
+        .process h2, .security h2 {
             color: #90EE90;
+            margin-bottom: 10px;
         }
 
-        .offer p {
-            margin: 5px 0;
+        .process ol {
+            padding-left: 20px;
         }
 
-        .offer .tags {
-            color: #FFD700; /* Жёлтый для меток */
+        .process ol li, .security ul li {
+            margin-bottom: 10px;
         }
 
-        .offer .status {
-            color: #FF4500; /* Красный для процента завершения */
-        }
-
-        .offer button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            background-color: #90EE90;
-            color: #003300;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .offer button:hover {
-            background-color: #70c070;
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #004d00;
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
-    <h1>P2P Обменник</h1>
+    <header>
+        <h1>Добро пожаловать в P2P Торговлю</h1>
+    </header>
 
-    <!-- Вкладки -->
-    <div class="tabs">
-        <button class="active">Покупка</button>
-        <button>Продажа</button>
-    </div>
-
-    <!-- Фильтры -->
-    <div class="filters">
-        <select>
-            <option value="USDT">USDT</option>
-            <option value="BTC">BTC</option>
-            <option value="ETH">ETH</option>
-        </select>
-        <input type="text" placeholder="Сумма">
-        <select>
-            <option value="all">Все способы оплаты</option>
-            <option value="sbp">SBP</option>
-            <option value="transfer">Банковский перевод</option>
-        </select>
-        <button>Фильтр</button>
-    </div>
-
-    <!-- Баннер -->
-    <div class="banner">
-        <h2>Попробуйте P2P HotSwap — лучшие ставки и больше ликвидности!</h2>
-        <button>Узнать больше</button>
-    </div>
-
-    <!-- Список предложений -->
-    <div class="offers">
-        <div class="offer">
-            <h3>Пользователь: Savak</h3>
-            <p>Цена: ₽ 70,96</p>
-            <p>Кол-во: 304,7685 USDT</p>
-            <p>Лимиты: 500 — 500 000 RUB</p>
-            <p class="tags">Метки: SBP, Кольнение</p>
-            <p class="status">40 ордеров | 10 % завершения</p>
-            <button>Покупка</button>
+    <section>
+        <div class="feature-list">
+            <div class="feature">
+                <h2>🔁 Прямая торговля</h2>
+                <p>Торгуйте напрямую с другими пользователями.</p>
+                <p>Размещайте объявления и откликайтесь.</p>
+            </div>
+            <div class="feature">
+                <h2>💵 Популярные валюты</h2>
+                <p>Fiat: RUB, USD, EUR, KZT</p>
+                <p>Crypto: USDT, BTC, ETH, TON</p>
+            </div>
+            <div class="feature">
+                <h2>🏦 Способы оплаты</h2>
+                <p>Банковские переводы, QIWI, ЮMoney, и др.</p>
+            </div>
+            <div class="feature">
+                <h2>🧾 Нулевые комиссии</h2>
+                <p>Платформа не взимает комиссию за сделки.</p>
+            </div>
+            <div class="feature">
+                <h2>🔐 Эскроу-защита</h2>
+                <p>Криптовалюты блокируются для безопасности.</p>
+                <p>Защита от мошенничества.</p>
+            </div>
         </div>
-        <div class="offer">
-            <h3>Пользователь: Ищу_Партнеров</h3>
-            <p>Цена: ₽ 71,03</p>
-            <p>Кол-во: 128,8821 USDT</p>
-            <p>Лимиты: 500 — 500 000 RUB</p>
-            <p class="tags">Метки: Пиметы, Овореол</p>
-            <p class="status">15 ордеров | 10 % завершения</p>
-            <button>Покупка</button>
+
+        <div class="process">
+            <h2>🔎 Как работает процесс сделки?</h2>
+            <ol>
+                <li>Покупатель выбирает объявление и нажимает “Купить”.</li>
+                <li>Продавец подтверждает, и крипта блокируется платформой.</li>
+                <li>Покупатель переводит деньги напрямую продавцу.</li>
+                <li>После оплаты нажимает “Я оплатил”.</li>
+                <li>Продавец подтверждает получение денег, и крипта разблокируется.</li>
+            </ol>
         </div>
-        <div class="offer">
-            <h3>Пользователь: ПроданоМейкеро</h3>
-            <p>Цена: ₽ 69,50</p>
-            <p>Кол-во: 500 USDT</p>
-            <p>Лимиты: 1 000 — 100 000 RUB</p>
-            <p class="tags">Метки: SBP</p>
-            <p class="status">25 ордеров | 80 % завершения</p>
-            <button>Покупка</button>
+
+        <div class="security">
+            <h2>⚠️ Безопасность</h2>
+            <ul>
+                <li>Верификация личности (KYC) для доступа.</li>
+                <li>Эскроу-защита всех сделок.</li>
+                <li>Система арбитража в случае спора.</li>
+            </ul>
         </div>
-    </div>
+    </section>
+
+    <footer>
+        <p>© 2025 P2P Trading Platform | Все права защищены.</p>
+    </footer>
 </body>
 </html>
