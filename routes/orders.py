@@ -1,47 +1,41 @@
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+from models.order import Order
+from models.user import User
+from utils.auth import get_current_user
 
-class MessageCreate(BaseModel):
-    content: str
+router = APIRouter(prefix="/api/orders", tags=["orders"])
 
-@router.get("/orders/{order_id}/chat")
-def get_chat(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    messages = db.query(ChatMessage).filter(ChatMessage.order_id == order_id).all()
-    return [{
-        "content": m.content,
-        "is_me": m.sender_id == current_user.id
-    } for m in messages]
-
-@router.post("/orders/{order_id}/chat")
-def post_message(order_id: int, message: MessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    db_msg = ChatMessage(order_id=order_id, sender_id=current_user.id, content=message.content)
-    db.add(db_msg)
-    db.commit()
-    db.refresh(db_msg)
-    return {"status": "ok"}
-
-@router.post("/orders/{order_id}/mark_paid")
-def mark_paid(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order or order.buyer_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Нет доступа")
-    order.status = "paid"
-    db.commit()
-    return {"status": "marked as paid"}
-
-@router.post("/orders/{order_id}/mark_confirmed")
-def mark_confirmed(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order or order.seller_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Нет доступа")
-    order.status = "completed"
-    db.commit()
-    return {"status": "marked as confirmed"}
-
-@router.post("/orders/{order_id}/dispute")
-def dispute_order(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post("/{order_id}/mark-paid")
+def mark_order_as_paid(order_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Сделка не найдена")
+    if order.buyer_id != user.id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
+    order.status = "paid"
+    db.commit()
+    return {"message": "Отмечено как оплачено"}
+
+@router.post("/{order_id}/confirm-receipt")
+def confirm_order(order_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    if order.seller_id != user.id:
+        raise HTTPException(status_code=403, detail="Нет доступа")
+    order.status = "completed"
+    db.commit()
+    return {"message": "Сделка завершена"}
+
+@router.post("/{order_id}/dispute")
+def open_dispute(order_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    if user.id not in [order.buyer_id, order.seller_id]:
+        raise HTTPException(status_code=403, detail="Нет доступа")
     order.status = "dispute"
     db.commit()
-    return {"status": "dispute opened"}
+    return {"message": "Спор открыт"}
