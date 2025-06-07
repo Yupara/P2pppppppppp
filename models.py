@@ -1,26 +1,32 @@
-from sqlalchemy import Enum as PgEnum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum
+from sqlalchemy.orm import relationship
 import enum
+from .database import Base
 
-class TradeStatus(str, enum.Enum):
-    pending = "pending"
-    paid = "paid"
-    completed = "completed"
-    canceled = "canceled"
+class OrderType(str, enum.Enum):
+    buy = "buy"
+    sell = "sell"
 
-class Trade(Base):
-    __tablename__ = "trades"
+class OrderStatus(str, enum.Enum):
+    pending = "ожидание"
+    completed = "завершено"
+    cancelled = "отменено"
+
+class Order(Base):
+    __tablename__ = "orders"
+
     id = Column(Integer, primary_key=True, index=True)
-    ad_id = Column(Integer, ForeignKey("ads.id"))
-    buyer_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    type = Column(Enum(OrderType))
     amount = Column(Float)
-    status = Column(PgEnum(TradeStatus), default=TradeStatus.pending)
+    price = Column(Float)
+    status = Column(Enum(OrderStatus), default=OrderStatus.pending)
 
-    # ... другие связи
-class Message(Base):
-    __tablename__ = "messages"
+    user = relationship("User", back_populates="orders")
 
+class User(Base):
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    trade_id = Column(Integer, ForeignKey("trades.id"))
-    sender_id = Column(Integer, ForeignKey("users.id"))
-    content = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    orders = relationship("Order", back_populates="user")
