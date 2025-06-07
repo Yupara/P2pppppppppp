@@ -1,17 +1,29 @@
 from pydantic import BaseModel
-from typing import Literal
+from enum import Enum
+
+class OrderStatus(str, Enum):
+    pending = "pending"
+    paid = "paid"
+    completed = "completed"
+    cancelled = "cancelled"
+
+class OrderType(str, Enum):
+    buy = "buy"
+    sell = "sell"
 
 class OrderCreate(BaseModel):
-    type: Literal["buy", "sell"]
+    ad_id: int
     amount: float
     price: float
+    type: OrderType
 
 class OrderOut(BaseModel):
     id: int
-    type: str
+    ad_id: int
     amount: float
     price: float
-    status: str
+    type: OrderType
+    status: OrderStatus
 
     class Config:
         orm_mode = True
