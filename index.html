@@ -66,3 +66,27 @@
     </script>
 </body>
 </html>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("/api/public_ads")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("adsList");
+      data.forEach(ad => {
+        const div = document.createElement("div");
+        div.className = "ad";
+        div.innerHTML = `
+          <p><strong>${ad.type === "buy" ? "Покупка" : "Продажа"}</strong></p>
+          <p>Ник: ${ad.nickname}</p>
+          <p>Цена: ${ad.price} ₽</p>
+          <p>Сумма: ${ad.amount} USDT</p>
+          <a href="/order.html?id=${ad.id}">
+            <button>${ad.type === "buy" ? "Продать" : "Купить"}</button>
+          </a>
+        `;
+        container.appendChild(div);
+      });
+    });
+});
+</script>
