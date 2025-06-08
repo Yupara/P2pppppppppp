@@ -1,76 +1,48 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Детали сделки</title>
-  <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Сделка #{{ trade_id }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Сделка № <span id="tradeId"></span></h1>
-    <div id="tradeInfo">
-      <!-- Здесь появятся данные о сделке -->
+    <h1>Сделка #{{ trade_id }}</h1>
+
+    <div id="chat-box" style="border:1px solid #ccc; padding:10px; height:300px; overflow-y:scroll;">
+        {% for message in messages %}
+            <p><strong>{{ message.sender }}:</strong> {{ message.text }}</p>
+        {% endfor %}
     </div>
-    <div id="chatBox">
-      <h3>Чат</h3>
-      <div id="messages" style="height: 200px; overflow-y: scroll; border: 1px solid #ccc;"></div>
-      <input type="text" id="messageInput" placeholder="Введите сообщение...">
-      <button onclick="sendMessage()">Отправить</button>
-    </div>
-    <div id="actions">
-      <button onclick="markAsPaid()">Я оплатил</button>
-      <button onclick="openDispute()">Открыть спор</button>
-    </div>
-  </div>
 
-  <script>
-    const tradeId = new URLSearchParams(window.location.search).get('id');
-    document.getElementById('tradeId').textContent = tradeId;
+    <form id="chat-form" method="post" action="/send_message/{{ trade_id }}">
+        <input type="text" name="text" placeholder="Введите сообщение..." required>
+        <button type="submit">Отправить</button>
+    </form>
 
-    fetch(`/api/orders/${tradeId}`, {
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
-    })
-    .then(res => res.json())
-    .then(order => {
-      document.getElementById('tradeInfo').innerHTML = `
-        <p><b>Тип:</b> ${order.type}</p>
-        <p><b>Сумма:</b> ${order.amount} USDT</p>
-        <p><b>Цена:</b> ${order.price} ₽</p>
-        <p><b>Статус:</b> ${order.status}</p>
-      `;
-    });
+    <br>
 
-    function sendMessage() {
-      const text = document.getElementById('messageInput').value;
-      fetch(`/api/chat/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        },
-        body: JSON.stringify({ trade_id: tradeId, text })
-      });
-    }
+    <button onclick="markAsPaid()">Я оплатил</button>
+    <button onclick="markAsConfirmed()">Подтвердить получение</button>
+    <button onclick="openDispute()">Открыть спор</button>
 
-    function markAsPaid() {
-      fetch(`/api/orders/${tradeId}/mark_paid`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+    <script>
+        function markAsPaid() {
+            fetch('/trades/{{ trade_id }}/mark_paid', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => alert(data.message));
         }
-      }).then(() => alert('Статус обновлен на: ОПЛАЧЕНО'));
-    }
 
-    function openDispute() {
-      fetch(`/api/orders/${tradeId}/dispute`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        function markAsConfirmed() {
+            fetch('/trades/{{ trade_id }}/mark_confirmed', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => alert(data.message));
         }
-      }).then(() => alert('Спор открыт.'));
-    }
-  </script>
+
+        function openDispute() {
+            fetch('/trades/{{ trade_id }}/dispute', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => alert(data.message));
+        }
+    </script>
 </body>
 </html>
