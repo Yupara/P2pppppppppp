@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Детали сделки</title>
+  <title>Сделка</title>
   <style>
     body {
       background-color: #002b26;
@@ -13,93 +13,154 @@
 
     h1 {
       text-align: center;
-      color: #90EE90;
+      color: #90ee90;
     }
 
-    .order-details {
+    .info, .chat, .actions {
       background-color: #003f35;
       border-radius: 8px;
-      padding: 20px;
-      margin: 0 auto;
-      max-width: 500px;
+      padding: 15px;
+      margin-bottom: 15px;
     }
 
-    .order-details p {
-      margin: 10px 0;
-    }
-
-    button {
-      background-color: #009966;
+    .actions button {
+      background-color: #008080;
       color: white;
+      padding: 10px;
       border: none;
-      padding: 10px 15px;
-      margin: 10px 5px 0 0;
+      margin-right: 10px;
       border-radius: 5px;
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #007755;
+    .chat-messages {
+      height: 200px;
+      overflow-y: scroll;
+      border: 1px solid #444;
+      padding: 10px;
+      background-color: #001f1a;
+      margin-bottom: 10px;
+    }
+
+    .chat input {
+      width: 80%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .chat button {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #00a86b;
+      color: white;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Информация о сделке</h1>
+  <h1>Сделка</h1>
 
-  <div class="order-details">
-    <p><strong>ID сделки:</strong> {{ order.id }}</p>
-    <p><strong>Тип:</strong> {{ order.type }}</p>
-    <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-    <p><strong>Покупатель:</strong> {{ order.buyer }}</p>
-    <p><strong>Продавец:</strong> {{ order.seller }}</p>
-    <p><strong>Текущий статус:</strong> <span id="order-status">{{ order.status }}</span></p>
+  <div class="info" id="orderInfo">
+    <!-- Информация о сделке будет здесь -->
+  </div>
 
+  <div class="actions">
     <button onclick="markAsPaid()">Я оплатил</button>
     <button onclick="markAsConfirmed()">Подтвердить получение</button>
     <button onclick="openDispute()">Открыть спор</button>
   </div>
 
+  <div class="chat">
+    <div class="chat-messages" id="chatMessages">
+      <!-- Сообщения чата -->
+    </div>
+    <input type="text" id="chatInput" placeholder="Написать сообщение...">
+    <button onclick="sendMessage()">Отправить</button>
+  </div>
+
   <script>
-    function updateStatus(newStatus) {
-      document.getElementById('order-status').innerText = newStatus;
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('id');
+
+    function loadOrder() {
+      fetch(`/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      })
+      .then(res => res.json())
+      .then(order => {
+        document.getElementById('orderInfo').innerHTML = `
+          <p><strong>ID сделки:</strong> ${order.id}</p>
+          <p><strong>Тип:</strong> ${order.type}</p>
+          <p><strong>Сумма:</strong> ${order.amount} USDT</p>
+          <p><strong>Цена:</strong> ${order.price} ₽</p>
+          <p><strong>Покупатель:</strong> ${order.buyer}</p>
+          <p><strong>Продавец:</strong> ${order.seller}</p>
+          <p><strong>Статус:</strong> ${order.status}</p>
+        `;
+      });
     }
 
     function markAsPaid() {
-      fetch(`/order/{{ order.id }}/mark_paid`, {
-        method: 'POST'
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        updateStatus('paid');
-      })
-      .catch(() => alert("Ошибка при отметке оплаты"));
+      fetch(`/api/orders/${orderId}/paid`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      }).then(() => alert("Отмечено как оплачено"));
     }
 
     function markAsConfirmed() {
-      fetch(`/order/{{ order.id }}/confirm`, {
-        method: 'POST'
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        updateStatus('confirmed');
-      })
-      .catch(() => alert("Ошибка при подтверждении"));
+      fetch(`/api/orders/${orderId}/confirm`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      }).then(() => alert("Подтверждено получение"));
     }
 
     function openDispute() {
-      fetch(`/order/{{ order.id }}/dispute`, {
-        method: 'POST'
+      fetch(`/api/orders/${orderId}/dispute`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      }).then(() => alert("Открыт спор"));
+    }
+
+    function sendMessage() {
+      const msg = document.getElementById('chatInput').value;
+      if (!msg.trim()) return;
+
+      fetch(`/api/orders/${orderId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify({ message: msg })
+      }).then(() => {
+        document.getElementById('chatInput').value = '';
+        loadChat();
+      });
+    }
+
+    function loadChat() {
+      fetch(`/api/orders/${orderId}/chat`, {
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
       })
       .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        updateStatus('dispute');
-      })
-      .catch(() => alert("Ошибка при открытии спора"));
+      .then(messages => {
+        const container = document.getElementById('chatMessages');
+        container.innerHTML = '';
+        messages.forEach(msg => {
+          const p = document.createElement('p');
+          p.textContent = `${msg.sender}: ${msg.text}`;
+          container.appendChild(p);
+        });
+      });
     }
+
+    loadOrder();
+    loadChat();
+    setInterval(loadChat, 5000);
   </script>
 </body>
 </html>
