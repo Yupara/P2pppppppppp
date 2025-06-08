@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-Jinja2
-SQLAlchemy
-psycopg2-binary     # если используешь PostgreSQL, иначе можно убрать
-python-dotenv       # для загрузки SECRET_KEY из .env
-passlib[bcrypt]
-python-jose[cryptography]
-python-multipart     # для работы с form_data
