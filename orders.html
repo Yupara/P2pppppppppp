@@ -2,63 +2,72 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Мои сделки | P2P</title>
+  <title>Мои сделки</title>
   <style>
     body {
-      background-color: #002b26;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      background-color: #0d1f1e;
+      color: #e0f7ea;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      margin: 0;
     }
 
     h1 {
       text-align: center;
-      color: #90EE90;
+      color: #00ffcc;
+      margin-bottom: 30px;
     }
 
     .order {
-      background-color: #003f35;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
+      background-color: #102926;
+      border: 1px solid #00ffcc44;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: 0.3s;
+    }
+
+    .order:hover {
+      border-color: #00ffcc;
+      box-shadow: 0 0 10px #00ffcc55;
     }
 
     .order p {
-      margin: 5px 0;
+      margin: 6px 0;
+      font-size: 15px;
     }
 
     .status {
       font-weight: bold;
-      color: #ffd700;
+      color: #ffea00;
     }
 
-    .buy {
-      color: #00ffb3;
-    }
-
-    .sell {
-      color: #ff9999;
+    .empty {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 50px;
+      color: #888;
     }
   </style>
 </head>
 <body>
-  <h1>Мои сделки</h1>
+  <h1>📄 История моих сделок</h1>
   <div id="ordersContainer">
-    <!-- Здесь будут загружены сделки -->
+    <!-- Сюда подгрузятся сделки -->
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       fetch('/api/orders/mine', {
         headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')  // Вставить токен
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
       })
       .then(res => res.json())
       .then(data => {
         const container = document.getElementById('ordersContainer');
         if (!data.length) {
-          container.innerHTML = '<p>У вас пока нет сделок.</p>';
+          container.innerHTML = '<div class="empty">У вас пока нет сделок.</div>';
           return;
         }
 
@@ -66,9 +75,7 @@
           const div = document.createElement('div');
           div.className = 'order';
           div.innerHTML = `
-            <p><strong>Тип:</strong> <span class="${order.type === 'buy' ? 'buy' : 'sell'}">
-              ${order.type === 'buy' ? 'Покупка' : 'Продажа'}
-            </span></p>
+            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
             <p><strong>Сумма:</strong> ${order.amount} USDT</p>
             <p><strong>Цена:</strong> ${order.price} ₽</p>
             <p><strong>Статус:</strong> <span class="status">${order.status}</span></p>
