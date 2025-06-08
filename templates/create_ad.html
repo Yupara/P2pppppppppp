@@ -4,104 +4,48 @@
   <meta charset="UTF-8">
   <title>Создать объявление</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    body {
-      background-color: #001e1d;
-      color: #e6f1e9;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .form-container {
-      background-color: #003030;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #00c89644;
-      width: 400px;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #7fff9f;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #006e5c;
-      border-radius: 5px;
-      background-color: #002524;
-      color: #e6f1e9;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #00c896;
-      color: #001e1d;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    button:hover {
-      background-color: #00b288;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="form-container">
-    <h2>Новое объявление</h2>
-    <form action="/ads/create" method="post">
-      <label for="type">Тип сделки</label>
-      <select name="type" id="type" required>
-        <option value="buy">Купить</option>
-        <option value="sell">Продать</option>
-      </select>
+  <div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#001e1d;">
+    <div class="form-container">
+      <h2>Новое P2P-объявление</h2>
+      <form action="/ads/create" method="post">
+        <label for="type">Тип сделки</label>
+        <select name="type" id="type" required>
+          <option value="buy">Купить</option>
+          <option value="sell">Продать</option>
+        </select>
 
-      <label for="currency">Криптовалюта</label>
-      <select name="currency" id="currency" required>
-        <option value="USDT">USDT</option>
-        <option value="BTC">BTC</option>
-        <option value="ETH">ETH</option>
-      </select>
+        <label for="currency">Криптовалюта</label>
+        <select name="currency" id="currency" required>
+          <option value="USDT">USDT</option>
+          <option value="BTC">BTC</option>
+          <option value="ETH">ETH</option>
+        </select>
 
-      <label for="price">Цена (₽ за единицу)</label>
-      <input type="number" name="price" id="price" step="0.01" required>
+        <label for="price">Цена (₽ за единицу)</label>
+        <input type="number" name="price" id="price" step="0.01" required>
 
-      <label for="amount">Количество (USDT)</label>
-      <input type="number" name="amount" id="amount" step="0.0001" required>
+        <label for="amount">Количество (USDT)</label>
+        <input type="number" name="amount" id="amount" step="0.0001" required>
 
-      <label for="min_limit">Мин. сумма (₽)</label>
-      <input type="number" name="min_limit" id="min_limit" step="0.01" value="0" required>
+        <label for="min_limit">Мин. сумма (₽)</label>
+        <input type="number" name="min_limit" id="min_limit" step="0.01" value="0" required>
 
-      <label for="max_limit">Макс. сумма (₽)</label>
-      <input type="number" name="max_limit" id="max_limit" step="0.01" value="0" required>
+        <label for="max_limit">Макс. сумма (₽)</label>
+        <input type="number" name="max_limit" id="max_limit" step="0.01" value="0" required>
 
-      <label for="payment_method">Способ оплаты</label>
-      <select name="payment_method" id="payment_method" required>
-        <option value="bank_transfer">Банковский перевод</option>
-        <option value="sbp">СБП</option>
-        <option value="paypal">PayPal</option>
-      </select>
+        <label for="payment_method">Способ оплаты</label>
+        <select name="payment_method" id="payment_method" required>
+          <option value="bank_transfer">Банковский перевод</option>
+          <option value="sbp">СБП</option>
+          <option value="paypal">PayPal</option>
+        </select>
 
-      <button type="submit">Создать объявление</button>
-    </form>
+        <button type="submit">Создать объявление</button>
+      </form>
+    </div>
   </div>
 </body>
 </html>
