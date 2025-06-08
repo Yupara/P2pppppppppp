@@ -1,74 +1,105 @@
-from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, Form
+from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.status import HTTP_302_FOUND
 
 from database import get_db
-from models import User, Order
+from models import User, Ad, Order, ChatMessage
 from utils.auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/orders/mine")
-def get_my_orders(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    orders = db.query(Order).filter((Order.buyer_id == current_user.id) | (Order.seller_id == current_user.id)).all()
-    
-    result = []
-    for order in orders:
-        result.append({
-            "id": order.id,
-            "type": order.type,
-            "amount": order.amount,
-            "price": order.price,
-            "status": order.status,
-            "is_owner": order.seller_id == current_user.id
-        })
+@router.get("/orders/create/{ad_id}")
+def confirm_create(ad_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    # Страница подтверждения покупки (можно убрать, делать сразу POST)
+    ad = db.query(Ad).get(ad_id)
+    if not ad:
+        raise HTTPException(404, "Объявление не найдено")
+    return templates.TemplateResponse("confirm_create.html", {"request": request, "ad": ad})
 
-    return templates.TemplateResponse("orders.html", {
+
+@router.post("/orders/create/{ad_id}")
+def create_order(ad_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ad = db.query(Ad).get(ad_id)
+    if not ad:
+        raise HTTPException(404, "Объявление не найдено")
+    order = Order(
+        ad_id=ad.id,
+        buyer_id=current_user.id,
+        seller_id=ad.owner_id,
+        amount=ad.amount,
+        price=ad.price,
+        status="pending"
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return RedirectResponse(f"/orders/{order.id}", status_code=HTTP_302_FOUND)
+
+
+@router.get("/orders/{order_id}", response_class=HTMLResponse)
+def view_order(order_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).get(order_id)
+    if not order:
+        raise HTTPException(404, "Сделка не найдена")
+    # Загрузить историю чата
+    messages = db.query(ChatMessage).filter(ChatMessage.order_id == order_id).order_by(ChatMessage.created_at).all()
+    return templates.TemplateResponse("trade.html", {
         "request": request,
-        "orders": result
+        "order": order,
+        "messages": messages,
+        "user": current_user
     })
 
 
 @router.post("/orders/{order_id}/mark_paid")
 def mark_as_paid(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if order and order.buyer_id == current_user.id:
-        order.status = "paid"
-        db.commit()
-    return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
+    order = db.query(Order).get(order_id)
+    if not order or order.buyer_id != current_user.id:
+        raise HTTPException(403, "Нет доступа")
+    order.status = "paid"
+    db.add(ChatMessage(order_id=order.id, sender_id=current_user.id, content="Покупатель отметил оплату"))
+    db.commit()
+    return JSONResponse({"detail": "Отмечено как оплачено"})
 
 
 @router.post("/orders/{order_id}/confirm")
 def confirm_order(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if order and order.seller_id == current_user.id and order.status == "paid":
-        order.status = "completed"
-        db.commit()
-    return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
+    order = db.query(Order).get(order_id)
+    if not order or order.seller_id != current_user.id:
+        raise HTTPException(403, "Нет доступа")
+    order.status = "completed"
+    db.add(ChatMessage(order_id=order.id, sender_id=current_user.id, content="Продавец подтвердил получение"))
+    db.commit()
+    return JSONResponse({"detail": "Сделка подтверждена"})
 
 
 @router.post("/orders/{order_id}/dispute")
 def open_dispute(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if order and (order.buyer_id == current_user.id or order.seller_id == current_user.id):
-        order.status = "disputed"
-        db.commit()
-    return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
-
-@router.post("/create/{ad_id}", response_class=HTMLResponse)
-async def create_order(ad_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    ad = db.query(Ad).filter(Ad.id == ad_id).first()
-    if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-
-    # Создание сделки
-    order = Order(ad_id=ad.id, buyer_id=user.id, seller_id=ad.owner_id, amount=ad.amount, price=ad.price, status="in_progress")
-    db.add(order)
+    order = db.query(Order).get(order_id)
+    if not order or (order.buyer_id != current_user.id and order.seller_id != current_user.id):
+        raise HTTPException(403, "Нет доступа")
+    order.status = "dispute"
+    db.add(ChatMessage(order_id=order.id, sender_id=current_user.id, content="Открыт спор"))
     db.commit()
-    db.refresh(order)
+    return JSONResponse({"detail": "Спор открыт"})
 
-    return RedirectResponse(url=f"/orders/{order.id}", status_code=302)
+
+@router.get("/orders/{order_id}/messages")
+def get_messages(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    msgs = db.query(ChatMessage).filter(ChatMessage.order_id == order_id).order_by(ChatMessage.created_at).all()
+    return [{"sender_username": msg.sender.username, "content": msg.content} for msg in msgs]
+
+
+@router.post("/orders/{order_id}/messages")
+def post_message(order_id: int, content: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).get(order_id)
+    if not order or (current_user.id not in (order.buyer_id, order.seller_id)):
+        raise HTTPException(403, "Нет доступа")
+    msg = ChatMessage(order_id=order_id, sender_id=current_user.id, content=content["content"])
+    db.add(msg)
+    db.commit()
+    return JSONResponse({"detail": "Сообщение отправлено"})
