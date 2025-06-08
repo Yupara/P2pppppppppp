@@ -1,78 +1,60 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #001e1d;
-  color: #e6f1e9;
-}
-
-header {
-  background-color: #003b3a;
-  padding: 15px 30px;
-  color: #90ee90;
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  border-bottom: 2px solid #00c896;
-}
-
-.container {
-  max-width: 800px;
-  margin: 30px auto;
-  padding: 20px;
+/* Форма создания объявления */
+.form-container {
   background-color: #003030;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #00c89644;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 200, 150, 0.3);
+  width: 400px;
+  margin: auto;
 }
 
-h2 {
-  color: #aaffaa;
-  margin-bottom: 20px;
+.form-container h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  color: #00ffcc;
+  margin-bottom: 30px;
   text-align: center;
 }
 
-.ad-item {
+.form-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #a0ffd1;
+}
+
+.form-container input,
+.form-container select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #005548;
+  border-radius: 6px;
   background-color: #002524;
-  border: 1px solid #006e5c;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 0 5px #00c89633;
+  color: #e6f1e9;
+  font-size: 14px;
+  transition: border-color 0.2s;
 }
 
-.ad-item p {
-  margin: 5px 0;
+.form-container input:focus,
+.form-container select:focus {
+  outline: none;
+  border-color: #00c896;
 }
 
-.action-button {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #00c896;
+.form-container button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #00c896, #00e6b8);
   color: #001e1d;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 5px;
-  margin-top: 10px;
-}
-
-.action-button:hover {
-  background-color: #00b288;
-  color: #ffffff;
-  transition: 0.2s;
-}
-
-button {
-  background-color: #00c896;
-  color: #001e1d;
+  font-weight: 600;
+  font-size: 16px;
   border: none;
-  padding: 10px 15px;
-  margin-top: 10px;
-  border-radius: 5px;
-  font-weight: bold;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.3s;
 }
 
-button:hover {
-  background-color: #00a378;
-  color: #fff;
+.form-container button:hover {
+  background: linear-gradient(135deg, #00a378, #00c896);
 }
