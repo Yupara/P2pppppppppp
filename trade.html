@@ -10,102 +10,84 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
-
     h1 {
-      color: #00ff99;
+      text-align: center;
+      color: #90EE90;
     }
-
-    .info-box {
-      background-color: #004d40;
-      padding: 15px;
-      margin-bottom: 20px;
-      border-radius: 8px;
+    .order-box {
+      background-color: #003f35;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: auto;
     }
-
-    button {
+    .order-box p {
+      margin: 10px 0;
+    }
+    .buttons {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .buttons button {
+      margin: 5px;
       padding: 10px 20px;
-      margin-right: 10px;
-      margin-top: 10px;
-      background-color: #00cc99;
+      font-size: 16px;
+      background-color: #007d65;
       border: none;
-      border-radius: 4px;
-      cursor: pointer;
+      border-radius: 5px;
       color: white;
+      cursor: pointer;
     }
-
-    button:hover {
-      background-color: #009977;
-    }
-
-    #chatBox {
-      background-color: #013f36;
-      padding: 10px;
-      height: 200px;
-      overflow-y: scroll;
-      margin-bottom: 10px;
-    }
-
-    #chatInput {
-      width: 80%;
-      padding: 10px;
-    }
-
-    #sendBtn {
-      padding: 10px;
+    .buttons button:hover {
+      background-color: #00a87d;
     }
   </style>
 </head>
 <body>
+  <h1>Детали сделки</h1>
 
-  <h1>Сделка № {{ order_id }}</h1>
+  <div class="order-box">
+    <p><strong>ID сделки:</strong> {{ order.id }}</p>
+    <p><strong>Тип:</strong> {{ "Покупка" if order.type == "buy" else "Продажа" }}</p>
+    <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ order.price }} ₽</p>
+    <p><strong>Статус:</strong> {{ order.status }}</p>
 
-  <div class="info-box">
-    <p><strong>Тип сделки:</strong> {{ trade.type }}</p>
-    <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ trade.price }} ₽</p>
-    <p><strong>Статус:</strong> {{ trade.status }}</p>
-  </div>
-
-  <div class="info-box">
-    <button onclick="markAsPaid()">Я оплатил</button>
-    <button onclick="markAsConfirmed()">Подтвердить получение</button>
-    <button onclick="openDispute()">Открыть спор</button>
-  </div>
-
-  <div class="info-box">
-    <h2>Чат сделки</h2>
-    <div id="chatBox">
-      <!-- Здесь будут сообщения -->
+    <div class="buttons">
+      <button onclick="markAsPaid()">Я оплатил</button>
+      <button onclick="markAsConfirmed()">Подтвердить получение</button>
+      <button onclick="openDispute()">Открыть спор</button>
     </div>
-    <input type="text" id="chatInput" placeholder="Введите сообщение">
-    <button id="sendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 
   <script>
+    const orderId = {{ order.id }};
+    const token = localStorage.getItem("token");
+
+    function sendAction(url) {
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.json())
+      .then(data => alert(data.detail))
+      .catch(() => alert("Ошибка запроса"));
+    }
+
     function markAsPaid() {
-      alert("Вы отметили сделку как оплачено (пока демо).");
+      sendAction(`/orders/${orderId}/pay`);
     }
 
     function markAsConfirmed() {
-      alert("Вы подтвердили получение (пока демо).");
+      sendAction(`/orders/${orderId}/confirm`);
     }
 
     function openDispute() {
-      alert("Открытие спора (пока демо).");
-    }
-
-    function sendMessage() {
-      const input = document.getElementById('chatInput');
-      const message = input.value.trim();
-      if (message) {
-        const box = document.getElementById('chatBox');
-        const msgDiv = document.createElement('div');
-        msgDiv.textContent = "Вы: " + message;
-        box.appendChild(msgDiv);
-        input.value = "";
-      }
+      sendAction(`/orders/${orderId}/dispute`);
     }
   </script>
-
 </body>
 </html>
