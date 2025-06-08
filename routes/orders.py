@@ -1,62 +1,60 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from models.order import Order as OrderModel
-from models.user import User as UserModel
-from database import get_db
-from schemas.order import OrderCreate, OrderResponse
+from fastapi import APIRouter, Depends, Request, Form
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from fastapi.requests import Request
+from sqlalchemy.orm import Session
+from starlette.status import HTTP_302_FOUND
+
+from database import get_db
+from models import User, Order
 from utils.auth import get_current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/orders", response_class=HTMLResponse)
-def list_orders(request: Request, db: Session = Depends(get_db)):
-    orders = db.query(OrderModel).filter(OrderModel.status == "open").all()
-    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders})
+@router.get("/orders/mine")
+def get_my_orders(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    orders = db.query(Order).filter((Order.buyer_id == current_user.id) | (Order.seller_id == current_user.id)).all()
+    
+    result = []
+    for order in orders:
+        result.append({
+            "id": order.id,
+            "type": order.type,
+            "amount": order.amount,
+            "price": order.price,
+            "status": order.status,
+            "is_owner": order.seller_id == current_user.id
+        })
+
+    return templates.TemplateResponse("orders.html", {
+        "request": request,
+        "orders": result
+    })
 
 
-@router.get("/orders/mine", response_model=list[OrderResponse])
-def my_orders(db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    return db.query(OrderModel).filter(OrderModel.buyer_id == current_user.id).all()
-
-
-@router.get("/orders/{order_id}", response_class=HTMLResponse)
-def get_order_page(order_id: int, request: Request, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    return templates.TemplateResponse("trade.html", {"request": request, "order": order, "user": current_user})
-
-
-@router.post("/orders/{order_id}/pay")
-def mark_as_paid(order_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    order.status = "paid"
-    db.commit()
-    return {"detail": "Статус изменён на 'оплачено'"}
+@router.post("/orders/{order_id}/mark_paid")
+def mark_as_paid(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order and order.buyer_id == current_user.id:
+        order.status = "paid"
+        db.commit()
+    return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
 
 
 @router.post("/orders/{order_id}/confirm")
-def confirm_payment(order_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    order.status = "confirmed"
-    db.commit()
-    return {"detail": "Платёж подтверждён"}
+def confirm_order(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order and order.seller_id == current_user.id and order.status == "paid":
+        order.status = "completed"
+        db.commit()
+    return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
 
 
 @router.post("/orders/{order_id}/dispute")
-def open_dispute(order_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
-    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    order.status = "disputed"
-    db.commit()
-    return {"detail": "Открыт спор по сделке"}
+def open_dispute(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order and (order.buyer_id == current_user.id or order.seller_id == current_user.id):
+        order.status = "disputed"
+        db.commit()
+    return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
