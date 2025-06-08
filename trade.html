@@ -5,205 +5,107 @@
   <title>Сделка</title>
   <style>
     body {
-      background-color: #001c1a;
+      background-color: #002b26;
       color: white;
       font-family: Arial, sans-serif;
       padding: 20px;
     }
 
-    .trade-box {
-      background-color: #00332f;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: auto;
+    h1 {
+      color: #00ff99;
     }
 
-    .trade-box h2 {
-      color: #00ffcc;
-    }
-
-    button {
-      background-color: #00775c;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      margin-right: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #00a57a;
-    }
-
-    .chat-box {
-      margin-top: 20px;
-      background-color: #002621;
-      padding: 10px;
+    .info-box {
+      background-color: #004d40;
+      padding: 15px;
+      margin-bottom: 20px;
       border-radius: 8px;
     }
 
-    .chat-box input {
+    button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      margin-top: 10px;
+      background-color: #00cc99;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+
+    button:hover {
+      background-color: #009977;
+    }
+
+    #chatBox {
+      background-color: #013f36;
+      padding: 10px;
+      height: 200px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+
+    #chatInput {
       width: 80%;
       padding: 10px;
     }
 
-    .chat-box button {
-      width: 18%;
+    #sendBtn {
+      padding: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="trade-box">
-    <h2>Информация о сделке</h2>
-    <p><strong>ID сделки:</strong> <span id="orderId"></span></p>
-    <p><strong>Тип:</strong> <span id="type"></span></p>
-    <p><strong>Сумма:</strong> <span id="amount"></span> USDT</p>
-    <p><strong>Цена:</strong> <span id="price"></span> ₽</p>
-    <p><strong>Статус:</strong> <span id="status"></span></p>
 
-    <div style="margin-top: 20px;">
-      <button onclick="markAsPaid()">Я оплатил</button>
-      <button onclick="markAsConfirmed()">Подтвердить получение</button>
-      <button onclick="openDispute()">Открыть спор</button>
-    </div>
+  <h1>Сделка № {{ order_id }}</h1>
 
-    <div class="chat-box">
-      <input type="text" id="chatInput" placeholder="Написать сообщение...">
-      <button onclick="sendMessage()">Отправить</button>
+  <div class="info-box">
+    <p><strong>Тип сделки:</strong> {{ trade.type }}</p>
+    <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ trade.price }} ₽</p>
+    <p><strong>Статус:</strong> {{ trade.status }}</p>
+  </div>
+
+  <div class="info-box">
+    <button onclick="markAsPaid()">Я оплатил</button>
+    <button onclick="markAsConfirmed()">Подтвердить получение</button>
+    <button onclick="openDispute()">Открыть спор</button>
+  </div>
+
+  <div class="info-box">
+    <h2>Чат сделки</h2>
+    <div id="chatBox">
+      <!-- Здесь будут сообщения -->
     </div>
+    <input type="text" id="chatInput" placeholder="Введите сообщение">
+    <button id="sendBtn" onclick="sendMessage()">Отправить</button>
   </div>
 
   <script>
-    const orderId = new URLSearchParams(window.location.search).get('id');
-
-    document.getElementById('orderId').innerText = orderId;
-
-    fetch(`/api/orders/${orderId}`, {
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
-    })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error("Ошибка при загрузке сделки");
-      }
-      return res.json();
-    })
-    .then(order => {
-      document.getElementById('type').innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
-      document.getElementById('amount').innerText = order.amount;
-      document.getElementById('price').innerText = order.price;
-      document.getElementById('status').innerText = order.status;
-    })
-    .catch(err => alert(err.message));
-
     function markAsPaid() {
-      alert('Вы отметили как оплачено (функция ещё не реализована)');
+      alert("Вы отметили сделку как оплачено (пока демо).");
     }
 
     function markAsConfirmed() {
-      alert('Вы подтвердили получение (функция ещё не реализована)');
+      alert("Вы подтвердили получение (пока демо).");
     }
 
     function openDispute() {
-      alert('Вы открыли спор (функция ещё не реализована)');
+      alert("Открытие спора (пока демо).");
     }
 
     function sendMessage() {
-      const message = document.getElementById('chatInput').value;
-      alert(`Сообщение отправлено: ${message} (чат пока не подключён)`);
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (message) {
+        const box = document.getElementById('chatBox');
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = "Вы: " + message;
+        box.appendChild(msgDiv);
+        input.value = "";
+      }
     }
   </script>
-</body>
-</html>
 
-<script>
-  const orderId = new URLSearchParams(window.location.search).get('id');
-  document.getElementById('orderId').innerText = orderId;
-
-  fetch(`/api/orders/${orderId}`, {
-    headers: {
-      'Authorization': 'Bearer ' + localStorage.getItem('token')
-    }
-  })
-  .then(res => res.json())
-  .then(order => {
-    document.getElementById('type').innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
-    document.getElementById('amount').innerText = order.amount;
-    document.getElementById('price').innerText = order.price;
-    document.getElementById('status').innerText = order.status;
-  });
-
-  function markAsPaid() {
-    fetch(`/api/orders/${orderId}/mark_paid`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
-    }).then(res => res.json()).then(data => {
-      alert(data.message);
-      location.reload();
-    });
-  }
-
-  function markAsConfirmed() {
-    fetch(`/api/orders/${orderId}/confirm`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
-    }).then(res => res.json()).then(data => {
-      alert(data.message);
-      location.reload();
-    });
-  }
-
-  function openDispute() {
-    fetch(`/api/orders/${orderId}/dispute`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
-    }).then(res => res.json()).then(data => {
-      alert(data.message);
-      location.reload();
-    });
-  }
-
-  function sendMessage() {
-    const message = document.getElementById('chatInput').value;
-    alert(`Сообщение отправлено: ${message} (чат пока не подключён)`);
-  }
-</script>
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Сделка</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <h1>Сделка #{{ order.id }}</h1>
-  <div class="trade-box">
-    <p><strong>Тип:</strong> {{ 'Покупка' if order.type == 'buy' else 'Продажа' }}</p>
-    <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-    <p><strong>Статус:</strong> {{ order.status }}</p>
-
-    <form method="post" action="/mark_paid/{{ order.id }}">
-      <button type="submit">Я оплатил</button>
-    </form>
-
-    <form method="post" action="/confirm_payment/{{ order.id }}">
-      <button type="submit">Подтвердить получение</button>
-    </form>
-
-    <form method="post" action="/dispute/{{ order.id }}">
-      <button type="submit">Открыть спор</button>
-    </form>
-  </div>
 </body>
 </html>
