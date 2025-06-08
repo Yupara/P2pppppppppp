@@ -3,156 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <title>Сделка</title>
-  <style>
-    body {
-      background-color: #0d1f1e;
-      color: #e0f7ea;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 40px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #00ffcc;
-      margin-bottom: 20px;
-    }
-
-    .trade-info {
-      background-color: #102926;
-      border: 1px solid #00ffcc44;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 0 10px #00ffcc22;
-    }
-
-    .trade-info p {
-      margin: 8px 0;
-    }
-
-    .status {
-      font-weight: bold;
-      color: #ffc107;
-    }
-
-    .actions {
-      text-align: center;
-      margin-top: 30px;
-    }
-
-    .actions button {
-      background-color: #00cc99;
-      border: none;
-      color: white;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      margin: 10px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .actions button:hover {
-      background-color: #00b386;
-    }
-
-    .chat-box {
-      background-color: #132b29;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 40px;
-      box-shadow: 0 0 8px #00ffcc22;
-    }
-
-    .chat-message {
-      margin: 8px 0;
-      padding: 10px;
-      background-color: #1a3a37;
-      border-radius: 5px;
-    }
-
-    input, textarea {
-      width: 100%;
-      margin-top: 10px;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-    }
-
-    button.send {
-      margin-top: 10px;
-      background-color: #00ffcc;
-      color: #002822;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <h1>Детали сделки</h1>
+  <div class="trade-container">
+    <h1>Сделка №{{ order.id }}</h1>
 
-  <div class="trade-info">
-    <p><strong>ID сделки:</strong> {{ trade.id }}</p>
-    <p><strong>Тип:</strong> {{ 'Покупка' if trade.type == 'buy' else 'Продажа' }}</p>
-    <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ trade.price }} ₽</p>
-    <p><strong>Статус:</strong> <span class="status">{{ trade.status }}</span></p>
-  </div>
-
-  <div class="actions">
-    {% if trade.status == 'created' %}
-      <button onclick="markAsPaid()">Я оплатил</button>
-    {% endif %}
-    {% if trade.status == 'paid' %}
-      <button onclick="markAsConfirmed()">Подтвердить получение</button>
-    {% endif %}
-    {% if trade.status != 'completed' %}
-      <button onclick="openDispute()">Открыть спор</button>
-    {% endif %}
-  </div>
-
-  <div class="chat-box">
-    <h3>Чат сделки</h3>
-    <div id="chat">
-      {% for message in trade.messages %}
-        <div class="chat-message"><strong>{{ message.sender }}:</strong> {{ message.text }}</div>
-      {% endfor %}
+    <div class="trade-info">
+      <p><strong>Тип:</strong> {{ "Покупка" if order.type == "buy" else "Продажа" }}</p>
+      <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
+      <p><strong>Цена:</strong> {{ order.price }} ₽</p>
+      <p><strong>Статус:</strong> <span class="status">{{ order.status }}</span></p>
     </div>
-    <textarea id="messageInput" placeholder="Напишите сообщение..."></textarea>
-    <button class="send" onclick="sendMessage()">Отправить</button>
+
+    <div class="trade-buttons">
+      {% if order.status == "pending" %}
+        <button onclick="markAsPaid({{ order.id }})">Я оплатил</button>
+      {% endif %}
+      {% if order.status == "paid" %}
+        <button onclick="markAsConfirmed({{ order.id }})">Подтвердить получение</button>
+      {% endif %}
+      <button onclick="openDispute({{ order.id }})">Открыть спор</button>
+    </div>
+
+    <div class="chat-box">
+      <h2>Чат</h2>
+      <div id="messages"></div>
+      <input type="text" id="messageInput" placeholder="Введите сообщение">
+      <button onclick="sendMessage()">Отправить</button>
+    </div>
   </div>
 
   <script>
-    function markAsPaid() {
-      fetch(`/api/orders/${{{ trade.id }}}/pay`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+    const orderId = {{ order.id }};
+    const token = localStorage.getItem('token');
+
+    function markAsPaid(id) {
+      fetch(`/api/orders/${id}/mark_paid`, {
+        method: "POST",
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
       }).then(() => location.reload());
     }
 
-    function markAsConfirmed() {
-      fetch(`/api/orders/${{{ trade.id }}}/confirm`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+    function markAsConfirmed(id) {
+      fetch(`/api/orders/${id}/mark_confirmed`, {
+        method: "POST",
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
       }).then(() => location.reload());
     }
 
-    function openDispute() {
-      fetch(`/api/orders/${{{ trade.id }}}/dispute`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
-      }).then(() => location.reload());
+    function openDispute(id) {
+      fetch(`/api/orders/${id}/dispute`, {
+        method: "POST",
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      }).then(() => alert("Спор открыт!"));
     }
 
     function sendMessage() {
-      const text = document.getElementById('messageInput').value;
-      fetch(`/api/orders/${{{ trade.id }}}/message`, {
-        method: 'POST',
+      const message = document.getElementById("messageInput").value;
+      fetch(`/api/orders/${orderId}/messages`, {
+        method: "POST",
         headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token'),
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
         },
-        body: JSON.stringify({ text })
-      }).then(() => location.reload());
+        body: JSON.stringify({ content: message })
+      }).then(() => {
+        document.getElementById("messageInput").value = "";
+        loadMessages();
+      });
     }
+
+    function loadMessages() {
+      fetch(`/api/orders/${orderId}/messages`, {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const messages = document.getElementById("messages");
+        messages.innerHTML = "";
+        data.forEach(msg => {
+          const div = document.createElement("div");
+          div.innerText = msg.sender_username + ": " + msg.content;
+          messages.appendChild(div);
+        });
+      });
+    }
+
+    loadMessages();
+    setInterval(loadMessages, 5000); // автообновление чата
   </script>
 </body>
 </html>
