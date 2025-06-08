@@ -90,3 +90,66 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 </script>
+
+<body>
+  <h1>Объявления</h1>
+  <div>
+    <label>Тип:
+      <select id="typeFilter">
+        <option value="">Все</option>
+        <option value="buy">Покупка</option>
+        <option value="sell">Продажа</option>
+      </select>
+    </label>
+
+    <label>Валюта:
+      <select id="currencyFilter">
+        <option value="">Все</option>
+        <option value="RUB">RUB</option>
+        <option value="USD">USD</option>
+      </select>
+    </label>
+
+    <button onclick="loadAds()">Применить фильтр</button>
+  </div>
+
+  <div id="adsList" style="margin-top: 20px;"></div>
+
+  <script>
+    function loadAds() {
+      const type = document.getElementById('typeFilter').value;
+      const currency = document.getElementById('currencyFilter').value;
+      let url = "/api/public_ads?";
+      if (type) url += "type=" + type + "&";
+      if (currency) url += "currency=" + currency;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("adsList");
+          container.innerHTML = "";
+          if (!data.length) {
+            container.innerHTML = "<p>Объявлений нет</p>";
+            return;
+          }
+
+          data.forEach(ad => {
+            const div = document.createElement("div");
+            div.className = "ad";
+            div.innerHTML = `
+              <p><strong>${ad.type === "buy" ? "Покупка" : "Продажа"}</strong></p>
+              <p>Ник: ${ad.nickname}</p>
+              <p>Цена: ${ad.price} ₽</p>
+              <p>Сумма: ${ad.amount} USDT</p>
+              <a href="/order.html?id=${ad.id}">
+                <button>${ad.type === "buy" ? "Продать" : "Купить"}</button>
+              </a>
+            `;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", loadAds);
+  </script>
+</body>
