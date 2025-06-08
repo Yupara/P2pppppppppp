@@ -58,3 +58,17 @@ def open_dispute(order_id: int, db: Session = Depends(get_db), current_user: Use
         order.status = "disputed"
         db.commit()
     return RedirectResponse(url="/orders/mine", status_code=HTTP_302_FOUND)
+
+@router.post("/create/{ad_id}", response_class=HTMLResponse)
+async def create_order(ad_id: int, request: Request, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    ad = db.query(Ad).filter(Ad.id == ad_id).first()
+    if not ad:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+
+    # Создание сделки
+    order = Order(ad_id=ad.id, buyer_id=user.id, seller_id=ad.owner_id, amount=ad.amount, price=ad.price, status="in_progress")
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    return RedirectResponse(url=f"/orders/{order.id}", status_code=302)
