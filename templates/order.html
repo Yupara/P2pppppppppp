@@ -5,95 +5,103 @@
   <title>Детали сделки</title>
   <style>
     body {
-      background-color: #002b26;
+      background-color: #001f1f;
       color: white;
       font-family: Arial, sans-serif;
       padding: 20px;
     }
 
     h1 {
-      color: #90EE90;
+      text-align: center;
+      color: #00ff99;
     }
 
-    .info-block {
-      background-color: #00453d;
-      border-radius: 10px;
+    .order-info {
+      background-color: #003333;
       padding: 20px;
-      margin-top: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .order-info p {
+      margin: 10px 0;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-top: 30px;
     }
 
     button {
-      margin-top: 15px;
-      padding: 10px 15px;
-      margin-right: 10px;
-      background-color: #007b5e;
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
       border: none;
       border-radius: 5px;
-      color: white;
       cursor: pointer;
+      background-color: #00cc99;
+      color: white;
     }
 
     button:hover {
-      background-color: #00a57a;
+      background-color: #009977;
     }
   </style>
 </head>
 <body>
-  <h1>Сделка №<span id="orderId"></span></h1>
+  <h1>Информация о сделке</h1>
 
-  <div class="info-block">
-    <p><strong>Тип:</strong> <span id="orderType"></span></p>
-    <p><strong>Сумма:</strong> <span id="orderAmount"></span> USDT</p>
-    <p><strong>Цена:</strong> <span id="orderPrice"></span> ₽</p>
-    <p><strong>Статус:</strong> <span id="orderStatus"></span></p>
+  <div class="order-info">
+    <p><strong>Тип сделки:</strong> {{ order.type }}</p>
+    <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ order.price }} ₽</p>
+    <p><strong>Статус:</strong> {{ order.status }}</p>
+  </div>
 
+  <div class="buttons">
     <button onclick="markAsPaid()">Я оплатил</button>
     <button onclick="markAsConfirmed()">Подтвердить получение</button>
     <button onclick="openDispute()">Открыть спор</button>
   </div>
 
   <script>
-    const orderId = new URLSearchParams(window.location.search).get("id");
-    document.getElementById('orderId').textContent = orderId;
-
-    fetch(`/api/orders/${orderId}`, {
-      headers: {
-        "Authorization": "Bearer " + localStorage.getItem("token")
-      }
-    })
-    .then(res => res.json())
-    .then(order => {
-      document.getElementById("orderType").textContent = order.type === "buy" ? "Покупка" : "Продажа";
-      document.getElementById("orderAmount").textContent = order.amount;
-      document.getElementById("orderPrice").textContent = order.price;
-      document.getElementById("orderStatus").textContent = order.status;
-    });
+    const orderId = "{{ order.id }}";
 
     function markAsPaid() {
-      fetch(`/api/orders/${orderId}/mark-paid`, {
-        method: "POST",
+      fetch(`/api/orders/${orderId}/mark_paid`, {
+        method: 'POST',
         headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
-      }).then(() => alert("Отметили как оплачено"));
+      })
+      .then(res => res.json())
+      .then(data => alert('Статус обновлён: ' + data.status))
+      .catch(err => alert('Ошибка: ' + err));
     }
 
     function markAsConfirmed() {
-      fetch(`/api/orders/${orderId}/confirm-receipt`, {
-        method: "POST",
+      fetch(`/api/orders/${orderId}/mark_confirmed`, {
+        method: 'POST',
         headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
-      }).then(() => alert("Подтверждено"));
+      })
+      .then(res => res.json())
+      .then(data => alert('Статус обновлён: ' + data.status))
+      .catch(err => alert('Ошибка: ' + err));
     }
 
     function openDispute() {
       fetch(`/api/orders/${orderId}/dispute`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
         }
-      }).then(() => alert("Спор открыт"));
+      })
+      .then(res => res.json())
+      .then(data => alert('Спор открыт. Статус: ' + data.status))
+      .catch(err => alert('Ошибка: ' + err));
     }
   </script>
 </body>
