@@ -2,104 +2,100 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Сделка</title>
+  <title>Сделка №{{ order.id }}</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="trade-container">
-    <h1>Сделка №{{ order.id }}</h1>
-
+  <header>Сделка №{{ order.id }}</header>
+  <div class="container">
     <div class="trade-info">
-      <p><strong>Тип:</strong> {{ "Покупка" if order.type == "buy" else "Продажа" }}</p>
+      <p><strong>Тип:</strong> {{ order.type|capitalize }}</p>
       <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
       <p><strong>Цена:</strong> {{ order.price }} ₽</p>
       <p><strong>Статус:</strong> <span class="status">{{ order.status }}</span></p>
     </div>
 
     <div class="trade-buttons">
-      {% if order.status == "pending" %}
-        <button onclick="markAsPaid({{ order.id }})">Я оплатил</button>
+      {% if order.status == "pending" and user.id == order.buyer_id %}
+        <button onclick="markAsPaid()">Я оплатил</button>
       {% endif %}
-      {% if order.status == "paid" %}
-        <button onclick="markAsConfirmed({{ order.id }})">Подтвердить получение</button>
+      {% if order.status == "paid" and user.id == order.seller_id %}
+        <button onclick="confirmOrder()">Подтвердить получение</button>
       {% endif %}
-      <button onclick="openDispute({{ order.id }})">Открыть спор</button>
+      {% if order.status != "completed" %}
+        <button onclick="openDispute()">Открыть спор</button>
+      {% endif %}
     </div>
 
-    <div class="chat-box">
-      <h2>Чат</h2>
-      <div id="messages"></div>
-      <input type="text" id="messageInput" placeholder="Введите сообщение">
+    <h3>Чат сделки</h3>
+    <div class="chat-box" id="chatBox">
+      {% for msg in messages %}
+        <div class="chat-message"><strong>{{ msg.sender.username }}:</strong> {{ msg.content }}</div>
+      {% endfor %}
+    </div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Напишите сообщение...">
       <button onclick="sendMessage()">Отправить</button>
     </div>
   </div>
 
   <script>
     const orderId = {{ order.id }};
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
-    function markAsPaid(id) {
-      fetch(`/api/orders/${id}/mark_paid`, {
-        method: "POST",
-        headers: {
-          'Authorization': 'Bearer ' + token
-        }
-      }).then(() => location.reload());
-    }
-
-    function markAsConfirmed(id) {
-      fetch(`/api/orders/${id}/mark_confirmed`, {
-        method: "POST",
-        headers: {
-          'Authorization': 'Bearer ' + token
-        }
-      }).then(() => location.reload());
-    }
-
-    function openDispute(id) {
-      fetch(`/api/orders/${id}/dispute`, {
-        method: "POST",
-        headers: {
-          'Authorization': 'Bearer ' + token
-        }
-      }).then(() => alert("Спор открыт!"));
-    }
-
-    function sendMessage() {
-      const message = document.getElementById("messageInput").value;
-      fetch(`/api/orders/${orderId}/messages`, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
+    function fetchAPI(url, method, body) {
+      return fetch(url, {
+        method,
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
         },
-        body: JSON.stringify({ content: message })
-      }).then(() => {
-        document.getElementById("messageInput").value = "";
-        loadMessages();
-      });
+        body: body && JSON.stringify(body)
+      }).then(r => r.json());
+    }
+
+    function markAsPaid() {
+      fetchAPI(`/orders/${orderId}/mark_paid`, "POST")
+        .then(() => location.reload());
+    }
+
+    function confirmOrder() {
+      fetchAPI(`/orders/${orderId}/confirm`, "POST")
+        .then(() => location.reload());
+    }
+
+    function openDispute() {
+      fetchAPI(`/orders/${orderId}/dispute`, "POST")
+        .then(() => location.reload());
     }
 
     function loadMessages() {
-      fetch(`/api/orders/${orderId}/messages`, {
-        headers: {
-          'Authorization': 'Bearer ' + token
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        const messages = document.getElementById("messages");
-        messages.innerHTML = "";
-        data.forEach(msg => {
-          const div = document.createElement("div");
-          div.innerText = msg.sender_username + ": " + msg.content;
-          messages.appendChild(div);
+      fetchAPI(`/orders/${orderId}/messages`, "GET")
+        .then(data => {
+          const box = document.getElementById("chatBox");
+          box.innerHTML = "";
+          data.forEach(m => {
+            const d = document.createElement("div");
+            d.className = "chat-message";
+            d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
+            box.appendChild(d);
+          });
         });
-      });
     }
 
+    function sendMessage() {
+      const text = document.getElementById("messageInput").value.trim();
+      if (!text) return;
+      fetchAPI(`/orders/${orderId}/messages`, "POST", { content: text })
+        .then(() => {
+          document.getElementById("messageInput").value = "";
+          loadMessages();
+        });
+    }
+
+    // автозагрузка чата
     loadMessages();
-    setInterval(loadMessages, 5000); // автообновление чата
+    setInterval(loadMessages, 5000);
   </script>
 </body>
 </html>
