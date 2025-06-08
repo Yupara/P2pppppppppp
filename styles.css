@@ -102,3 +102,33 @@ h1 {
     max-width: 600px;
     margin: auto;
 }
+
+body {
+  background-color: #002b26;
+  color: white;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+h1 {
+  color: #90ee90;
+}
+.ads, .trade-box {
+  margin-top: 20px;
+}
+.ad {
+  background-color: #003f35;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+button {
+  margin-top: 10px;
+  background-color: #04aa6d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+}
+button:hover {
+  background-color: #037d52;
+}
