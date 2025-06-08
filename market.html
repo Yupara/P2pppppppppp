@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Маркет</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>Маркет обмена</header>
+  <div class="container">
+    <h2>Доступные объявления</h2>
+    {% for ad in ads %}
+      <div class="ad-item">
+        <p><strong>Продавец:</strong> {{ ad.owner.username }}</p>
+        <p><strong>Тип:</strong> {{ ad.ad_type }}</p>
+        <p><strong>Фиат:</strong> {{ ad.fiat_currency }}</p>
+        <p><strong>Криптовалюта:</strong> {{ ad.crypto_currency }}</p>
+        <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
+        <p><strong>Доступно:</strong> {{ ad.amount }} {{ ad.crypto_currency }}</p>
+        <a class="action-button" href="/orders/start/{{ ad.id }}">
+          {% if ad.ad_type == 'buy' %}Продать{% else %}Купить{% endif %}
+        </a>
+      </div>
+    {% else %}
+      <p>Объявления не найдены.</p>
+    {% endfor %}
+  </div>
+</body>
+</html>
