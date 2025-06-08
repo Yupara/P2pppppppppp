@@ -153,3 +153,25 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("DOMContentLoaded", loadAds);
   </script>
 </body>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>P2P Платформа</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <h1>Доступные объявления</h1>
+  <div class="ads">
+    {% for ad in orders %}
+      <div class="ad">
+        <p><strong>Тип:</strong> {{ 'Покупка' if ad.type == 'buy' else 'Продажа' }}</p>
+        <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
+        <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
+        <a href="/trade/{{ ad.id }}"><button>Купить</button></a>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>
