@@ -1,64 +1,93 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from database import SessionLocal
-from models.order import Order
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import List
+from uuid import uuid4
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
+# Временные базы
+orders_db = {}
+chat_db = {}
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Зависимость — "текущий пользователь" (заглушка)
+def get_current_user():
+    return "testuser"  # Здесь должна быть авторизация через токен
 
+# Модель сделки
+class Order(BaseModel):
+    id: str
+    type: str  # "buy" или "sell"
+    amount: float
+    price: float
+    buyer: str
+    seller: str
+    status: str  # "pending", "paid", "confirmed", "disputed"
 
-@router.get("/order/{order_id}", response_class=HTMLResponse)
-def get_order_page(request: Request, order_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
+# Модель сообщения
+class Message(BaseModel):
+    sender: str
+    text: str
+
+# Получение сделки
+@router.get("/api/orders/{order_id}", response_model=Order)
+def get_order(order_id: str, user=Depends(get_current_user)):
+    if order_id not in orders_db:
         raise HTTPException(status_code=404, detail="Сделка не найдена")
+    return orders_db[order_id]
 
-    return templates.TemplateResponse("order.html", {
-        "request": request,
-        "order": {
-            "id": order.id,
-            "type": order.type,
-            "amount": order.amount,
-            "price": order.price,
-            "status": order.status,
-            "buyer_id": order.buyer_id,
-            "seller_id": order.seller_id
-        }
-    })
-
-@router.post("/order/{order_id}/mark_paid")
-def mark_order_as_paid(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
+# Отметить как оплачено
+@router.post("/api/orders/{order_id}/paid")
+def mark_paid(order_id: str, user=Depends(get_current_user)):
+    order = orders_db.get(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Сделка не найдена")
     order.status = "paid"
-    db.commit()
-    return {"message": "Оплата отмечена"}
+    return {"detail": "Отмечено как оплачено"}
 
-@router.post("/order/{order_id}/confirm")
-def confirm_order(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
+# Подтвердить получение
+@router.post("/api/orders/{order_id}/confirm")
+def mark_confirmed(order_id: str, user=Depends(get_current_user)):
+    order = orders_db.get(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Сделка не найдена")
     order.status = "confirmed"
-    db.commit()
-    return {"message": "Сделка подтверждена"}
+    return {"detail": "Подтверждено"}
 
-@router.post("/order/{order_id}/dispute")
-def dispute_order(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
+# Открыть спор
+@router.post("/api/orders/{order_id}/dispute")
+def mark_dispute(order_id: str, user=Depends(get_current_user)):
+    order = orders_db.get(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Сделка не найдена")
-    order.status = "dispute"
-    db.commit()
-    return {"message": "Спор открыт"}
+    order.status = "disputed"
+    return {"detail": "Спор открыт"}
+
+# Получение чата
+@router.get("/api/orders/{order_id}/chat", response_model=List[Message])
+def get_chat(order_id: str, user=Depends(get_current_user)):
+    return chat_db.get(order_id, [])
+
+# Отправка сообщения
+@router.post("/api/orders/{order_id}/chat")
+def send_message(order_id: str, message: Message, user=Depends(get_current_user)):
+    if order_id not in chat_db:
+        chat_db[order_id] = []
+    chat_db[order_id].append(message)
+    return {"detail": "Сообщение отправлено"}
+
+# Для теста: создать фейковую сделку
+@router.post("/api/orders/create_test")
+def create_test_order(user=Depends(get_current_user)):
+    order_id = str(uuid4())
+    new_order = Order(
+        id=order_id,
+        type="buy",
+        amount=100.0,
+        price=90_000.0,
+        buyer=user,
+        seller="seller123",
+        status="pending"
+    )
+    orders_db[order_id] = new_order
+    return {"id": order_id}
