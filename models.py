@@ -1,63 +1,40 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Enum
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-import enum
-from datetime import datetime
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
-Base = declarative_base()
+from database import engine, Base, get_db
+from utils.auth import create_token_route, oauth2_scheme, get_current_user
+from routes.orders import router as orders_router
+from routes.public_ads import router as ads_router
+# Импорт моделей, чтобы таблицы создались
+import models
 
-class User(Base):
-    __tablename__ = "users"
+# Инициализация FastAPI
+app = FastAPI(title="P2P Pлатформа")
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    email = Column(String, unique=True, index=True)
-    full_name = Column(String, nullable=True)
+# Создание таблиц в БД
+Base.metadata.create_all(bind=engine)
 
-    ads = relationship("Ad", back_populates="owner")
-    orders_bought = relationship("Order", foreign_keys='Order.buyer_id', back_populates="buyer")
-    orders_sold = relationship("Order", foreign_keys='Order.seller_id', back_populates="seller")
+# Статика и шаблоны
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
+# Настройка роутов аутентификации
+create_token_route(app)
 
-class AdType(str, enum.Enum):
-    buy = "buy"
-    sell = "sell"
+# Подключение маршрутов
+app.include_router(ads_router, prefix="", tags=["Public Ads"])
+app.include_router(orders_router, prefix="", tags=["Orders"])
 
-class Ad(Base):
-    __tablename__ = "ads"
+# Маршрут главной страницы (публичный маркет)
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse("market.html", {"request": request})
 
-    id = Column(Integer, primary_key=True, index=True)
-    type = Column(Enum(AdType))
-    amount = Column(Float)
-    price = Column(Float)
-    currency = Column(String, default="USDT")
-    created_at = Column(DateTime, default=datetime.utcnow)
+# Маршрут профиля
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request: Request, user=Depends(get_current_user)):
+    return templates.TemplateResponse("templates/profile.html", {"request": request})
 
-    owner_id = Column(Integer, ForeignKey("users.id"))
-    owner = relationship("User", back_populates="ads")
-
-
-class OrderStatus(str, enum.Enum):
-    pending = "pending"
-    paid = "paid"
-    completed = "completed"
-    dispute = "dispute"
-    cancelled = "cancelled"
-
-class Order(Base):
-    __tablename__ = "orders"
-
-    id = Column(Integer, primary_key=True, index=True)
-    amount = Column(Float)
-    price = Column(Float)
-    status = Column(Enum(OrderStatus), default=OrderStatus.pending)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    buyer_id = Column(Integer, ForeignKey("users.id"))
-    seller_id = Column(Integer, ForeignKey("users.id"))
-    ad_id = Column(Integer, ForeignKey("ads.id"))
-
-    buyer = relationship("User", foreign_keys=[buyer_id], back_populates="orders_bought")
-    seller = relationship("User", foreign_keys=[seller_id], back_populates="orders_sold")
-    ad = relationship("Ad")
+# При необходимости добавьте другие страницы (каталог, админка и т.д.) ниже
