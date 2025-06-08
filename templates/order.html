@@ -106,3 +106,26 @@
   </script>
 </body>
 </html>
+
+<script>
+  function markAsPaid() {
+    fetch(`/order/{{ order.id }}/mark_paid`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(err => alert("Ошибка"));
+  }
+
+  function markAsConfirmed() {
+    fetch(`/order/{{ order.id }}/confirm`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(err => alert("Ошибка"));
+  }
+
+  function openDispute() {
+    fetch(`/order/{{ order.id }}/dispute`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => alert(data.message))
+      .catch(err => alert("Ошибка"));
+  }
+</script>
