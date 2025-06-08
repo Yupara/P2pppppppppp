@@ -118,3 +118,62 @@
   </script>
 </body>
 </html>
+
+<script>
+  const orderId = new URLSearchParams(window.location.search).get('id');
+  document.getElementById('orderId').innerText = orderId;
+
+  fetch(`/api/orders/${orderId}`, {
+    headers: {
+      'Authorization': 'Bearer ' + localStorage.getItem('token')
+    }
+  })
+  .then(res => res.json())
+  .then(order => {
+    document.getElementById('type').innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
+    document.getElementById('amount').innerText = order.amount;
+    document.getElementById('price').innerText = order.price;
+    document.getElementById('status').innerText = order.status;
+  });
+
+  function markAsPaid() {
+    fetch(`/api/orders/${orderId}/mark_paid`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token')
+      }
+    }).then(res => res.json()).then(data => {
+      alert(data.message);
+      location.reload();
+    });
+  }
+
+  function markAsConfirmed() {
+    fetch(`/api/orders/${orderId}/confirm`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token')
+      }
+    }).then(res => res.json()).then(data => {
+      alert(data.message);
+      location.reload();
+    });
+  }
+
+  function openDispute() {
+    fetch(`/api/orders/${orderId}/dispute`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token')
+      }
+    }).then(res => res.json()).then(data => {
+      alert(data.message);
+      location.reload();
+    });
+  }
+
+  function sendMessage() {
+    const message = document.getElementById('chatInput').value;
+    alert(`Сообщение отправлено: ${message} (чат пока не подключён)`);
+  }
+</script>
