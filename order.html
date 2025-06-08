@@ -1,107 +1,61 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Детали сделки</title>
-  <style>
-    body {
-      background-color: #002b26;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #00ffcc;
-    }
-
-    .info-box {
-      background-color: #004d40;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-
-    .actions button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #00796b;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-    }
-
-    .actions button:hover {
-      background-color: #00bfa5;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Детали сделки</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <h1>Детали сделки</h1>
+    <header>Сделка</header>
+    <div class="container">
+        <h2>Информация о сделке</h2>
+        <div class="ad-item">
+            <p><strong>ID сделки:</strong> {{ order.id }}</p>
+            <p><strong>Продавец:</strong> {{ order.seller_username }}</p>
+            <p><strong>Покупатель:</strong> {{ order.buyer_username }}</p>
+            <p><strong>Сумма:</strong> {{ order.amount }} {{ order.currency }}</p>
+            <p><strong>Статус:</strong> {{ order.status }}</p>
 
-  <div class="info-box" id="orderInfo">
-    Загрузка информации о сделке...
-  </div>
+            <div>
+                {% if order.status == 'WAITING_PAYMENT' %}
+                    <button class="action-button" onclick="markAsPaid()">Я оплатил</button>
+                {% elif order.status == 'WAITING_CONFIRMATION' %}
+                    <button class="action-button" onclick="markAsConfirmed()">Подтвердить получение</button>
+                {% endif %}
+                {% if order.status != 'COMPLETED' %}
+                    <button class="action-button" onclick="openDispute()">Открыть спор</button>
+                {% endif %}
+            </div>
+        </div>
 
-  <div class="actions">
-    <button onclick="markAsPaid()">Я оплатил</button>
-    <button onclick="markAsConfirmed()">Подтвердить получение</button>
-    <button onclick="openDispute()">Открыть спор</button>
-  </div>
+        <h3>Чат со второй стороной</h3>
+        <div class="chat-box" id="chat-box">
+            {% for msg in messages %}
+                <p><strong>{{ msg.sender }}:</strong> {{ msg.content }}</p>
+            {% endfor %}
+        </div>
 
-  <script>
-    const orderId = new URLSearchParams(window.location.search).get('id');
+        <form method="post" action="/orders/{{ order.id }}/message">
+            <input type="text" name="message" class="chat-input" placeholder="Введите сообщение">
+            <button type="submit" class="chat-send">Отправить</button>
+        </form>
+    </div>
 
-    function loadOrder() {
-      fetch(`/api/orders/${orderId}`, {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+    <script>
+        function markAsPaid() {
+            fetch(`/orders/{{ order.id }}/mark_paid`, { method: "POST" })
+                .then(() => location.reload());
         }
-      })
-        .then(res => res.json())
-        .then(order => {
-          const box = document.getElementById('orderInfo');
-          box.innerHTML = `
-            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
-            <p><strong>Сумма:</strong> ${order.amount} USDT</p>
-            <p><strong>Цена:</strong> ${order.price} ₽</p>
-            <p><strong>Статус:</strong> ${order.status}</p>
-            <p><strong>Создано:</strong> ${new Date(order.created_at).toLocaleString()}</p>
-          `;
-        });
-    }
 
-    function markAsPaid() {
-      fetch(`/api/orders/${orderId}/mark_paid`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        function markAsConfirmed() {
+            fetch(`/orders/{{ order.id }}/mark_confirmed`, { method: "POST" })
+                .then(() => location.reload());
         }
-      }).then(() => alert('Отмечено как оплачено'));
-    }
 
-    function markAsConfirmed() {
-      fetch(`/api/orders/${orderId}/confirm`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        function openDispute() {
+            fetch(`/orders/{{ order.id }}/dispute`, { method: "POST" })
+                .then(() => location.reload());
         }
-      }).then(() => alert('Получение подтверждено'));
-    }
-
-    function openDispute() {
-      fetch(`/api/orders/${orderId}/dispute`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-      }).then(() => alert('Спор открыт'));
-    }
-
-    loadOrder();
-  </script>
+    </script>
 </body>
 </html>
