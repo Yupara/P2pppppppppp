@@ -35,3 +35,30 @@ def get_order_page(request: Request, order_id: int, db: Session = Depends(get_db
             "seller_id": order.seller_id
         }
     })
+
+@router.post("/order/{order_id}/mark_paid")
+def mark_order_as_paid(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    order.status = "paid"
+    db.commit()
+    return {"message": "Оплата отмечена"}
+
+@router.post("/order/{order_id}/confirm")
+def confirm_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    order.status = "confirmed"
+    db.commit()
+    return {"message": "Сделка подтверждена"}
+
+@router.post("/order/{order_id}/dispute")
+def dispute_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    order.status = "dispute"
+    db.commit()
+    return {"message": "Спор открыт"}
