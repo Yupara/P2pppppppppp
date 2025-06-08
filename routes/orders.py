@@ -1,102 +1,56 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>Мои сделки</title>
-  <style>
-    body {
-      background-color: #002b26;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from database import get_db
+from models import Order, User
+from utils.auth import get_current_user
 
-    h1 {
-      text-align: center;
-      color: #90EE90;
-    }
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
-    .order {
-      background-color: #003f35;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
+@router.get("/orders/{order_id}", response_class=HTMLResponse)
+def view_order(order_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    
+    counterparty_id = order.buyer_id if current_user.id != order.buyer_id else order.seller_id
+    counterparty = db.query(User).filter(User.id == counterparty_id).first()
 
-    .order p {
-      margin: 5px 0;
-    }
+    return templates.TemplateResponse("deal.html", {
+        "request": request,
+        "order": order,
+        "counterparty": counterparty,
+        "current_user": current_user
+    })
 
-    .status {
-      font-weight: bold;
-    }
 
-    .status.paid {
-      color: orange;
-    }
+@router.post("/api/orders/{order_id}/paid")
+def mark_as_paid(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order or current_user.id != order.buyer_id:
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
+    order.status = "paid"
+    db.commit()
+    return {"message": "Отмечено как оплачено"}
 
-    .status.confirmed {
-      color: green;
-    }
 
-    .status.disputed {
-      color: red;
-    }
+@router.post("/api/orders/{order_id}/confirm")
+def mark_as_confirmed(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order or current_user.id != order.seller_id:
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
+    order.status = "completed"
+    db.commit()
+    return {"message": "Сделка подтверждена"}
 
-    .button {
-      background-color: #00796b;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
 
-    .button:hover {
-      background-color: #004d40;
-    }
-  </style>
-</head>
-<body>
-  <h1>Мои сделки</h1>
-  <div id="ordersContainer">
-    <p>Загрузка...</p>
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      fetch('/api/orders/mine', {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById('ordersContainer');
-        if (!data.length) {
-          container.innerHTML = '<p>У вас пока нет сделок.</p>';
-          return;
-        }
-
-        container.innerHTML = '';
-        data.forEach(order => {
-          const div = document.createElement('div');
-          div.className = 'order';
-          div.innerHTML = `
-            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
-            <p><strong>Сумма:</strong> ${order.amount} USDT</p>
-            <p><strong>Цена:</strong> ${order.price} ₽</p>
-            <p><strong>Статус:</strong> <span class="status ${order.status}">${order.status}</span></p>
-            <button class="button" onclick="goToTrade(${order.id})">Открыть</button>
-          `;
-          container.appendChild(div);
-        });
-      });
-
-      function goToTrade(orderId) {
-        window.location.href = '/trade?id=' + orderId;
-      }
-    });
-  </script>
-</body>
-</html>
+@router.post("/api/orders/{order_id}/dispute")
+def open_dispute(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    order.status = "dispute"
+    db.commit()
+    return {"message": "Спор открыт"}
