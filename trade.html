@@ -1,11 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <title>Сделка #{{ order_id }}</title>
+  <style>
+    body {
+      background-color: #002b26;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      color: #90EE90;
+    }
+    .info {
+      background-color: #003f35;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .chat-box {
+      background-color: #004f3f;
+      padding: 15px;
+      border-radius: 10px;
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+    .message-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-top: 5px;
+    }
+    button {
+      background-color: #1db954;
+      color: white;
+      padding: 10px 15px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1ed760;
+    }
+  </style>
 </head>
-<body style="background:#002b26;color:white;font-family:sans-serif;">
+<body>
   <h1>Сделка #{{ order_id }}</h1>
-  <p>Вы перешли на страницу сделки. Здесь будет интерфейс оплаты, чата и подтверждений.</p>
+
+  <div class="info">
+    <p><strong>Информация о сделке:</strong></p>
+    <p>Тут будет: сумма, цена, участник, время и статус сделки.</p>
+  </div>
+
+  <div>
+    <button onclick="markAsPaid()">Я оплатил</button>
+    <button onclick="markAsConfirmed()">Подтвердить получение</button>
+    <button onclick="openDispute()">Открыть спор</button>
+  </div>
+
+  <h2>Чат сделки</h2>
+  <div class="chat-box" id="chatBox">
+    <!-- Сообщения появятся здесь -->
+  </div>
+  <input type="text" id="messageInput" class="message-input" placeholder="Введите сообщение..." />
+  <button onclick="sendMessage()">Отправить</button>
+
+  <script>
+    const orderId = "{{ order_id }}";
+
+    function markAsPaid() {
+      alert("Вы отметили сделку как оплаченную.");
+    }
+
+    function markAsConfirmed() {
+      alert("Вы подтвердили получение.");
+    }
+
+    function openDispute() {
+      alert("Вы открыли спор.");
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const chatBox = document.getElementById('chatBox');
+      const p = document.createElement('p');
+      p.textContent = "Вы: " + msg;
+      chatBox.appendChild(p);
+
+      input.value = '';
+    }
+  </script>
 </body>
 </html>
