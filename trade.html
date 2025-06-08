@@ -27,15 +27,16 @@
       {% endif %}
     </div>
 
-    <h3>Чат сделки</h3>
+    <h3 style="margin-top:30px; color:#aaffaa;">Чат сделки</h3>
     <div class="chat-box" id="chatBox">
       {% for msg in messages %}
         <div class="chat-message"><strong>{{ msg.sender.username }}:</strong> {{ msg.content }}</div>
       {% endfor %}
     </div>
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Напишите сообщение...">
-      <button onclick="sendMessage()">Отправить</button>
+
+    <div class="chat-input" style="display:flex; margin-top:10px;">
+      <input type="text" id="messageInput" placeholder="Напишите сообщение..." style="flex:1;">
+      <button class="chat-send" onclick="sendMessage()">Отправить</button>
     </div>
   </div>
 
@@ -43,57 +44,50 @@
     const orderId = {{ order.id }};
     const token = localStorage.getItem("token");
 
-    function fetchAPI(url, method, body) {
-      return fetch(url, {
+    function api(method, path, body) {
+      return fetch(path, {
         method,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer " + token
         },
-        body: body && JSON.stringify(body)
+        body: body ? JSON.stringify(body) : undefined
       }).then(r => r.json());
     }
 
     function markAsPaid() {
-      fetchAPI(`/orders/${orderId}/mark_paid`, "POST")
-        .then(() => location.reload());
+      api("POST", `/orders/${orderId}/mark_paid`).then(()=> location.reload());
     }
-
     function confirmOrder() {
-      fetchAPI(`/orders/${orderId}/confirm`, "POST")
-        .then(() => location.reload());
+      api("POST", `/orders/${orderId}/confirm`).then(()=> location.reload());
     }
-
     function openDispute() {
-      fetchAPI(`/orders/${orderId}/dispute`, "POST")
-        .then(() => location.reload());
+      api("POST", `/orders/${orderId}/dispute`).then(()=> location.reload());
     }
 
     function loadMessages() {
-      fetchAPI(`/orders/${orderId}/messages`, "GET")
-        .then(data => {
-          const box = document.getElementById("chatBox");
-          box.innerHTML = "";
-          data.forEach(m => {
-            const d = document.createElement("div");
-            d.className = "chat-message";
-            d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
-            box.appendChild(d);
-          });
+      api("GET", `/orders/${orderId}/messages`).then(data=>{
+        const box = document.getElementById("chatBox");
+        box.innerHTML = "";
+        data.forEach(m=>{
+          const d = document.createElement("div");
+          d.className = "chat-message";
+          d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
+          box.appendChild(d);
         });
+      });
     }
 
     function sendMessage() {
-      const text = document.getElementById("messageInput").value.trim();
-      if (!text) return;
-      fetchAPI(`/orders/${orderId}/messages`, "POST", { content: text })
+      const content = document.getElementById("messageInput").value.trim();
+      if(!content) return;
+      api("POST", `/orders/${orderId}/messages`, { content })
         .then(() => {
           document.getElementById("messageInput").value = "";
           loadMessages();
         });
     }
 
-    // автозагрузка чата
     loadMessages();
     setInterval(loadMessages, 5000);
   </script>
