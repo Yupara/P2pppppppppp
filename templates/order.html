@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Сделка</title>
+  <title>Сделка #{{ ad.id }}</title>
   <style>
     body {
       background-color: #002b26;
@@ -11,41 +11,84 @@
       padding: 20px;
     }
 
-    .box {
-      max-width: 500px;
-      margin: auto;
-      background-color: #003c33;
+    h1 {
+      color: #90EE90;
+    }
+
+    .deal-info {
+      background-color: #00463e;
       padding: 20px;
-      border-radius: 8px;
+      border-radius: 10px;
+      margin-bottom: 20px;
     }
 
-    h2 {
-      color: #00e676;
-      text-align: center;
-    }
-
-    .btn {
-      display: block;
-      width: 100%;
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #00cc99;
+    .buttons button {
+      background-color: #007f6e;
       color: white;
+      padding: 10px 15px;
+      margin-right: 10px;
       border: none;
-      border-radius: 4px;
-      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .buttons button:hover {
+      background-color: #009e86;
+    }
+
+    .chat {
+      background-color: #003730;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .chat input {
+      width: 80%;
+      padding: 8px;
+    }
+
+    .chat button {
+      padding: 8px 12px;
+      margin-left: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h2>{{ 'Покупка' if ad.type == 'buy' else 'Продажа' }}</h2>
-    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
+  <h1>Сделка №{{ ad.id }}</h1>
 
-    <button class="btn">Я оплатил</button>
-    <button class="btn">Подтвердить получение</button>
-    <button class="btn" style="background-color: #ff4444;">Открыть спор</button>
+  <div class="deal-info">
+    <p><strong>Тип:</strong> {{ 'Покупка' if ad.type == 'buy' else 'Продажа' }}</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
   </div>
+
+  <div class="buttons">
+    <button onclick="alert('Вы отметили: Я оплатил')">Я оплатил</button>
+    <button onclick="alert('Вы подтвердили получение')">Подтвердить получение</button>
+    <button onclick="alert('Вы открыли спор')">Открыть спор</button>
+  </div>
+
+  <div class="chat">
+    <h3>Чат сделки</h3>
+    <div id="chat-box">
+      <p><em>Здесь будут сообщения...</em></p>
+    </div>
+    <input type="text" id="messageInput" placeholder="Введите сообщение">
+    <button onclick="sendMessage()">Отправить</button>
+  </div>
+
+  <script>
+    function sendMessage() {
+      const msg = document.getElementById('messageInput').value;
+      if (msg.trim()) {
+        const box = document.getElementById('chat-box');
+        const p = document.createElement('p');
+        p.textContent = "Вы: " + msg;
+        box.appendChild(p);
+        document.getElementById('messageInput').value = '';
+      }
+    }
+  </script>
 </body>
 </html>
