@@ -1,134 +1,98 @@
+/* Базовый стиль */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #002b26;
-    color: #ffffff;
-    margin: 0;
-    padding: 20px;
+  background-color: #001f1c;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0ffe8;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-    text-align: center;
-    color: #90EE90;
-}
-
-.menu {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    background-color: #003f35;
-    padding: 10px;
-}
-
-.menu button {
-    background: transparent;
-    color: white;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-}
-
-.menu button.active {
-    color: #90EE90;
-    font-weight: bold;
-}
-
-.filters {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin: 20px;
-}
-
-.filters input, .filters select, .filters button {
-    padding: 10px;
-    background-color: #003f35;
-    color: white;
-    border: 1px solid #90EE90;
-}
-
-.cards {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-}
-
-.card {
-    background-color: #003f35;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 800px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.info img {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-}
-
-.status.online {
-    width: 10px;
-    height: 10px;
-    background-color: #90EE90;
-    border-radius: 50%;
-}
-
-.details p {
-    margin: 5px 0;
-}
-
-.actions button {
-    background-color: #90EE90;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    color: #003300;
-    font-weight: bold;
-}
-
-.trade-details {
-    background-color: #003f35;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 600px;
-    margin: auto;
-}
-
-body {
-  background-color: #002b26;
+/* Заголовок */
+header {
+  background-color: #004c40;
   color: white;
-  font-family: Arial, sans-serif;
+  padding: 15px 30px;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Контейнер */
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 40px 20px;
+}
+
+/* Объявления */
+.ad-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ad-item {
+  background-color: #003730;
+  border: 1px solid #006652;
+  border-radius: 10px;
   padding: 20px;
 }
-h1 {
-  color: #90ee90;
+
+.ad-item strong {
+  color: #7fff9f;
 }
-.ads, .trade-box {
-  margin-top: 20px;
-}
-.ad {
-  background-color: #003f35;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-button {
-  margin-top: 10px;
-  background-color: #04aa6d;
+
+.buy-button, .action-button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background-color: #00b894;
   color: white;
-  padding: 8px 16px;
   border: none;
   border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
-button:hover {
-  background-color: #037d52;
+
+.buy-button:hover, .action-button:hover {
+  background-color: #00e6b8;
+}
+
+/* Чат и сообщения */
+.chat-box {
+  border: 1px solid #006652;
+  background-color: #002f28;
+  padding: 15px;
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  color: #caffea;
+}
+
+.chat-input {
+  width: calc(100% - 100px);
+  padding: 10px;
+  border: 1px solid #004c40;
+  background-color: #001f1c;
+  color: #e0ffe8;
+  border-radius: 5px;
+}
+
+.chat-send {
+  padding: 10px 20px;
+  background-color: #00cfa0;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.footer {
+  text-align: center;
+  padding: 30px;
+  color: #60c2aa;
+  font-size: 14px;
 }
