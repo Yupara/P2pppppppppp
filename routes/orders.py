@@ -1,40 +1,102 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from models.order import Order
-from utils.auth import get_current_user
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Мои сделки</title>
+  <style>
+    body {
+      background-color: #002b26;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
 
-router = APIRouter(prefix="/api/orders", tags=["Orders"])
+    h1 {
+      text-align: center;
+      color: #90EE90;
+    }
 
-@router.post("/{order_id}/mark_paid")
-def mark_order_paid(order_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    if order.buyer_id != user.id:
-        raise HTTPException(status_code=403, detail="Нет доступа")
-    order.status = "paid"
-    db.commit()
-    return {"message": "Сделка отмечена как оплаченная"}
+    .order {
+      background-color: #003f35;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
 
-@router.post("/{order_id}/confirm")
-def confirm_order(order_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    if order.seller_id != user.id:
-        raise HTTPException(status_code=403, detail="Нет доступа")
-    order.status = "confirmed"
-    db.commit()
-    return {"message": "Сделка подтверждена"}
+    .order p {
+      margin: 5px 0;
+    }
 
-@router.post("/{order_id}/dispute")
-def dispute_order(order_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Сделка не найдена")
-    if order.buyer_id != user.id and order.seller_id != user.id:
-        raise HTTPException(status_code=403, detail="Нет доступа")
-    order.status = "disputed"
-    db.commit()
-    return {"message": "Открыт спор"}
+    .status {
+      font-weight: bold;
+    }
+
+    .status.paid {
+      color: orange;
+    }
+
+    .status.confirmed {
+      color: green;
+    }
+
+    .status.disputed {
+      color: red;
+    }
+
+    .button {
+      background-color: #00796b;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #004d40;
+    }
+  </style>
+</head>
+<body>
+  <h1>Мои сделки</h1>
+  <div id="ordersContainer">
+    <p>Загрузка...</p>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/orders/mine', {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('ordersContainer');
+        if (!data.length) {
+          container.innerHTML = '<p>У вас пока нет сделок.</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        data.forEach(order => {
+          const div = document.createElement('div');
+          div.className = 'order';
+          div.innerHTML = `
+            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
+            <p><strong>Сумма:</strong> ${order.amount} USDT</p>
+            <p><strong>Цена:</strong> ${order.price} ₽</p>
+            <p><strong>Статус:</strong> <span class="status ${order.status}">${order.status}</span></p>
+            <button class="button" onclick="goToTrade(${order.id})">Открыть</button>
+          `;
+          container.appendChild(div);
+        });
+      });
+
+      function goToTrade(orderId) {
+        window.location.href = '/trade?id=' + orderId;
+      }
+    });
+  </script>
+</body>
+</html>
