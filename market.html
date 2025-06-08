@@ -6,20 +6,22 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+  <header>Маркет обмена</header>
   <div class="container">
-    <h1>Публичные объявления</h1>
-
-    <div class="ads-list">
+    <h2>Объявления</h2>
+    <div class="ad-list">
       {% for ad in ads %}
         <div class="ad-item">
-          <p><strong>{{ ad.user.username }}</strong></p>
-          <p>{{ ad.type|capitalize }} USDT</p>
-          <p>Цена: {{ ad.price }} ₽</p>
-          <p>Доступно: {{ ad.amount }} USDT</p>
-          <form action="/orders/start/{{ ad.id }}" method="post">
-            <button type="submit">Купить</button>
+          <p><strong>Пользователь:</strong> {{ ad.owner.username }}</p>
+          <p><strong>Тип:</strong> {{ ad.type|capitalize }}</p>
+          <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
+          <p><strong>Доступно:</strong> {{ ad.amount }} {{ ad.currency }}</p>
+          <form action="/orders/create/{{ ad.id }}" method="post">
+            <button type="submit" class="action-button">Начать сделку</button>
           </form>
         </div>
+      {% else %}
+        <p style="text-align:center; color:#ccc;">Объявлений не найдено.</p>
       {% endfor %}
     </div>
   </div>
