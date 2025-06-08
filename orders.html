@@ -4,89 +4,37 @@
   <meta charset="UTF-8">
   <title>Мои сделки</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    .orders-container {
-      max-width: 800px;
-      margin: 0 auto;
-      margin-top: 40px;
-    }
-
-    .order {
-      background-color: #00352e;
-      border: 1px solid #005548;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-
-    .order h3 {
-      color: #90EE90;
-      margin-bottom: 10px;
-    }
-
-    .order p {
-      margin: 5px 0;
-    }
-
-    .order .actions {
-      margin-top: 10px;
-    }
-
-    .order button {
-      background-color: #008c6e;
-      color: white;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 6px;
-      margin-right: 10px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .order button:hover {
-      background-color: #00a382;
-    }
-
-    .status {
-      font-weight: bold;
-      color: #ffd700;
-    }
-  </style>
 </head>
 <body>
-  <div class="orders-container">
-    <h1 style="text-align: center; color: #90EE90;">Мои сделки</h1>
-
+  <header>Мои сделки</header>
+  <div class="container orders-container">
     {% for order in orders %}
       <div class="order">
         <h3>Сделка №{{ order.id }}</h3>
-        <p><strong>Тип:</strong> {{ 'Покупка' if order.type == 'buy' else 'Продажа' }}</p>
+        <p><strong>Тип:</strong> {{ order.type == 'buy' ? 'Покупка' : 'Продажа' }}</p>
         <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
         <p><strong>Цена:</strong> {{ order.price }} ₽</p>
         <p><strong>Статус:</strong> <span class="status">{{ order.status }}</span></p>
-
         <div class="actions">
-          {% if order.status == 'pending' %}
-            <form method="post" action="/orders/{{ order.id }}/mark_paid" style="display: inline;">
+          {% if order.status == 'pending' and order.buyer_id == user.id %}
+            <form action="/orders/{{ order.id }}/mark_paid" method="post" style="display:inline;">
               <button type="submit">Я оплатил</button>
             </form>
           {% endif %}
-          
-          {% if order.status == 'paid' and order.is_owner %}
-            <form method="post" action="/orders/{{ order.id }}/confirm" style="display: inline;">
+          {% if order.status == 'paid' and order.seller_id == user.id %}
+            <form action="/orders/{{ order.id }}/confirm" method="post" style="display:inline;">
               <button type="submit">Подтвердить получение</button>
             </form>
           {% endif %}
-
-          {% if order.status in ['pending', 'paid'] %}
-            <form method="post" action="/orders/{{ order.id }}/dispute" style="display: inline;">
+          {% if order.status != 'completed' %}
+            <form action="/orders/{{ order.id }}/dispute" method="post" style="display:inline;">
               <button type="submit">Открыть спор</button>
             </form>
           {% endif %}
         </div>
       </div>
     {% else %}
-      <p style="text-align: center;">У вас пока нет сделок.</p>
+      <p style="text-align:center; margin-top:50px; color:#ccc;">У вас пока нет сделок.</p>
     {% endfor %}
   </div>
 </body>
