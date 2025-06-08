@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Сделка #{{ ad.id }}</title>
+  <title>Сделка</title>
   <style>
     body {
       background-color: #002b26;
@@ -11,123 +11,171 @@
       padding: 20px;
     }
 
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #003f35;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
     h1 {
       color: #90EE90;
+      text-align: center;
     }
 
-    .deal-info {
-      background-color: #00463e;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-
-    .buttons button {
-      background-color: #007f6e;
-      color: white;
+    button {
+      margin: 10px 5px;
       padding: 10px 15px;
-      margin-right: 10px;
+      background-color: #007f5f;
       border: none;
+      color: white;
       border-radius: 5px;
       cursor: pointer;
     }
 
-    .buttons button:hover {
-      background-color: #009e86;
+    button:hover {
+      background-color: #005f47;
     }
 
     .chat {
-      background-color: #003730;
-      padding: 10px;
-      border-radius: 10px;
+      border-top: 1px solid #666;
       margin-top: 20px;
+      padding-top: 10px;
     }
 
-    .chat input {
-      width: 80%;
+    .message {
+      background-color: #004d3b;
       padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 5px;
     }
 
-    .chat button {
-      padding: 8px 12px;
-      margin-left: 10px;
+    .input-area {
+      display: flex;
+      margin-top: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    .input-area button {
+      margin-left: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>Сделка №{{ ad.id }}</h1>
+  <div class="container">
+    <h1>Сделка #<span id="orderId"></span></h1>
+    <p><strong>Тип:</strong> <span id="type"></span></p>
+    <p><strong>Сумма:</strong> <span id="amount"></span> USDT</p>
+    <p><strong>Цена:</strong> <span id="price"></span> ₽</p>
+    <p><strong>Статус:</strong> <span id="status"></span></p>
 
-  <div class="deal-info">
-    <p><strong>Тип:</strong> {{ 'Покупка' if ad.type == 'buy' else 'Продажа' }}</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
-  </div>
-
-  <div class="buttons">
-    <button onclick="alert('Вы отметили: Я оплатил')">Я оплатил</button>
-    <button onclick="alert('Вы подтвердили получение')">Подтвердить получение</button>
-    <button onclick="alert('Вы открыли спор')">Открыть спор</button>
-  </div>
-
-  <div class="chat">
-    <h3>Чат сделки</h3>
-    <div id="chat-box">
-      <p><em>Здесь будут сообщения...</em></p>
+    <div>
+      <button onclick="markAsPaid()">Я оплатил</button>
+      <button onclick="markAsConfirmed()">Подтвердить получение</button>
+      <button onclick="openDispute()">Открыть спор</button>
     </div>
-    <input type="text" id="messageInput" placeholder="Введите сообщение">
-    <div class="buttons">
-  <button onclick="markPaid()">Я оплатил</button>
-  <button onclick="markConfirmed()">Подтвердить получение</button>
-  <button onclick="openDispute()">Открыть спор</button>
-</div>
+
+    <div class="chat">
+      <h3>Чат</h3>
+      <div id="chatBox"></div>
+      <div class="input-area">
+        <input type="text" id="messageInput" placeholder="Напишите сообщение..." />
+        <button onclick="sendMessage()">Отправить</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    function sendMessage() {
-      const msg = document.getElementById('messageInput').value;
-      if (msg.trim()) {
-        const box = document.getElementById('chat-box');
-        const p = document.createElement('p');
-        p.textContent = "Вы: " + msg;
-        box.appendChild(p);
-        document.getElementById('messageInput').value = '';
-      }
+    const orderId = new URLSearchParams(window.location.search).get('id');
+    document.getElementById('orderId').innerText = orderId;
+
+    async function fetchOrder() {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      });
+      const data = await res.json();
+      document.getElementById('type').innerText = data.type === 'buy' ? 'Покупка' : 'Продажа';
+      document.getElementById('amount').innerText = data.amount;
+      document.getElementById('price').innerText = data.price;
+      document.getElementById('status').innerText = data.status;
     }
+
+    async function markAsPaid() {
+      await fetch(`/api/orders/${orderId}/paid`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      });
+      alert('Статус обновлён: Оплачено');
+      fetchOrder();
+    }
+
+    async function markAsConfirmed() {
+      await fetch(`/api/orders/${orderId}/confirm`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      });
+      alert('Статус обновлён: Завершено');
+      fetchOrder();
+    }
+
+    async function openDispute() {
+      await fetch(`/api/orders/${orderId}/dispute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      });
+      alert('Спор открыт');
+      fetchOrder();
+    }
+
+    async function fetchMessages() {
+      const res = await fetch(`/api/orders/${orderId}/messages`, {
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+      });
+      const data = await res.json();
+      const box = document.getElementById('chatBox');
+      box.innerHTML = '';
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerText = msg.sender + ': ' + msg.content;
+        box.appendChild(div);
+      });
+    }
+
+    async function sendMessage() {
+      const content = document.getElementById('messageInput').value;
+      await fetch(`/api/orders/${orderId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify({ content })
+      });
+      document.getElementById('messageInput').value = '';
+      fetchMessages();
+    }
+
+    fetchOrder();
+    fetchMessages();
+    setInterval(fetchMessages, 3000); // обновление чата каждые 3 секунды
   </script>
 </body>
 </html>
-
-<script>
-  function getToken() {
-    return localStorage.getItem('token');
-  }
-
-  function markPaid() {
-    fetch(`/api/orders/{{ ad.id }}/mark_paid`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + getToken()
-      }
-    }).then(res => res.json())
-      .then(data => alert(data.detail || 'Ошибка'));
-  }
-
-  function markConfirmed() {
-    fetch(`/api/orders/{{ ad.id }}/mark_confirmed`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + getToken()
-      }
-    }).then(res => res.json())
-      .then(data => alert(data.detail || 'Ошибка'));
-  }
-
-  function openDispute() {
-    fetch(`/api/orders/{{ ad.id }}/open_dispute`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + getToken()
-      }
-    }).then(res => res.json())
-      .then(data => alert(data.detail || 'Ошибка'));
-  }
-</script>
