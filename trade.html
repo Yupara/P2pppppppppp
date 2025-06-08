@@ -2,99 +2,89 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Сделка #{{ order_id }}</title>
+  <title>Сделка</title>
   <style>
     body {
-      background-color: #002b26;
+      background-color: #001f1f;
       color: white;
       font-family: Arial, sans-serif;
       padding: 20px;
     }
-    h1 {
-      color: #90EE90;
-    }
-    .info {
-      background-color: #003f35;
-      padding: 15px;
+
+    .trade-box {
+      background-color: #003333;
+      padding: 20px;
       border-radius: 10px;
-      margin-bottom: 20px;
+      max-width: 600px;
+      margin: 0 auto;
     }
-    .chat-box {
-      background-color: #004f3f;
-      padding: 15px;
-      border-radius: 10px;
-      height: 200px;
-      overflow-y: auto;
-      margin-bottom: 15px;
+
+    .trade-box h2 {
+      color: #90ee90;
     }
-    .message-input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 5px;
+
+    .trade-box p {
+      margin: 10px 0;
+    }
+
+    .trade-box button {
+      background-color: #008000;
       border: none;
-      margin-top: 5px;
-    }
-    button {
-      background-color: #1db954;
-      color: white;
       padding: 10px 15px;
-      margin: 5px 0;
-      border: none;
+      margin: 10px 5px;
       border-radius: 5px;
+      color: white;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #1ed760;
+
+    .trade-box button:hover {
+      background-color: #00cc66;
     }
   </style>
 </head>
 <body>
-  <h1>Сделка #{{ order_id }}</h1>
+  <div class="trade-box">
+    <h2>Сделка № <span id="orderId"></span></h2>
+    <p><strong>Тип:</strong> <span id="orderType">Загрузка...</span></p>
+    <p><strong>Сумма:</strong> <span id="orderAmount">Загрузка...</span> USDT</p>
+    <p><strong>Цена:</strong> <span id="orderPrice">Загрузка...</span> ₽</p>
+    <p><strong>Статус:</strong> <span id="orderStatus">Загрузка...</span></p>
 
-  <div class="info">
-    <p><strong>Информация о сделке:</strong></p>
-    <p>Тут будет: сумма, цена, участник, время и статус сделки.</p>
-  </div>
-
-  <div>
     <button onclick="markAsPaid()">Я оплатил</button>
     <button onclick="markAsConfirmed()">Подтвердить получение</button>
     <button onclick="openDispute()">Открыть спор</button>
   </div>
 
-  <h2>Чат сделки</h2>
-  <div class="chat-box" id="chatBox">
-    <!-- Сообщения появятся здесь -->
-  </div>
-  <input type="text" id="messageInput" class="message-input" placeholder="Введите сообщение..." />
-  <button onclick="sendMessage()">Отправить</button>
-
   <script>
-    const orderId = "{{ order_id }}";
+    const orderId = window.location.pathname.split("/").pop();
+    document.getElementById('orderId').innerText = orderId;
+
+    fetch(`/api/orders/${orderId}`, {
+      headers: {
+        'Authorization': 'Bearer ' + localStorage.getItem('token')  // если авторизация включена
+      }
+    })
+    .then(res => res.json())
+    .then(order => {
+      document.getElementById('orderType').innerText = order.type === 'buy' ? 'Покупка' : 'Продажа';
+      document.getElementById('orderAmount').innerText = order.amount;
+      document.getElementById('orderPrice').innerText = order.price;
+      document.getElementById('orderStatus').innerText = order.status;
+    })
+    .catch(() => {
+      alert("Ошибка загрузки данных сделки");
+    });
 
     function markAsPaid() {
-      alert("Вы отметили сделку как оплаченную.");
+      alert("Вы отметили как оплачено (дальше будет API)");
     }
 
     function markAsConfirmed() {
-      alert("Вы подтвердили получение.");
+      alert("Вы подтвердили получение (дальше будет API)");
     }
 
     function openDispute() {
-      alert("Вы открыли спор.");
-    }
-
-    function sendMessage() {
-      const input = document.getElementById('messageInput');
-      const msg = input.value.trim();
-      if (!msg) return;
-
-      const chatBox = document.getElementById('chatBox');
-      const p = document.createElement('p');
-      p.textContent = "Вы: " + msg;
-      chatBox.appendChild(p);
-
-      input.value = '';
+      alert("Вы открыли спор (дальше будет API)");
     }
   </script>
 </body>
