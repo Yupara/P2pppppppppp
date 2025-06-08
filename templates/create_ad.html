@@ -2,55 +2,106 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Разместить объявление</title>
+  <title>Создать объявление</title>
+  <link rel="stylesheet" href="/static/styles.css">
   <style>
     body {
-      background-color: #001f1f;
-      color: white;
+      background-color: #001e1d;
+      color: #e6f1e9;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-    form {
-      max-width: 400px;
-      margin: auto;
-      background-color: #003333;
-      padding: 20px;
-      border-radius: 8px;
+
+    .form-container {
+      background-color: #003030;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #00c89644;
+      width: 400px;
     }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #7fff9f;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
     input, select {
       width: 100%;
       padding: 10px;
       margin-bottom: 15px;
-      border-radius: 4px;
-      border: none;
+      border: 1px solid #006e5c;
+      border-radius: 5px;
+      background-color: #002524;
+      color: #e6f1e9;
     }
+
     button {
       width: 100%;
-      padding: 10px;
-      background-color: #00cc99;
-      color: white;
+      padding: 12px;
+      background-color: #00c896;
+      color: #001e1d;
       border: none;
-      border-radius: 4px;
-      font-weight: bold;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #00b288;
     }
   </style>
 </head>
 <body>
-  <h2 align="center">Разместить объявление</h2>
-  <form action="/create" method="post">
-    <label>Тип сделки:</label>
-    <select name="type" required>
-      <option value="buy">Купить</option>
-      <option value="sell">Продать</option>
-    </select>
+  <div class="form-container">
+    <h2>Новое объявление</h2>
+    <form action="/ads/create" method="post">
+      <label for="type">Тип сделки</label>
+      <select name="type" id="type" required>
+        <option value="buy">Купить</option>
+        <option value="sell">Продать</option>
+      </select>
 
-    <label>Цена (₽):</label>
-    <input type="number" name="price" step="0.01" required>
+      <label for="currency">Криптовалюта</label>
+      <select name="currency" id="currency" required>
+        <option value="USDT">USDT</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+      </select>
 
-    <label>Сумма (USDT):</label>
-    <input type="number" name="amount" step="0.01" required>
+      <label for="price">Цена (₽ за единицу)</label>
+      <input type="number" name="price" id="price" step="0.01" required>
 
-    <button type="submit">Создать</button>
-  </form>
+      <label for="amount">Количество (USDT)</label>
+      <input type="number" name="amount" id="amount" step="0.0001" required>
+
+      <label for="min_limit">Мин. сумма (₽)</label>
+      <input type="number" name="min_limit" id="min_limit" step="0.01" value="0" required>
+
+      <label for="max_limit">Макс. сумма (₽)</label>
+      <input type="number" name="max_limit" id="max_limit" step="0.01" value="0" required>
+
+      <label for="payment_method">Способ оплаты</label>
+      <select name="payment_method" id="payment_method" required>
+        <option value="bank_transfer">Банковский перевод</option>
+        <option value="sbp">СБП</option>
+        <option value="paypal">PayPal</option>
+      </select>
+
+      <button type="submit">Создать объявление</button>
+    </form>
+  </div>
 </body>
 </html>
