@@ -5,7 +5,7 @@
   <title>Детали сделки</title>
   <style>
     body {
-      background-color: #001f1f;
+      background-color: #002b26;
       color: white;
       font-family: Arial, sans-serif;
       padding: 20px;
@@ -13,119 +13,93 @@
 
     h1 {
       text-align: center;
-      color: #00ff99;
+      color: #90EE90;
     }
 
-    .order-info {
-      background-color: #003333;
+    .order-details {
+      background-color: #003f35;
+      border-radius: 8px;
       padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
       margin: 0 auto;
+      max-width: 500px;
     }
 
-    .order-info p {
+    .order-details p {
       margin: 10px 0;
     }
 
-    .buttons {
-      text-align: center;
-      margin-top: 30px;
-    }
-
     button {
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 16px;
+      background-color: #009966;
+      color: white;
       border: none;
+      padding: 10px 15px;
+      margin: 10px 5px 0 0;
       border-radius: 5px;
       cursor: pointer;
-      background-color: #00cc99;
-      color: white;
     }
 
     button:hover {
-      background-color: #009977;
+      background-color: #007755;
     }
   </style>
 </head>
 <body>
   <h1>Информация о сделке</h1>
 
-  <div class="order-info">
-    <p><strong>Тип сделки:</strong> {{ order.type }}</p>
+  <div class="order-details">
+    <p><strong>ID сделки:</strong> {{ order.id }}</p>
+    <p><strong>Тип:</strong> {{ order.type }}</p>
     <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
     <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-    <p><strong>Статус:</strong> {{ order.status }}</p>
-  </div>
+    <p><strong>Покупатель:</strong> {{ order.buyer }}</p>
+    <p><strong>Продавец:</strong> {{ order.seller }}</p>
+    <p><strong>Текущий статус:</strong> <span id="order-status">{{ order.status }}</span></p>
 
-  <div class="buttons">
     <button onclick="markAsPaid()">Я оплатил</button>
     <button onclick="markAsConfirmed()">Подтвердить получение</button>
     <button onclick="openDispute()">Открыть спор</button>
   </div>
 
   <script>
-    const orderId = "{{ order.id }}";
+    function updateStatus(newStatus) {
+      document.getElementById('order-status').innerText = newStatus;
+    }
 
     function markAsPaid() {
-      fetch(`/api/orders/${orderId}/mark_paid`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+      fetch(`/order/{{ order.id }}/mark_paid`, {
+        method: 'POST'
       })
       .then(res => res.json())
-      .then(data => alert('Статус обновлён: ' + data.status))
-      .catch(err => alert('Ошибка: ' + err));
+      .then(data => {
+        alert(data.message);
+        updateStatus('paid');
+      })
+      .catch(() => alert("Ошибка при отметке оплаты"));
     }
 
     function markAsConfirmed() {
-      fetch(`/api/orders/${orderId}/mark_confirmed`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+      fetch(`/order/{{ order.id }}/confirm`, {
+        method: 'POST'
       })
       .then(res => res.json())
-      .then(data => alert('Статус обновлён: ' + data.status))
-      .catch(err => alert('Ошибка: ' + err));
+      .then(data => {
+        alert(data.message);
+        updateStatus('confirmed');
+      })
+      .catch(() => alert("Ошибка при подтверждении"));
     }
 
     function openDispute() {
-      fetch(`/api/orders/${orderId}/dispute`, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
+      fetch(`/order/{{ order.id }}/dispute`, {
+        method: 'POST'
       })
       .then(res => res.json())
-      .then(data => alert('Спор открыт. Статус: ' + data.status))
-      .catch(err => alert('Ошибка: ' + err));
+      .then(data => {
+        alert(data.message);
+        updateStatus('dispute');
+      })
+      .catch(() => alert("Ошибка при открытии спора"));
     }
   </script>
 </body>
 </html>
-
-<script>
-  function markAsPaid() {
-    fetch(`/order/{{ order.id }}/mark_paid`, { method: 'POST' })
-      .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(err => alert("Ошибка"));
-  }
-
-  function markAsConfirmed() {
-    fetch(`/order/{{ order.id }}/confirm`, { method: 'POST' })
-      .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(err => alert("Ошибка"));
-  }
-
-  function openDispute() {
-    fetch(`/order/{{ order.id }}/dispute`, { method: 'POST' })
-      .then(res => res.json())
-      .then(data => alert(data.message))
-      .catch(err => alert("Ошибка"));
-  }
-</script>
