@@ -3,87 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <title>Мои сделки</title>
+  <link rel="stylesheet" href="/static/styles.css">
   <style>
-    body {
-      background-color: #0d1f1e;
-      color: #e0f7ea;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 40px;
-      margin: 0;
-    }
-
-    h1 {
-      text-align: center;
-      color: #00ffcc;
-      margin-bottom: 30px;
+    .orders-container {
+      max-width: 800px;
+      margin: 0 auto;
+      margin-top: 40px;
     }
 
     .order {
-      background-color: #102926;
-      border: 1px solid #00ffcc44;
-      border-radius: 10px;
+      background-color: #00352e;
+      border: 1px solid #005548;
       padding: 20px;
+      border-radius: 10px;
       margin-bottom: 20px;
-      transition: 0.3s;
     }
 
-    .order:hover {
-      border-color: #00ffcc;
-      box-shadow: 0 0 10px #00ffcc55;
+    .order h3 {
+      color: #90EE90;
+      margin-bottom: 10px;
     }
 
     .order p {
-      margin: 6px 0;
-      font-size: 15px;
+      margin: 5px 0;
+    }
+
+    .order .actions {
+      margin-top: 10px;
+    }
+
+    .order button {
+      background-color: #008c6e;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .order button:hover {
+      background-color: #00a382;
     }
 
     .status {
       font-weight: bold;
-      color: #ffea00;
-    }
-
-    .empty {
-      text-align: center;
-      font-size: 18px;
-      margin-top: 50px;
-      color: #888;
+      color: #ffd700;
     }
   </style>
 </head>
 <body>
-  <h1>📄 История моих сделок</h1>
-  <div id="ordersContainer">
-    <!-- Сюда подгрузятся сделки -->
+  <div class="orders-container">
+    <h1 style="text-align: center; color: #90EE90;">Мои сделки</h1>
+
+    {% for order in orders %}
+      <div class="order">
+        <h3>Сделка №{{ order.id }}</h3>
+        <p><strong>Тип:</strong> {{ 'Покупка' if order.type == 'buy' else 'Продажа' }}</p>
+        <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
+        <p><strong>Цена:</strong> {{ order.price }} ₽</p>
+        <p><strong>Статус:</strong> <span class="status">{{ order.status }}</span></p>
+
+        <div class="actions">
+          {% if order.status == 'pending' %}
+            <form method="post" action="/orders/{{ order.id }}/mark_paid" style="display: inline;">
+              <button type="submit">Я оплатил</button>
+            </form>
+          {% endif %}
+          
+          {% if order.status == 'paid' and order.is_owner %}
+            <form method="post" action="/orders/{{ order.id }}/confirm" style="display: inline;">
+              <button type="submit">Подтвердить получение</button>
+            </form>
+          {% endif %}
+
+          {% if order.status in ['pending', 'paid'] %}
+            <form method="post" action="/orders/{{ order.id }}/dispute" style="display: inline;">
+              <button type="submit">Открыть спор</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <p style="text-align: center;">У вас пока нет сделок.</p>
+    {% endfor %}
   </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      fetch('/api/orders/mine', {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById('ordersContainer');
-        if (!data.length) {
-          container.innerHTML = '<div class="empty">У вас пока нет сделок.</div>';
-          return;
-        }
-
-        data.forEach(order => {
-          const div = document.createElement('div');
-          div.className = 'order';
-          div.innerHTML = `
-            <p><strong>Тип:</strong> ${order.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
-            <p><strong>Сумма:</strong> ${order.amount} USDT</p>
-            <p><strong>Цена:</strong> ${order.price} ₽</p>
-            <p><strong>Статус:</strong> <span class="status">${order.status}</span></p>
-          `;
-          container.appendChild(div);
-        });
-      });
-    });
-  </script>
 </body>
 </html>
