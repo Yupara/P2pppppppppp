@@ -75,8 +75,11 @@
       <p><em>Здесь будут сообщения...</em></p>
     </div>
     <input type="text" id="messageInput" placeholder="Введите сообщение">
-    <button onclick="sendMessage()">Отправить</button>
-  </div>
+    <div class="buttons">
+  <button onclick="markPaid()">Я оплатил</button>
+  <button onclick="markConfirmed()">Подтвердить получение</button>
+  <button onclick="openDispute()">Открыть спор</button>
+</div>
 
   <script>
     function sendMessage() {
@@ -92,3 +95,39 @@
   </script>
 </body>
 </html>
+
+<script>
+  function getToken() {
+    return localStorage.getItem('token');
+  }
+
+  function markPaid() {
+    fetch(`/api/orders/{{ ad.id }}/mark_paid`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + getToken()
+      }
+    }).then(res => res.json())
+      .then(data => alert(data.detail || 'Ошибка'));
+  }
+
+  function markConfirmed() {
+    fetch(`/api/orders/{{ ad.id }}/mark_confirmed`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + getToken()
+      }
+    }).then(res => res.json())
+      .then(data => alert(data.detail || 'Ошибка'));
+  }
+
+  function openDispute() {
+    fetch(`/api/orders/{{ ad.id }}/open_dispute`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + getToken()
+      }
+    }).then(res => res.json())
+      .then(data => alert(data.detail || 'Ошибка'));
+  }
+</script>
