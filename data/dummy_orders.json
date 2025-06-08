@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1",
+    "type": "buy",
+    "amount": 100,
+    "price": 94.5,
+    "status": "Ожидает"
+  },
+  {
+    "id": "2",
+    "type": "sell",
+    "amount": 200,
+    "price": 95,
+    "status": "Ожидает"
+  }
+]
