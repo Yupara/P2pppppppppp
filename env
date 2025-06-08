@@ -1,0 +1,2 @@
+DATABASE_URL=sqlite:///./p2p.db
+SECRET_KEY=тут_твой_секретный_ключ_jwt
