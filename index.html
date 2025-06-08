@@ -1,177 +1,114 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>P2P Платформа</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <h1>P2P Платформа</h1>
-
-    <div class="menu">
-        <button class="active" onclick="switchTab('buy')">Покупка</button>
-        <button onclick="switchTab('sell')">Продажа</button>
-    </div>
-
-    <div class="filters">
-        <select id="currencySelect">
-            <option value="USDT">USDT</option>
-            <option value="BTC">BTC</option>
-        </select>
-        <input type="text" placeholder="Сумма (RUB)" />
-        <select>
-            <option>Все способы оплаты</option>
-            <option>SBP</option>
-            <option>Банк</option>
-        </select>
-        <button>Фильтр</button>
-    </div>
-
-    <div class="cards">
-        <div class="card">
-            <div class="info">
-                <div class="status online"></div>
-                <img src="https://via.placeholder.com/50" alt="avatar" />
-                <div>
-                    <h3>Savak</h3>
-                    <p>50 сделок • 95% успех</p>
-                </div>
-            </div>
-            <div class="details">
-                <p>Цена: ₽90.25</p>
-                <p>Доступно: 1200 USDT</p>
-                <p>Лимит: 1000–500000 ₽</p>
-                <p>Способ: СБП</p>
-            </div>
-            <div class="actions">
-                <button onclick="startTrade('Savak', 'USDT', '90.25', 'SBP')">Купить</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function switchTab(tab) {
-            alert("Вкладка '" + tab + "' выбрана. (реализуется позже)");
-        }
-
-        function startTrade(seller, currency, price, method) {
-            const params = new URLSearchParams({
-                seller,
-                currency,
-                price,
-                method
-            });
-            window.location.href = 'trade.html?' + params.toString();
-        }
-    </script>
-</body>
-</html>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  fetch("/api/public_ads")
-    .then(res => res.json())
-    .then(data => {
-      const container = document.getElementById("adsList");
-      data.forEach(ad => {
-        const div = document.createElement("div");
-        div.className = "ad";
-        div.innerHTML = `
-          <p><strong>${ad.type === "buy" ? "Покупка" : "Продажа"}</strong></p>
-          <p>Ник: ${ad.nickname}</p>
-          <p>Цена: ${ad.price} ₽</p>
-          <p>Сумма: ${ad.amount} USDT</p>
-          <a href="/order.html?id=${ad.id}">
-            <button>${ad.type === "buy" ? "Продать" : "Купить"}</button>
-          </a>
-        `;
-        container.appendChild(div);
-      });
-    });
-});
-</script>
-
-<body>
-  <h1>Объявления</h1>
-  <div>
-    <label>Тип:
-      <select id="typeFilter">
-        <option value="">Все</option>
-        <option value="buy">Покупка</option>
-        <option value="sell">Продажа</option>
-      </select>
-    </label>
-
-    <label>Валюта:
-      <select id="currencyFilter">
-        <option value="">Все</option>
-        <option value="RUB">RUB</option>
-        <option value="USD">USD</option>
-      </select>
-    </label>
-
-    <button onclick="loadAds()">Применить фильтр</button>
-  </div>
-
-  <div id="adsList" style="margin-top: 20px;"></div>
-
-  <script>
-    function loadAds() {
-      const type = document.getElementById('typeFilter').value;
-      const currency = document.getElementById('currencyFilter').value;
-      let url = "/api/public_ads?";
-      if (type) url += "type=" + type + "&";
-      if (currency) url += "currency=" + currency;
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          const container = document.getElementById("adsList");
-          container.innerHTML = "";
-          if (!data.length) {
-            container.innerHTML = "<p>Объявлений нет</p>";
-            return;
-          }
-
-          data.forEach(ad => {
-            const div = document.createElement("div");
-            div.className = "ad";
-            div.innerHTML = `
-              <p><strong>${ad.type === "buy" ? "Покупка" : "Продажа"}</strong></p>
-              <p>Ник: ${ad.nickname}</p>
-              <p>Цена: ${ad.price} ₽</p>
-              <p>Сумма: ${ad.amount} USDT</p>
-              <a href="/order.html?id=${ad.id}">
-                <button>${ad.type === "buy" ? "Продать" : "Купить"}</button>
-              </a>
-            `;
-            container.appendChild(div);
-          });
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", loadAds);
-  </script>
-</body>
-
-<!DOCTYPE html>
-<html lang="ru">
-<head>
   <meta charset="UTF-8">
   <title>P2P Платформа</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    body {
+      background-color: #001f1c;
+      font-family: Arial, sans-serif;
+      color: #e0ffe8;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #004c40;
+      padding: 15px 30px;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 40px 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    h2 {
+      color: #7fff9f;
+      margin-bottom: 20px;
+    }
+
+    .ad-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .ad-item {
+      background-color: #003730;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #006652;
+    }
+
+    .ad-item strong {
+      color: #a0ffd1;
+    }
+
+    .buy-button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #00b894;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .buy-button:hover {
+      background-color: #00e6b8;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #60c2aa;
+    }
+  </style>
 </head>
 <body>
-  <h1>Доступные объявления</h1>
-  <div class="ads">
-    {% for ad in orders %}
-      <div class="ad">
-        <p><strong>Тип:</strong> {{ 'Покупка' if ad.type == 'buy' else 'Продажа' }}</p>
-        <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
-        <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
-        <a href="/trade/{{ ad.id }}"><button>Купить</button></a>
-      </div>
-    {% endfor %}
+  <header>P2P Платформа</header>
+
+  <div class="container">
+    <h2>Объявления на покупку и продажу</h2>
+    <div class="ad-list" id="ads"></div>
   </div>
+
+  <div class="footer">© 2025 P2P Exchange</div>
+
+  <script>
+    async function loadAds() {
+      const res = await fetch('/ads');
+      const ads = await res.json();
+
+      const container = document.getElementById('ads');
+      container.innerHTML = '';
+
+      ads.forEach(ad => {
+        const adElement = document.createElement('div');
+        adElement.className = 'ad-item';
+
+        adElement.innerHTML = `
+          <div><strong>Тип:</strong> ${ad.type}</div>
+          <div><strong>Цена:</strong> ${ad.price} ${ad.currency}</div>
+          <div><strong>Доступно:</strong> ${ad.amount}</div>
+          <button class="buy-button" onclick="startTrade(${ad.id})">Купить</button>
+        `;
+
+        container.appendChild(adElement);
+      });
+    }
+
+    function startTrade(adId) {
+      window.location.href = `/trade/${adId}`;
+    }
+
+    loadAds();
+  </script>
 </body>
 </html>
