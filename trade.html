@@ -5,88 +5,153 @@
   <title>Сделка</title>
   <style>
     body {
-      background-color: #002b26;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      background-color: #0d1f1e;
+      color: #e0f7ea;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
     }
+
     h1 {
       text-align: center;
-      color: #90EE90;
+      color: #00ffcc;
+      margin-bottom: 20px;
     }
-    .order-box {
-      background-color: #003f35;
-      padding: 20px;
+
+    .trade-info {
+      background-color: #102926;
+      border: 1px solid #00ffcc44;
       border-radius: 10px;
-      max-width: 500px;
-      margin: auto;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px #00ffcc22;
     }
-    .order-box p {
-      margin: 10px 0;
+
+    .trade-info p {
+      margin: 8px 0;
     }
-    .buttons {
-      margin-top: 20px;
+
+    .status {
+      font-weight: bold;
+      color: #ffc107;
+    }
+
+    .actions {
       text-align: center;
+      margin-top: 30px;
     }
-    .buttons button {
-      margin: 5px;
-      padding: 10px 20px;
+
+    .actions button {
+      background-color: #00cc99;
+      border: none;
+      color: white;
+      padding: 12px 20px;
       font-size: 16px;
-      background-color: #007d65;
+      border-radius: 8px;
+      margin: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .actions button:hover {
+      background-color: #00b386;
+    }
+
+    .chat-box {
+      background-color: #132b29;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 40px;
+      box-shadow: 0 0 8px #00ffcc22;
+    }
+
+    .chat-message {
+      margin: 8px 0;
+      padding: 10px;
+      background-color: #1a3a37;
+      border-radius: 5px;
+    }
+
+    input, textarea {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
       border: none;
       border-radius: 5px;
-      color: white;
-      cursor: pointer;
     }
-    .buttons button:hover {
-      background-color: #00a87d;
+
+    button.send {
+      margin-top: 10px;
+      background-color: #00ffcc;
+      color: #002822;
     }
   </style>
 </head>
 <body>
   <h1>Детали сделки</h1>
 
-  <div class="order-box">
-    <p><strong>ID сделки:</strong> {{ order.id }}</p>
-    <p><strong>Тип:</strong> {{ "Покупка" if order.type == "buy" else "Продажа" }}</p>
-    <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-    <p><strong>Статус:</strong> {{ order.status }}</p>
+  <div class="trade-info">
+    <p><strong>ID сделки:</strong> {{ trade.id }}</p>
+    <p><strong>Тип:</strong> {{ 'Покупка' if trade.type == 'buy' else 'Продажа' }}</p>
+    <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ trade.price }} ₽</p>
+    <p><strong>Статус:</strong> <span class="status">{{ trade.status }}</span></p>
+  </div>
 
-    <div class="buttons">
+  <div class="actions">
+    {% if trade.status == 'created' %}
       <button onclick="markAsPaid()">Я оплатил</button>
+    {% endif %}
+    {% if trade.status == 'paid' %}
       <button onclick="markAsConfirmed()">Подтвердить получение</button>
+    {% endif %}
+    {% if trade.status != 'completed' %}
       <button onclick="openDispute()">Открыть спор</button>
+    {% endif %}
+  </div>
+
+  <div class="chat-box">
+    <h3>Чат сделки</h3>
+    <div id="chat">
+      {% for message in trade.messages %}
+        <div class="chat-message"><strong>{{ message.sender }}:</strong> {{ message.text }}</div>
+      {% endfor %}
     </div>
+    <textarea id="messageInput" placeholder="Напишите сообщение..."></textarea>
+    <button class="send" onclick="sendMessage()">Отправить</button>
   </div>
 
   <script>
-    const orderId = {{ order.id }};
-    const token = localStorage.getItem("token");
-
-    function sendAction(url) {
-      fetch(url, {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + token,
-          "Content-Type": "application/json"
-        }
-      })
-      .then(res => res.json())
-      .then(data => alert(data.detail))
-      .catch(() => alert("Ошибка запроса"));
-    }
-
     function markAsPaid() {
-      sendAction(`/orders/${orderId}/pay`);
+      fetch(`/api/orders/${{{ trade.id }}}/pay`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      }).then(() => location.reload());
     }
 
     function markAsConfirmed() {
-      sendAction(`/orders/${orderId}/confirm`);
+      fetch(`/api/orders/${{{ trade.id }}}/confirm`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      }).then(() => location.reload());
     }
 
     function openDispute() {
-      sendAction(`/orders/${orderId}/dispute`);
+      fetch(`/api/orders/${{{ trade.id }}}/dispute`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+      }).then(() => location.reload());
+    }
+
+    function sendMessage() {
+      const text = document.getElementById('messageInput').value;
+      fetch(`/api/orders/${{{ trade.id }}}/message`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('token'),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      }).then(() => location.reload());
     }
   </script>
 </body>
