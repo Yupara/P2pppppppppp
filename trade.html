@@ -12,31 +12,20 @@
       <p><strong>Тип:</strong> {{ order.type|capitalize }}</p>
       <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
       <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-      <p><strong>Статус:</strong> <span class="status">{{ order.status }}</span></p>
+      <p><strong>Статус:</strong> <span id="statusField">{{ order.status }}</span></p>
     </div>
 
     <div class="trade-buttons">
-      {% if order.status == "pending" and user.id == order.buyer_id %}
-        <button onclick="markAsPaid()">Я оплатил</button>
-      {% endif %}
-      {% if order.status == "paid" and user.id == order.seller_id %}
-        <button onclick="confirmOrder()">Подтвердить получение</button>
-      {% endif %}
-      {% if order.status != "completed" %}
-        <button onclick="openDispute()">Открыть спор</button>
-      {% endif %}
+      <button id="btnPaid">Я оплатил</button>
+      <button id="btnConfirm">Подтвердить получение</button>
+      <button id="btnDispute">Открыть спор</button>
     </div>
 
-    <h3 style="margin-top:30px; color:#aaffaa;">Чат сделки</h3>
-    <div class="chat-box" id="chatBox">
-      {% for msg in messages %}
-        <div class="chat-message"><strong>{{ msg.sender.username }}:</strong> {{ msg.content }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="chat-input" style="display:flex; margin-top:10px;">
-      <input type="text" id="messageInput" placeholder="Напишите сообщение..." style="flex:1;">
-      <button class="chat-send" onclick="sendMessage()">Отправить</button>
+    <h3>Чат сделки</h3>
+    <div id="chatBox" class="chat-box"></div>
+    <div style="display:flex; margin-top:10px;">
+      <input id="chatInput" type="text" placeholder="Напишите сообщение..." style="flex:1;">
+      <button id="sendBtn" class="chat-send">Отправить</button>
     </div>
   </div>
 
@@ -44,50 +33,56 @@
     const orderId = {{ order.id }};
     const token = localStorage.getItem("token");
 
-    function api(method, path, body) {
-      return fetch(path, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        },
-        body: body ? JSON.stringify(body) : undefined
-      }).then(r => r.json());
+    async function api(path, method='GET', body) {
+      const opts = { method, headers: { 'Authorization': 'Bearer ' + token } };
+      if (body) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(path, opts);
+      return res.json();
     }
 
-    function markAsPaid() {
-      api("POST", `/orders/${orderId}/mark_paid`).then(()=> location.reload());
-    }
-    function confirmOrder() {
-      api("POST", `/orders/${orderId}/confirm`).then(()=> location.reload());
-    }
-    function openDispute() {
-      api("POST", `/orders/${orderId}/dispute`).then(()=> location.reload());
+    // Обновляем статус на странице
+    function updateStatus(newStatus) {
+      document.getElementById('statusField').innerText = newStatus;
     }
 
-    function loadMessages() {
-      api("GET", `/orders/${orderId}/messages`).then(data=>{
-        const box = document.getElementById("chatBox");
-        box.innerHTML = "";
-        data.forEach(m=>{
-          const d = document.createElement("div");
-          d.className = "chat-message";
-          d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
-          box.appendChild(d);
-        });
+    // Действия
+    document.getElementById('btnPaid').onclick = async () => {
+      const data = await api(`/orders/${orderId}/mark_paid`, 'POST');
+      updateStatus('paid');
+    };
+    document.getElementById('btnConfirm').onclick = async () => {
+      const data = await api(`/orders/${orderId}/confirm`, 'POST');
+      updateStatus('completed');
+    };
+    document.getElementById('btnDispute').onclick = async () => {
+      await api(`/orders/${orderId}/dispute`, 'POST');
+      updateStatus('dispute');
+    };
+
+    // Чат
+    async function loadMessages() {
+      const msgs = await api(`/orders/${orderId}/messages`, 'GET');
+      const box = document.getElementById('chatBox');
+      box.innerHTML = '';
+      msgs.forEach(m => {
+        const d = document.createElement('div');
+        d.className = 'chat-message';
+        d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
+        box.appendChild(d);
       });
     }
+    document.getElementById('sendBtn').onclick = async () => {
+      const content = document.getElementById('chatInput').value.trim();
+      if (!content) return;
+      await api(`/orders/${orderId}/messages`, 'POST', { content });
+      document.getElementById('chatInput').value = '';
+      loadMessages();
+    };
 
-    function sendMessage() {
-      const content = document.getElementById("messageInput").value.trim();
-      if(!content) return;
-      api("POST", `/orders/${orderId}/messages`, { content })
-        .then(() => {
-          document.getElementById("messageInput").value = "";
-          loadMessages();
-        });
-    }
-
+    // Инициализация
     loadMessages();
     setInterval(loadMessages, 5000);
   </script>
