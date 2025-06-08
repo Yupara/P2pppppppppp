@@ -177,3 +177,33 @@
     alert(`Сообщение отправлено: ${message} (чат пока не подключён)`);
   }
 </script>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Сделка</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <h1>Сделка #{{ order.id }}</h1>
+  <div class="trade-box">
+    <p><strong>Тип:</strong> {{ 'Покупка' if order.type == 'buy' else 'Продажа' }}</p>
+    <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ order.price }} ₽</p>
+    <p><strong>Статус:</strong> {{ order.status }}</p>
+
+    <form method="post" action="/mark_paid/{{ order.id }}">
+      <button type="submit">Я оплатил</button>
+    </form>
+
+    <form method="post" action="/confirm_payment/{{ order.id }}">
+      <button type="submit">Подтвердить получение</button>
+    </form>
+
+    <form method="post" action="/dispute/{{ order.id }}">
+      <button type="submit">Открыть спор</button>
+    </form>
+  </div>
+</body>
+</html>
