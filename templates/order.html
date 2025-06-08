@@ -11,156 +11,41 @@
       padding: 20px;
     }
 
-    h1 {
-      text-align: center;
-      color: #90ee90;
-    }
-
-    .info, .chat, .actions {
-      background-color: #003f35;
+    .box {
+      max-width: 500px;
+      margin: auto;
+      background-color: #003c33;
+      padding: 20px;
       border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 15px;
     }
 
-    .actions button {
-      background-color: #008080;
+    h2 {
+      color: #00e676;
+      text-align: center;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #00cc99;
       color: white;
-      padding: 10px;
       border: none;
-      margin-right: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .chat-messages {
-      height: 200px;
-      overflow-y: scroll;
-      border: 1px solid #444;
-      padding: 10px;
-      background-color: #001f1a;
-      margin-bottom: 10px;
-    }
-
-    .chat input {
-      width: 80%;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-    }
-
-    .chat button {
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      background-color: #00a86b;
-      color: white;
-      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>Сделка</h1>
+  <div class="box">
+    <h2>{{ 'Покупка' if ad.type == 'buy' else 'Продажа' }}</h2>
+    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
 
-  <div class="info" id="orderInfo">
-    <!-- Информация о сделке будет здесь -->
+    <button class="btn">Я оплатил</button>
+    <button class="btn">Подтвердить получение</button>
+    <button class="btn" style="background-color: #ff4444;">Открыть спор</button>
   </div>
-
-  <div class="actions">
-    <button onclick="markAsPaid()">Я оплатил</button>
-    <button onclick="markAsConfirmed()">Подтвердить получение</button>
-    <button onclick="openDispute()">Открыть спор</button>
-  </div>
-
-  <div class="chat">
-    <div class="chat-messages" id="chatMessages">
-      <!-- Сообщения чата -->
-    </div>
-    <input type="text" id="chatInput" placeholder="Написать сообщение...">
-    <button onclick="sendMessage()">Отправить</button>
-  </div>
-
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('id');
-
-    function loadOrder() {
-      fetch(`/api/orders/${orderId}`, {
-        headers: {
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-      })
-      .then(res => res.json())
-      .then(order => {
-        document.getElementById('orderInfo').innerHTML = `
-          <p><strong>ID сделки:</strong> ${order.id}</p>
-          <p><strong>Тип:</strong> ${order.type}</p>
-          <p><strong>Сумма:</strong> ${order.amount} USDT</p>
-          <p><strong>Цена:</strong> ${order.price} ₽</p>
-          <p><strong>Покупатель:</strong> ${order.buyer}</p>
-          <p><strong>Продавец:</strong> ${order.seller}</p>
-          <p><strong>Статус:</strong> ${order.status}</p>
-        `;
-      });
-    }
-
-    function markAsPaid() {
-      fetch(`/api/orders/${orderId}/paid`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
-      }).then(() => alert("Отмечено как оплачено"));
-    }
-
-    function markAsConfirmed() {
-      fetch(`/api/orders/${orderId}/confirm`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
-      }).then(() => alert("Подтверждено получение"));
-    }
-
-    function openDispute() {
-      fetch(`/api/orders/${orderId}/dispute`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
-      }).then(() => alert("Открыт спор"));
-    }
-
-    function sendMessage() {
-      const msg = document.getElementById('chatInput').value;
-      if (!msg.trim()) return;
-
-      fetch(`/api/orders/${orderId}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + localStorage.getItem('token')
-        },
-        body: JSON.stringify({ message: msg })
-      }).then(() => {
-        document.getElementById('chatInput').value = '';
-        loadChat();
-      });
-    }
-
-    function loadChat() {
-      fetch(`/api/orders/${orderId}/chat`, {
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
-      })
-      .then(res => res.json())
-      .then(messages => {
-        const container = document.getElementById('chatMessages');
-        container.innerHTML = '';
-        messages.forEach(msg => {
-          const p = document.createElement('p');
-          p.textContent = `${msg.sender}: ${msg.text}`;
-          container.appendChild(p);
-        });
-      });
-    }
-
-    loadOrder();
-    loadChat();
-    setInterval(loadChat, 5000);
-  </script>
 </body>
 </html>
