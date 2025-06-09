@@ -5,11 +5,18 @@ from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
-# Подключаем папки
+# Подключение статики (CSS, картинки и т.д.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Подключение шаблонов Jinja2
 templates = Jinja2Templates(directory="templates")
 
 # Главная страница
 @app.get("/", response_class=HTMLResponse)
-async def read_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def home(request: Request):
+    return templates.TemplateResponse("market.html", {"request": request})
+
+# Страница рынка
+@app.get("/market", response_class=HTMLResponse)
+async def market(request: Request):
+    return templates.TemplateResponse("market.html", {"request": request})
