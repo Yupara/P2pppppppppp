@@ -7,35 +7,85 @@
 </head>
 <body>
   <header>Мои сделки</header>
-  <div class="container orders-container">
-    {% for order in orders %}
-      <div class="order">
-        <h3>Сделка №{{ order.id }}</h3>
-        <p><strong>Тип:</strong> {{ order.type == 'buy' ? 'Покупка' : 'Продажа' }}</p>
-        <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
-        <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-        <p><strong>Статус:</strong> <span class="status">{{ order.status }}</span></p>
-        <div class="actions">
-          {% if order.status == 'pending' and order.buyer_id == user.id %}
-            <form action="/orders/{{ order.id }}/mark_paid" method="post" style="display:inline;">
-              <button type="submit">Я оплатил</button>
-            </form>
-          {% endif %}
-          {% if order.status == 'paid' and order.seller_id == user.id %}
-            <form action="/orders/{{ order.id }}/confirm" method="post" style="display:inline;">
-              <button type="submit">Подтвердить получение</button>
-            </form>
-          {% endif %}
-          {% if order.status != 'completed' %}
-            <form action="/orders/{{ order.id }}/dispute" method="post" style="display:inline;">
-              <button type="submit">Открыть спор</button>
-            </form>
-          {% endif %}
-        </div>
-      </div>
-    {% else %}
-      <p style="text-align:center; margin-top:50px; color:#ccc;">У вас пока нет сделок.</p>
-    {% endfor %}
+  <div class="container">
+    <h2>История сделок</h2>
+    <div id="ordersContainer" class="orders-container">
+      <!-- сюда придут карточки -->
+    </div>
   </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+
+    async function api(path, method = "GET", body) {
+      const opts = {
+        method,
+        headers: {
+          "Authorization": "Bearer " + token,
+        }
+      };
+      if (body) {
+        opts.headers["Content-Type"] = "application/json";
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(path, opts);
+      return res.json();
+    }
+
+    function renderOrder(o) {
+      const div = document.createElement("div");
+      div.className = "order";
+      div.innerHTML = `
+        <h3>Сделка №${o.id}</h3>
+        <p><strong>Тип:</strong> ${o.type === "buy" ? "Покупка" : "Продажа"}</p>
+        <p><strong>Сумма:</strong> ${o.amount} USDT</p>
+        <p><strong>Цена:</strong> ${o.price} ₽</p>
+        <p><strong>Статус:</strong> <span class="status">${o.status}</span></p>
+        <div class="actions">
+          ${o.status === "pending" && o.is_owner
+            ? `<button onclick="markPaid(${o.id})">Я оплатил</button>`
+            : ""
+          }
+          ${o.status === "paid" && !o.is_owner
+            ? `<button onclick="confirm(${o.id})">Подтвердить получение</button>`
+            : ""
+          }
+          ${o.status !== "completed"
+            ? `<button onclick="dispute(${o.id})">Открыть спор</button>`
+            : ""
+          }
+          <button onclick="openTrade(${o.id})">Перейти к сделке</button>
+        </div>
+      `;
+      return div;
+    }
+
+    async function loadOrders() {
+      const container = document.getElementById("ordersContainer");
+      container.innerHTML = "";
+      const orders = await api("/orders/mine");
+      if (!orders.length) {
+        container.innerHTML = `<p style="text-align:center;color:#ccc">У вас пока нет сделок.</p>`;
+        return;
+      }
+      orders.forEach(o => container.appendChild(renderOrder(o)));
+    }
+
+    function markPaid(id) {
+      api(`/orders/${id}/mark_paid`, "POST").then(loadOrders);
+    }
+    function confirm(id) {
+      api(`/orders/${id}/confirm`, "POST").then(loadOrders);
+    }
+    function dispute(id) {
+      api(`/orders/${id}/dispute`, "POST").then(loadOrders);
+    }
+    function openTrade(id) {
+      window.location.href = `/orders/${id}`;
+    }
+
+    // запускаем сразу
+    loadOrders();
+  </script>
 </body>
 </html>
