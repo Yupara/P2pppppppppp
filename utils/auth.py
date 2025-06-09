@@ -97,3 +97,24 @@ def create_token_route(app):
     @app.get("/auth/me", response_model=TokenData)
     def read_users_me(current_user: User = Depends(get_current_user)):
         return TokenData(username=current_user.username)
+
+import uuid
+from sqlalchemy.orm import Session
+
+def register_user(db: Session, user_in: UserCreate, ref_code: str = None):
+    # Найти реферера, если передан код
+    referrer = None
+    if ref_code:
+        referrer = db.query(User).filter(User.referral_code == ref_code).first()
+
+    user = User(
+        username=user_in.username,
+        email=user_in.email,
+        hashed_password=get_password_hash(user_in.password),
+        referrer_id=referrer.id if referrer else None,
+        referral_code=str(uuid.uuid4())[:8]  # например 8 символов
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
