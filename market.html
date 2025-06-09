@@ -130,3 +130,9 @@
   </script>
 </body>
 </html>
+
+<p>Продавец: {{ ad.owner.username }} 
+{% if ad.owner.is_verified %}
+    <span style="color: #00c896;">✔️ верифицирован</span>
+{% endif %}
+</p>
