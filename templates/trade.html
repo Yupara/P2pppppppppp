@@ -4,28 +4,131 @@
   <meta charset="UTF-8">
   <title>Сделка №{{ order.id }}</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    header {
+      background-color: #0d2b27;
+      color: #7afcb7;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      border-bottom: 2px solid #14d38a;
+    }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    .trade-info {
+      background-color: #102926;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #00ffcc22;
+    }
+    .trade-info p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .status {
+      font-weight: bold;
+      color: #ffc107;
+    }
+    .trade-buttons {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+    }
+    .trade-buttons button {
+      flex: 1;
+      padding: 12px;
+      background: linear-gradient(135deg, #00c896, #00e6b8);
+      border: none;
+      border-radius: 6px;
+      color: #001e1d;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .trade-buttons button:hover {
+      background: linear-gradient(135deg, #00a378, #00c896);
+    }
+    .chat-box {
+      background-color: #132b29;
+      padding: 15px;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 0 8px #00ffcc22;
+      margin-bottom: 10px;
+    }
+    .chat-message {
+      margin: 8px 0;
+      padding: 10px;
+      background-color: #1a3a37;
+      border-radius: 5px;
+      color: #e0f8e0;
+    }
+    .chat-input {
+      display: flex;
+      gap: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #005548;
+      border-radius: 6px;
+      background-color: #0d3631;
+      color: #e0f8e0;
+    }
+    .chat-input button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #00c896, #00e6b8);
+      border: none;
+      border-radius: 6px;
+      color: #001e1d;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .chat-input button:hover {
+      background: linear-gradient(135deg, #00a378, #00c896);
+    }
+  </style>
 </head>
 <body>
   <header>Сделка №{{ order.id }}</header>
+
   <div class="container">
     <div class="trade-info">
-      <p><strong>Тип:</strong> {{ order.type|capitalize }}</p>
+      <p><strong>Тип:</strong> {{ order.type == 'buy' ? 'Покупка' : 'Продажа' }}</p>
       <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
       <p><strong>Цена:</strong> {{ order.price }} ₽</p>
-      <p><strong>Статус:</strong> <span id="statusField">{{ order.status }}</span></p>
+      <p><strong>Статус:</strong> <span id="statusField" class="status">{{ order.status }}</span></p>
     </div>
 
     <div class="trade-buttons">
-      <button id="btnPaid">Я оплатил</button>
-      <button id="btnConfirm">Подтвердить получение</button>
-      <button id="btnDispute">Открыть спор</button>
+      {% if order.status == 'pending' and user.id == order.buyer_id %}
+        <button onclick="markAsPaid()">Я оплатил</button>
+      {% endif %}
+      {% if order.status == 'paid' and user.id == order.seller_id %}
+        <button onclick="confirmOrder()">Подтвердить получение</button>
+      {% endif %}
+      {% if order.status != 'completed' %}
+        <button onclick="openDispute()">Открыть спор</button>
+      {% endif %}
     </div>
 
-    <h3>Чат сделки</h3>
-    <div id="chatBox" class="chat-box"></div>
-    <div style="display:flex; margin-top:10px;">
-      <input id="chatInput" type="text" placeholder="Напишите сообщение..." style="flex:1;">
-      <button id="sendBtn" class="chat-send">Отправить</button>
+    <h3 style="color:#aaffaa; margin-bottom:10px;">Чат сделки</h3>
+    <div id="chatBox" class="chat-box">
+      {% for msg in messages %}
+        <div class="chat-message">
+          <strong>{{ msg.sender.username }}:</strong> {{ msg.content }}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Напишите сообщение...">
+      <button onclick="sendMessage()">Отправить</button>
     </div>
   </div>
 
@@ -34,55 +137,53 @@
     const token = localStorage.getItem("token");
 
     async function api(path, method='GET', body) {
-      const opts = { method, headers: { 'Authorization': 'Bearer ' + token } };
+      const opts = { method, headers: { "Authorization": "Bearer " + token } };
       if (body) {
-        opts.headers['Content-Type'] = 'application/json';
+        opts.headers["Content-Type"] = "application/json";
         opts.body = JSON.stringify(body);
       }
       const res = await fetch(path, opts);
       return res.json();
     }
 
-    // Обновляем статус на странице
     function updateStatus(newStatus) {
-      document.getElementById('statusField').innerText = newStatus;
+      document.getElementById("statusField").innerText = newStatus;
     }
 
-    // Действия
-    document.getElementById('btnPaid').onclick = async () => {
-      const data = await api(`/orders/${orderId}/mark_paid`, 'POST');
-      updateStatus('paid');
-    };
-    document.getElementById('btnConfirm').onclick = async () => {
-      const data = await api(`/orders/${orderId}/confirm`, 'POST');
-      updateStatus('completed');
-    };
-    document.getElementById('btnDispute').onclick = async () => {
-      await api(`/orders/${orderId}/dispute`, 'POST');
-      updateStatus('dispute');
-    };
+    function markAsPaid() {
+      api(`/orders/${orderId}/mark_paid`, "POST").then(() => updateStatus("paid"));
+    }
 
-    // Чат
+    function confirmOrder() {
+      api(`/orders/${orderId}/confirm`, "POST").then(() => updateStatus("completed"));
+    }
+
+    function openDispute() {
+      api(`/orders/${orderId}/dispute`, "POST").then(() => updateStatus("dispute"));
+    }
+
     async function loadMessages() {
-      const msgs = await api(`/orders/${orderId}/messages`, 'GET');
-      const box = document.getElementById('chatBox');
-      box.innerHTML = '';
+      const msgs = await api(`/orders/${orderId}/messages`);
+      const box = document.getElementById("chatBox");
+      box.innerHTML = "";
       msgs.forEach(m => {
-        const d = document.createElement('div');
-        d.className = 'chat-message';
+        const d = document.createElement("div");
+        d.className = "chat-message";
         d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
         box.appendChild(d);
       });
     }
-    document.getElementById('sendBtn').onclick = async () => {
-      const content = document.getElementById('chatInput').value.trim();
-      if (!content) return;
-      await api(`/orders/${orderId}/messages`, 'POST', { content });
-      document.getElementById('chatInput').value = '';
-      loadMessages();
-    };
 
-    // Инициализация
+    function sendMessage() {
+      const content = document.getElementById("messageInput").value.trim();
+      if (!content) return;
+      api(`/orders/${orderId}/messages`, "POST", { content })
+        .then(() => {
+          document.getElementById("messageInput").value = "";
+          loadMessages();
+        });
+    }
+
     loadMessages();
     setInterval(loadMessages, 5000);
   </script>
