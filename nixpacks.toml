@@ -1,0 +1,11 @@
+# nixpacks.toml
+[phases.setup]
+# по умолчанию устанавливается python3
+
+[phases.install]
+# используем requirements.txt
+command = "pip install -r requirements.txt"
+
+[phases.start]
+# команда старта uvicorn, порт подхватывается из переменной PORT
+command = "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"
