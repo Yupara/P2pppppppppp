@@ -103,3 +103,18 @@ def post_message(order_id: int, content: dict, db: Session = Depends(get_db), cu
     db.add(msg)
     db.commit()
     return JSONResponse({"detail": "Сообщение отправлено"})
+
+from utils.telegram import notify_admin
+
+@router.post("/orders/{order_id}/dispute")
+def open_dispute(...):
+    # существующий код ...
+    notify_admin(f"⚠️ <b>Спор открыт</b>\nСделка №{order_id}\nПользователь: {current_user.username}")
+    return JSONResponse({"detail": "Спор открыт"})
+
+@router.post("/orders/create/{ad_id}")
+def create_order(...):
+    # существующий код создания
+    if order.amount * order.price >= 10000:
+        notify_admin(f"💰 <b>Крупная сделка</b>\nСделка №{order.id}\nСумма: {order.amount} USDT × {order.price} ₽")
+    return RedirectResponse(...)
