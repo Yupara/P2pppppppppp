@@ -118,3 +118,15 @@
   </script>
 </body>
 </html>
+
+@app.post("/auth/register", response_model=Token)
+def register(form_data: UserCreate, ref_code: str = Form(None), db: Session = Depends(get_db)):
+    # ref_code приходит из формы
+    user = register_user(db, form_data, ref_code)
+    # ...
+    <label>Код реферала (необязательно)</label>
+<input type="text" name="ref_code" id="ref_code" placeholder="REF12345">
+// ...
+const ref_code = document.getElementById('ref_code').value;
+body: JSON.stringify({ username, password, ref_code }),
+// ...
