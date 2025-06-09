@@ -4,26 +4,129 @@
   <meta charset="UTF-8">
   <title>Маркет</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    .filters {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filters select, .filters input {
+      padding: 8px;
+      border: 1px solid #005548;
+      border-radius: 6px;
+      background-color: #002524;
+      color: #e6f1e9;
+    }
+    .filters button {
+      padding: 8px 16px;
+      background-color: #00c896;
+      color: #001e1d;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filters button:hover {
+      background-color: #00a378;
+    }
+  </style>
 </head>
 <body>
   <header>Маркет обмена</header>
   <div class="container">
     <h2>Объявления</h2>
-    <div class="ad-list">
-      {% for ad in ads %}
-        <div class="ad-item">
-          <p><strong>Пользователь:</strong> {{ ad.owner.username }}</p>
-          <p><strong>Тип:</strong> {{ ad.type|capitalize }}</p>
-          <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
-          <p><strong>Доступно:</strong> {{ ad.amount }} {{ ad.currency }}</p>
-          <form action="/orders/create/{{ ad.id }}" method="post">
-            <button type="submit" class="action-button">Начать сделку</button>
-          </form>
-        </div>
-      {% else %}
-        <p style="text-align:center; color:#ccc;">Объявлений не найдено.</p>
-      {% endfor %}
+
+    <!-- Блок фильтров -->
+    <div class="filters">
+      <select id="filterType">
+        <option value="">Все типы</option>
+        <option value="buy">Покупка</option>
+        <option value="sell">Продажа</option>
+      </select>
+
+      <select id="filterCurrency">
+        <option value="">Все валюты</option>
+        <option value="USDT">USDT</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+      </select>
+
+      <input type="number" id="minAmount" placeholder="Мин. сумма USDT" />
+      <input type="number" id="maxAmount" placeholder="Макс. сумма USDT" />
+
+      <button id="applyFilters">Применить</button>
     </div>
+
+    <div id="adsList" class="ad-list"></div>
   </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+
+    // API-запрос
+    async function api(path, method = "GET", body) {
+      const opts = { method, headers: { 'Authorization': 'Bearer ' + token } };
+      if (body) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(path, opts);
+      return res.json();
+    }
+
+    // Загрузка и рендер списка с учётом фильтров
+    async function loadAds() {
+      let ads = await api('/ads');
+      // применяем фильтрацию на клиенте
+      const type  = document.getElementById('filterType').value;
+      const curr  = document.getElementById('filterCurrency').value;
+      const minA  = parseFloat(document.getElementById('minAmount').value) || 0;
+      const maxA  = parseFloat(document.getElementById('maxAmount').value) || Infinity;
+
+      ads = ads.filter(ad => {
+        if (type && ad.type !== type) return false;
+        if (curr && ad.currency !== curr) return false;
+        if (ad.amount < minA || ad.amount > maxA) return false;
+        return true;
+      });
+
+      const container = document.getElementById('adsList');
+      container.innerHTML = '';
+
+      if (!ads.length) {
+        container.innerHTML = '<p style="color:#ccc">Объявлений не найдено.</p>';
+        return;
+      }
+
+      ads.forEach(ad => {
+        const div = document.createElement('div');
+        div.className = 'ad-item';
+        div.innerHTML = `
+          <p><strong>Пользователь:</strong> ${ad.owner.username}</p>
+          <p><strong>Тип:</strong> ${ad.type === 'buy' ? 'Покупка' : 'Продажа'}</p>
+          <p><strong>Валюта:</strong> ${ad.currency}</p>
+          <p><strong>Цена:</strong> ${ad.price} ₽</p>
+          <p><strong>Доступно:</strong> ${ad.amount} ${ad.currency}</p>
+          <button class="action-button">Начать сделку</button>
+        `;
+        const btn = div.querySelector('button');
+        btn.addEventListener('click', async () => {
+          const resp = await fetch(`/orders/create/${ad.id}`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (resp.redirected) window.location.href = resp.url;
+        });
+        container.appendChild(div);
+      });
+    }
+
+    // Обработчик кнопки фильтров
+    document.getElementById('applyFilters').addEventListener('click', loadAds);
+
+    // Инициализация
+    loadAds();
+  </script>
 </body>
 </html>
