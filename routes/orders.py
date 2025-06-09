@@ -118,3 +118,19 @@ def create_order(...):
     if order.amount * order.price >= 10000:
         notify_admin(f"💰 <b>Крупная сделка</b>\nСделка №{order.id}\nСумма: {order.amount} USDT × {order.price} ₽")
     return RedirectResponse(...)
+
+COMMISSION_RATE = 0.005  # 0.5% с каждой стороны = 1% total
+REFERRAL_SHARE = 0.2    # 20%
+
+@router.post("/orders/{order_id}/confirm")
+def confirm_order(...):
+    order = db.query(Order).get(order_id)
+    # ... существующий код смены статуса на completed
+
+    # Рассчитываем комиссию
+    total_commission = (order.amount * order.price) * COMMISSION_RATE * 2
+    if order.buyer.referrer_id:
+        ref_user = db.query(User).get(order.buyer.referrer_id)
+        ref_user.referral_earnings += total_commission * REFERRAL_SHARE
+    db.commit()
+    return JSONResponse({"detail": "Сделка подтверждена"})
