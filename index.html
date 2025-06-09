@@ -2,113 +2,89 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>P2P Платформа</title>
+  <title>Сделка №{{ order.id }}</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    body {
-      background-color: #001f1c;
-      font-family: Arial, sans-serif;
-      color: #e0ffe8;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #004c40;
-      padding: 15px 30px;
-      text-align: center;
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-    }
-
-    .container {
-      padding: 40px 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    h2 {
-      color: #7fff9f;
-      margin-bottom: 20px;
-    }
-
-    .ad-list {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .ad-item {
-      background-color: #003730;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #006652;
-    }
-
-    .ad-item strong {
-      color: #a0ffd1;
-    }
-
-    .buy-button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: #00b894;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .buy-button:hover {
-      background-color: #00e6b8;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 40px;
-      color: #60c2aa;
-    }
-  </style>
 </head>
 <body>
-  <header>P2P Платформа</header>
-
+  <header>Сделка №{{ order.id }}</header>
   <div class="container">
-    <h2>Объявления на покупку и продажу</h2>
-    <div class="ad-list" id="ads"></div>
+    <div class="trade-info">
+      <p><strong>Тип:</strong> {{ order.type|capitalize }}</p>
+      <p><strong>Сумма:</strong> {{ order.amount }} USDT</p>
+      <p><strong>Цена:</strong> {{ order.price }} ₽</p>
+      <p><strong>Статус:</strong> <span id="statusField">{{ order.status }}</span></p>
+    </div>
+
+    <div class="trade-buttons">
+      <button id="btnPaid">Я оплатил</button>
+      <button id="btnConfirm">Подтвердить получение</button>
+      <button id="btnDispute">Открыть спор</button>
+    </div>
+
+    <h3>Чат сделки</h3>
+    <div id="chatBox" class="chat-box"></div>
+    <div style="display:flex; margin-top:10px;">
+      <input id="chatInput" type="text" placeholder="Напишите сообщение..." style="flex:1;">
+      <button id="sendBtn" class="chat-send">Отправить</button>
+    </div>
   </div>
 
-  <div class="footer">© 2025 P2P Exchange</div>
-
   <script>
-    async function loadAds() {
-      const res = await fetch('/ads');
-      const ads = await res.json();
+    const orderId = {{ order.id }};
+    const token = localStorage.getItem("token");
 
-      const container = document.getElementById('ads');
-      container.innerHTML = '';
+    async function api(path, method='GET', body) {
+      const opts = { method, headers: { 'Authorization': 'Bearer ' + token } };
+      if (body) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(body);
+      }
+      const res = await fetch(path, opts);
+      return res.json();
+    }
 
-      ads.forEach(ad => {
-        const adElement = document.createElement('div');
-        adElement.className = 'ad-item';
+    // Обновляем статус на странице
+    function updateStatus(newStatus) {
+      document.getElementById('statusField').innerText = newStatus;
+    }
 
-        adElement.innerHTML = `
-          <div><strong>Тип:</strong> ${ad.type}</div>
-          <div><strong>Цена:</strong> ${ad.price} ${ad.currency}</div>
-          <div><strong>Доступно:</strong> ${ad.amount}</div>
-          <button class="buy-button" onclick="startTrade(${ad.id})">Купить</button>
-        `;
+    // Действия
+    document.getElementById('btnPaid').onclick = async () => {
+      const data = await api(`/orders/${orderId}/mark_paid`, 'POST');
+      updateStatus('paid');
+    };
+    document.getElementById('btnConfirm').onclick = async () => {
+      const data = await api(`/orders/${orderId}/confirm`, 'POST');
+      updateStatus('completed');
+    };
+    document.getElementById('btnDispute').onclick = async () => {
+      await api(`/orders/${orderId}/dispute`, 'POST');
+      updateStatus('dispute');
+    };
 
-        container.appendChild(adElement);
+    // Чат
+    async function loadMessages() {
+      const msgs = await api(`/orders/${orderId}/messages`, 'GET');
+      const box = document.getElementById('chatBox');
+      box.innerHTML = '';
+      msgs.forEach(m => {
+        const d = document.createElement('div');
+        d.className = 'chat-message';
+        d.innerHTML = `<strong>${m.sender_username}:</strong> ${m.content}`;
+        box.appendChild(d);
       });
     }
+    document.getElementById('sendBtn').onclick = async () => {
+      const content = document.getElementById('chatInput').value.trim();
+      if (!content) return;
+      await api(`/orders/${orderId}/messages`, 'POST', { content });
+      document.getElementById('chatInput').value = '';
+      loadMessages();
+    };
 
-    function startTrade(adId) {
-      window.location.href = `/trade/${adId}`;
-    }
-
-    loadAds();
+    // Инициализация
+    loadMessages();
+    setInterval(loadMessages, 5000);
   </script>
 </body>
 </html>
