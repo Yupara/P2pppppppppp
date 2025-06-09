@@ -1,7 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Рынок объявлений</h2>
-{% for ad in ads %}
-    <p>{{ ad }}</p>
-{% endfor %}
+<div class="tabs">
+  <button class="tab active">Покупка</button>
+  <button class="tab">Продажа</button>
+</div>
+
+<div class="filters">
+  <select>
+    <option>USDT</option>
+  </select>
+  <input type="text" placeholder="Сумма" />
+  <select>
+    <option>Все способы оплаты</option>
+  </select>
+  <button class="filter-btn">Фильтр</button>
+</div>
+
+<div class="ad-banner">
+  <span>Попробуйте P2P HotSwap – лучшие ставки и больше ликвидности!</span>
+  <button>Узнать волью</button>
+</div>
+
+<div class="ads">
+  <div class="ad-card">
+    <div class="left">
+      <div class="avatar green"></div>
+      <div class="info">
+        <div class="name">Savak</div>
+        <div class="price">₽ 70,96</div>
+        <div class="details">Количество: 304,7685 USDT</div>
+        <div class="limits">Лимиты: 500 – 500 000 RUB</div>
+        <div class="tags">SBP | ЮKольнение</div>
+      </div>
+    </div>
+    <div class="right">
+      <div>40 Ордеров | 10%</div>
+      <button class="buy-btn">Покупка</button>
+    </div>
+  </div>
+
+  <!-- можно добавить ещё карточек по аналогии -->
+</div>
 {% endblock %}
