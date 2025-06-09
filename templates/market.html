@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Рынок объявлений</h2>
+{% for ad in ads %}
+    <p>{{ ad }}</p>
+{% endfor %}
+{% endblock %}
