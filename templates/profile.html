@@ -1,0 +1,12 @@
+<div class="profile-item">
+  <label>Ваш реферальный код</label>
+  <span>{{ user.referral_code }}</span>
+</div>
+<div class="profile-item">
+  <label>Заработано с рефералов (₽)</label>
+  <span>{{ user.referral_earnings }}</span>
+</div>
+<label>Поделитесь ссылкой:</label>
+<input type="text" readonly
+       value="{{ request.url_for('register_page') }}?ref_code={{ user.referral_code }}"
+       style="width:100%; background:#002524; color:#e6f1e9; padding:8px; border-radius:4px;">
