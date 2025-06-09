@@ -47,3 +47,25 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_verified = Column(Boolean, default=False)  # ✅ Новое поле
+
+from sqlalchemy import Column, Integer, Float, ForeignKey, DateTime, Enum
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import enum
+from database import Base
+
+class WithdrawalStatus(str, enum.Enum):
+    pending   = "pending"
+    paid      = "paid"
+    canceled  = "canceled"
+
+class Withdrawal(Base):
+    __tablename__ = "withdrawals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    amount  = Column(Float, nullable=False)              # сумма в USDT
+    status  = Column(Enum(WithdrawalStatus), default=WithdrawalStatus.pending)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="withdrawals")
