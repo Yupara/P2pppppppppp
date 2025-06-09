@@ -38,3 +38,12 @@ def profile(request: Request, user=Depends(get_current_user)):
     return templates.TemplateResponse("templates/profile.html", {"request": request})
 
 # При необходимости добавьте другие страницы (каталог, админка и т.д.) ниже
+
+# models.py
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    is_verified = Column(Boolean, default=False)  # ✅ Новое поле
