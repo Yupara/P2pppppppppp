@@ -1,40 +1,42 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from database import engine, Base, get_db
-from utils.auth import create_token_route, oauth2_scheme, get_current_user
-from routes.orders import router as orders_router
+from database import engine, Base
+from utils.auth import create_token_route, get_current_user
 from routes.public_ads import router as ads_router
-# Импорт моделей, чтобы таблицы создались
-import models
+from routes.orders import router as orders_router
+from routes.withdrawals import router as withdrawals_router
+from routes.support import router as support_router
+from routes.admin import router as admin_router
 
 # Инициализация FastAPI
-app = FastAPI(title="P2P Pлатформа")
+app = FastAPI(title="P2P Платформа")
 
-# Создание таблиц в БД
+# Создание таблиц
 Base.metadata.create_all(bind=engine)
 
-# Статика и шаблоны
+# Монтируем статические файлы и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Настройка роутов аутентификации
+# Авторизационные маршруты: /auth/register, /auth/token, /auth/me
 create_token_route(app)
 
-# Подключение маршрутов
-app.include_router(ads_router, prefix="", tags=["Public Ads"])
-app.include_router(orders_router, prefix="", tags=["Orders"])
+# Подключаем роутеры
+app.include_router(ads_router)           # /ads, /ads/my, /ads/create и т.д.
+app.include_router(orders_router)        # /orders/create/{ad_id}, /orders/{id}, чат и действия
+app.include_router(withdrawals_router)   # /withdrawals и связанные
+app.include_router(support_router)       # /support
+app.include_router(admin_router)         # /admin
 
-# Маршрут главной страницы (публичный маркет)
+# Главная страница — маркет (список публичных объявлений)
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("market.html", {"request": request})
+    return templates.TemplateResponse("index.html", {"request": request})
 
-# Маршрут профиля
+# Страница профиля пользователя
 @app.get("/profile", response_class=HTMLResponse)
 def profile(request: Request, user=Depends(get_current_user)):
-    return templates.TemplateResponse("templates/profile.html", {"request": request})
-
-# При необходимости добавьте другие страницы (каталог, админка и т.д.) ниже
+    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
