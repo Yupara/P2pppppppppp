@@ -1,10 +1,145 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Сделка</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: Arial, sans-serif;
+        }
 
-{% block content %}
-<h2>Сделка</h2>
-<p><strong>{{ ad.type|capitalize }}</strong>: {{ ad.amount }} USDT</p>
-<p>Оплата: {{ ad.payment }}</p>
-<button>Я оплатил</button>
-<button>Подтвердить получение</button>
-<button>Открыть спор</button>
-{% endblock %}
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #161b22;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 20px;
+            color: #00ff88;
+        }
+
+        .chat-box {
+            border: 1px solid #333;
+            height: 200px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #0f141a;
+        }
+
+        .message {
+            margin-bottom: 10px;
+        }
+
+        .message.you {
+            text-align: right;
+        }
+
+        .chat-form {
+            display: flex;
+        }
+
+        .chat-form input[type="text"] {
+            flex: 1;
+            padding: 8px;
+            background: #1f2933;
+            border: 1px solid #333;
+            color: #fff;
+        }
+
+        .chat-form button {
+            background: #00ff88;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .action-buttons button {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            background: #00ff88;
+            color: #000;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        h2 {
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="trade-header">
+        <h2>Сделка с пользователем {{ trade.seller_name or "Продавец" }}</h2>
+        <div class="timer" id="timer">Осталось: 30:00</div>
+    </div>
+
+    <p><strong>Сумма:</strong> {{ trade.amount }} {{ trade.currency }}</p>
+    <p><strong>Способ оплаты:</strong> {{ trade.payment_method }}</p>
+
+    <div class="chat-box" id="chat-box">
+        <!-- Сообщения будут добавляться сюда -->
+    </div>
+
+    <form class="chat-form" onsubmit="sendMessage(event)">
+        <input type="text" id="chat-input" placeholder="Напишите сообщение..." required>
+        <button type="submit">Отправить</button>
+    </form>
+
+    <div class="action-buttons">
+        <button onclick="alert('Вы отметили оплату')">Я оплатил</button>
+        <button onclick="alert('Вы подтвердили получение')">Подтвердить получение</button>
+        <button onclick="alert('Открыт спор')">Открыть спор</button>
+    </div>
+</div>
+
+<script>
+    // Таймер на 30 минут
+    let duration = 30 * 60;
+    const display = document.getElementById('timer');
+
+    setInterval(() => {
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        display.textContent = `Осталось: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        if (duration > 0) duration--;
+    }, 1000);
+
+    // Простой чат (frontend только)
+    function sendMessage(event) {
+        event.preventDefault();
+        const input = document.getElementById('chat-input');
+        const msg = input.value;
+        const box = document.getElementById('chat-box');
+        const msgElem = document.createElement('div');
+        msgElem.classList.add('message', 'you');
+        msgElem.innerText = msg;
+        box.appendChild(msgElem);
+        input.value = '';
+        box.scrollTop = box.scrollHeight;
+    }
+</script>
+</body>
+</html>
