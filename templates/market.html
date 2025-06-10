@@ -16,14 +16,19 @@
             <th>Дата</th>
         </tr>
         {% for ad in ads %}
-        <tr>
-            <td>{{ ad.username }}</td>
-            <td>{{ ad.action }}</td>
-            <td>{{ ad.amount }}</td>
-            <td>{{ ad.payment_method }}</td>
-            <td>{{ ad.created_at }}</td>
-        </tr>
-        {% endfor %}
+<tr>
+    <td>{{ ad.username }}</td>
+    <td>{{ ad.action }}</td>
+    <td>{{ ad.amount }}</td>
+    <td>{{ ad.payment_method }}</td>
+    <td>{{ ad.created_at }}</td>
+    <td>
+        <a href="/trade/{{ ad.id }}">
+            <button class="button">Купить</button>
+        </a>
+    </td>
+</tr>
+{% endfor %}
     </table>
 </body>
 </html>
