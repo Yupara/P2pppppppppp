@@ -1,46 +1,43 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-import uuid
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from uuid import uuid4
+import uvicorn
 
 app = FastAPI()
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 ads = []
-messages = {}
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+class Ad(BaseModel):
+    id: str
+    title: str
+    price: float
+    type: str  # 'buy' or 'sell'
+
+@app.get("/", response_class=RedirectResponse)
+async def root():
+    return "/market"
+
+@app.get("/market")
+async def market(request: Request):
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
 @app.post("/create-ad")
-def create_ad(title: str = Form(...), price: float = Form(...), type: str = Form(...)):
-    ad = {
-        "id": str(uuid.uuid4()),
-        "title": title,
-        "price": price,
-        "type": type
-    }
-    ads.append(ad)
-    return RedirectResponse("/", status_code=303)
+async def create_ad(title: str = Form(...), price: float = Form(...), type: str = Form(...)):
+    new_ad = Ad(id=str(uuid4()), title=title, price=price, type=type)
+    ads.append(new_ad)
+    return RedirectResponse(url="/market", status_code=303)
 
-@app.get("/trade/{ad_id}", response_class=HTMLResponse)
-def trade_page(request: Request, ad_id: str):
-    ad = next((ad for ad in ads if ad["id"] == ad_id), None)
+@app.get("/trade/{ad_id}")
+async def trade(request: Request, ad_id: str):
+    ad = next((ad for ad in ads if ad.id == ad_id), None)
     if not ad:
-        return HTMLResponse("Объявление не найдено", status_code=404)
-    return templates.TemplateResponse("trade.html", {"request": request, "ad": ad, "messages": messages.get(ad_id, [])})
+        return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+    return templates.TemplateResponse("trade.html", {"request": request, "ad": ad})
 
-@app.post("/trade/{ad_id}/message")
-def post_message(ad_id: str, sender: str = Form(...), text: str = Form(...)):
-    if ad_id not in messages:
-        messages[ad_id] = []
-    messages[ad_id].append({"sender": sender, "text": text})
-    return RedirectResponse(f"/trade/{ad_id}", status_code=303)
-
-@app.post("/trade/{ad_id}/action")
-def handle_action(ad_id: str, action: str = Form(...)):
-    return RedirectResponse(f"/trade/{ad_id}", status_code=303)
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
