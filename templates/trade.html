@@ -9,100 +9,62 @@
             background-color: #0d0d0d;
             color: #00ff99;
             font-family: Arial, sans-serif;
-            padding: 20px;
         }
         .container {
             max-width: 700px;
-            margin: auto;
+            margin: 50px auto;
+            padding: 20px;
             background: #111;
             border: 1px solid #00ff99;
-            padding: 20px;
             border-radius: 10px;
         }
-        .timer {
-            font-size: 20px;
-            margin-bottom: 20px;
-            color: #ffcc00;
-        }
         .chat {
-            background-color: #1a1a1a;
             height: 200px;
-            overflow-y: scroll;
+            overflow-y: auto;
+            background: #1a1a1a;
             padding: 10px;
-            border: 1px solid #00ff99;
             margin-bottom: 10px;
+            border: 1px solid #00ff99;
         }
         .chat-message {
-            margin: 5px 0;
-        }
-        .buttons {
-            margin-top: 20px;
-        }
-        .buttons form {
-            display: inline-block;
-            margin-right: 10px;
+            margin-bottom: 5px;
         }
         .btn {
-            background: #00ff99;
+            background-color: #00ff99;
             color: #000;
+            padding: 10px;
+            margin: 5px 0;
             border: none;
-            padding: 10px 15px;
             cursor: pointer;
             border-radius: 5px;
         }
         .btn:hover {
-            background: #00cc77;
+            background-color: #00cc77;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Сделка по объявлению #{{ ad.id }}</h2>
+        <h2>Сделка №{{ ad.id }}</h2>
         <p><strong>Тип:</strong> {{ ad.type }}</p>
         <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
         <p><strong>Цена:</strong> {{ ad.price }}</p>
         <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
 
-        <div class="timer">
-            До завершения: <span id="countdown"></span>
-        </div>
-
-        <div class="chat" id="chat-box">
+        <div class="chat">
             {% for msg in messages %}
                 <div class="chat-message"><strong>{{ msg.sender }}:</strong> {{ msg.content }}</div>
             {% endfor %}
         </div>
 
         <form method="post" action="/trade/{{ ad.id }}/send">
-            <input type="text" name="message" placeholder="Введите сообщение..." required style="width: 80%">
-            <button class="btn" type="submit">Отправить</button>
+            <input type="text" name="message" placeholder="Ваше сообщение..." required>
+            <button type="submit" class="btn">Отправить</button>
         </form>
 
-        <div class="buttons">
-            <form><button type="button" class="btn">Оплатил</button></form>
-            <form><button type="button" class="btn">Подтвердить получение</button></form>
-            <form><button type="button" class="btn">Открыть спор</button></form>
-        </div>
+        <form><button type="button" class="btn">Оплатил</button></form>
+        <form><button type="button" class="btn">Подтвердить получение</button></form>
+        <form><button type="button" class="btn">Открыть спор</button></form>
     </div>
-
-    <script>
-        const endTime = new Date("{{ end_time }}Z").getTime();
-        const countdown = document.getElementById("countdown");
-
-        function updateTimer() {
-            const now = new Date().getTime();
-            const distance = endTime - now;
-            if (distance < 0) {
-                countdown.innerHTML = "Время вышло";
-                return;
-            }
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-            countdown.innerHTML = `${minutes}м ${seconds}с`;
-        }
-
-        updateTimer();
-        setInterval(updateTimer, 1000);
-    </script>
 </body>
 </html>
