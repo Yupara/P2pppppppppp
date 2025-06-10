@@ -1,24 +1,24 @@
-from fastapi import FastAPI, Request, Form, Depends, status
+from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-import uvicorn
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime, timedelta
 import os
 
-from database import Base, engine, SessionLocal
-from models import User, Ad
+from models import Base, User, Ad, Message
 
 app = FastAPI()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_URL = f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}"
 
-# Статика и шаблоны
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-# Создание таблиц
+engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.metadata.create_all(bind=engine)
 
-# Зависимость подключения к БД
+templates = Jinja2Templates(directory="templates")
+
 def get_db():
     db = SessionLocal()
     try:
@@ -26,52 +26,70 @@ def get_db():
     finally:
         db.close()
 
-# 👉 Добавление тестового пользователя и объявления
-def create_test_data():
+@app.on_event("startup")
+def create_test_user():
     db = SessionLocal()
-    existing_user = db.query(User).filter_by(username="seller123").first()
-    if existing_user:
-        db.close()
-        return
-    seller = User(username="seller123", hashed_password="123456")
-    db.add(seller)
-    db.commit()
-    db.refresh(seller)
-    ad = Ad(
-        user_id=seller.id,
-        ad_type="sell",
-        amount=100,
-        price=1.0,
-        currency="USDT",
-        payment_method="Bank",
-        description="Test USDT sale"
-    )
-    db.add(ad)
-    db.commit()
+    if not db.query(User).filter_by(username="seller123").first():
+        user = User(username="seller123", hashed_password="123456")
+        db.add(user)
+        db.commit()
     db.close()
 
-# ⏩ Вызов функции при старте
-create_test_data()
-
-# 🔹 Главная
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# 🔹 Маркет
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request, db: Session = Depends(get_db)):
     ads = db.query(Ad).all()
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
-# 🔹 Купить
-@app.post("/buy/{ad_id}")
-def buy(ad_id: int, db: Session = Depends(get_db)):
+@app.get("/create", response_class=HTMLResponse)
+def create_ad_form(request: Request):
+    return templates.TemplateResponse("create_ad.html", {"request": request})
+
+@app.post("/create", response_class=RedirectResponse)
+def create_ad(
+    request: Request,
+    type: str = Form(...),
+    currency: str = Form(...),
+    price: float = Form(...),
+    amount: float = Form(...),
+    payment_method: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    ad = Ad(
+        type=type,
+        currency=currency,
+        price=price,
+        amount=amount,
+        payment_method=payment_method,
+        owner="seller123",  # временно
+    )
+    db.add(ad)
+    db.commit()
+    return RedirectResponse(url="/market", status_code=303)
+
+@app.get("/trade/{ad_id}", response_class=HTMLResponse)
+def trade(ad_id: int, request: Request, db: Session = Depends(get_db)):
     ad = db.query(Ad).filter(Ad.id == ad_id).first()
     if not ad:
-        return {"error": "Ad not found"}
-    return RedirectResponse(url="/market", status_code=302)
+        return templates.TemplateResponse("index.html", {"request": request, "message": "Объявление не найдено"})
+    
+    end_time = datetime.utcnow() + timedelta(minutes=15)
+    messages = db.query(Message).filter(Message.trade_id == ad_id).order_by(Message.timestamp).all()
 
-# 🔹 Запуск сервера
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+    return templates.TemplateResponse("trade.html", {
+        "request": request,
+        "ad": ad,
+        "end_time": end_time.strftime('%Y-%m-%dT%H:%M:%S'),
+        "messages": messages
+    })
+
+@app.post("/trade/{ad_id}/send", response_class=RedirectResponse)
+def send_message(ad_id: int, request: Request, message: str = Form(...), db: Session = Depends(get_db)):
+    sender = "Покупатель"
+    new_msg = Message(trade_id=ad_id, sender=sender, content=message)
+    db.add(new_msg)
+    db.commit()
+    return RedirectResponse(f"/trade/{ad_id}", status_code=303)
