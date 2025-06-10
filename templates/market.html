@@ -1,39 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Market</title>
+    <meta charset="UTF-8">
+    <title>Маркет | Обменник</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Добро пожаловать в P2P Маркет</h1>
-    <a href="/create-ad"><button>Создать объявление</button></a>
-    <table>
-        <thead>
-            <tr>
-                <th>Тип</th>
-                <th>Актив</th>
-                <th>Цена</th>
-                <th>Метод оплаты</th>
-                <th>Доступно</th>
-                <th>Действие</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ad in ads %}
-            <tr>
-                <td>{{ ad.type }}</td>
-                <td>{{ ad.asset }}</td>
-                <td>{{ ad.price }}</td>
-                <td>{{ ad.payment_method }}</td>
-                <td>{{ ad.available }}</td>
-                <td>
-                    <a href="/trade/{{ ad.id }}">
-                        <button>Купить</button>
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="container">
+        <h1>📈 Добро пожаловать в обменник</h1>
+        <a href="/create" class="create-btn">Создать объявление</a>
+
+        <table class="market-table">
+            <thead>
+                <tr>
+                    <th>Описание</th>
+                    <th>Сумма</th>
+                    <th>Оплата</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ad in ads %}
+                <tr>
+                    <td>{{ ad.title }}</td>
+                    <td>{{ ad.amount }} USDT</td>
+                    <td>{{ ad.payment_method }}</td>
+                    <td><a href="/buy/{{ ad.id }}" class="buy-btn">Купить</a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">Нет объявлений</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
