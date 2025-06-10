@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Сделка</title>
@@ -7,33 +7,26 @@
 </head>
 <body>
     <div class="container">
-        <h2>Сделка №{{ trade.id }}</h2>
-        <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
-        <p><strong>Метод оплаты:</strong> {{ trade.payment_method }}</p>
-        <p><strong>Время на оплату:</strong> 15 минут</p>
+        <h2>Сделка</h2>
+        <p><strong>Сумма:</strong> {{ amount }} USDT</p>
+        <p><strong>Цена:</strong> {{ price }} USD</p>
+        <p><strong>Оплата:</strong> {{ payment_method }}</p>
 
-        <div class="trade-actions">
-            <form method="post" action="/pay/{{ trade.id }}">
-                <button type="submit">Я оплатил</button>
-            </form>
-            <form method="post" action="/confirm/{{ trade.id }}">
-                <button type="submit">Подтвердить получение</button>
-            </form>
-            <form method="post" action="/dispute/{{ trade.id }}">
-                <button type="submit" class="dispute">Открыть спор</button>
-            </form>
+        <div>
+            <button>Я оплатил</button>
+            <button>Подтвердить получение</button>
+            <button>Открыть спор</button>
         </div>
 
-        <h3>💬 Чат сделки</h3>
-        <div class="chat-box">
-            {% for message in trade.messages %}
-                <div class="chat-message">
-                    <strong>{{ message.sender }}:</strong> {{ message.text }}
-                </div>
+        <h3>Чат</h3>
+        <div style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: scroll;">
+            {% for msg in messages %}
+                <p>{{ msg }}</p>
             {% endfor %}
         </div>
-        <form method="post" action="/trade/{{ trade.id }}/message">
-            <input type="text" name="message" placeholder="Напишите сообщение..." required>
+
+        <form method="post" action="/trade/{{ order_id }}/message">
+            <input type="text" name="message" placeholder="Сообщение..." required>
             <button type="submit">Отправить</button>
         </form>
     </div>
