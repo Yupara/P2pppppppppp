@@ -139,3 +139,12 @@ def my_orders(request: Request):
     user = get_current_user(request)
     my = [o for o in orders_db if o.buyer == user or o.seller == user]
     return templates.TemplateResponse("orders.html", {"request": request, "orders": my, "user": user})
+
+@app.post("/ads/create")
+def create_ad(request: Request, type: str = Form(...), price: float = Form(...), currency: str = Form(...), method: str = Form(...)):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+    ad = Ad(id=str(uuid4()), type=type, price=price, currency=currency, method=method, user=user)
+    ads_db.append(ad)
+    return RedirectResponse("/market", status_code=302)
