@@ -5,18 +5,17 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Список объявлений</h1>
-    <a href="/create_ad">+ Создать объявление</a>
+    <h1>Объявления</h1>
+    <a href="/create">+ Создать объявление</a>
     <ul>
         {% for ad in ads %}
         <li>
             <strong>{{ ad.type|capitalize }}</strong> {{ ad.amount }} {{ ad.currency }}
-            за {{ ad.fiat }} | Метод: {{ ad.payment_method }}
-            ({{ ad.min_limit }}₽ - {{ ad.max_limit }}₽) —
-            Продавец: {{ ad.seller }}
+            за {{ ad.fiat }}₽ ({{ ad.min_limit }}₽ - {{ ad.max_limit }}₽)
+            — Метод: {{ ad.payment_method }}
+            — Продавец: {{ ad.seller }}
+            <a href="/trade/{{ ad.id }}">Купить</a>
         </li>
-        {% else %}
-        <li>Объявлений пока нет.</li>
         {% endfor %}
     </ul>
 </body>
