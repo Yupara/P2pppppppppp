@@ -7,16 +7,19 @@ from uuid import uuid4
 import datetime
 
 app = FastAPI()
+
+# Подключение шаблонов и статики
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Простейшее хранилище в памяти
 ads = []
 trades = []
-chat_messages = {}
 
+# Pydantic-модель объявления
 class Ad(BaseModel):
     id: str
-    type: str
+    type: str  # "buy" или "sell"
     amount: float
     price: float
     payment_method: str
@@ -26,7 +29,12 @@ def index(request: Request):
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
 @app.post("/create_ad")
-def create_ad(type: str = Form(...), amount: float = Form(...), price: float = Form(...), payment_method: str = Form(...)):
+def create_ad(
+    type: str = Form(...),
+    amount: float = Form(...),
+    price: float = Form(...),
+    payment_method: str = Form(...)
+):
     ad_id = str(uuid4())
     ad = Ad(id=ad_id, type=type, amount=amount, price=price, payment_method=payment_method)
     ads.append(ad)
@@ -42,17 +50,15 @@ def buy_ad(ad_id: str, request: Request):
     trade = {
         "id": trade_id,
         "ad": ad,
-        "start_time": datetime.datetime.utcnow(),
+        "start_time": datetime.datetime.utcnow().isoformat(),
         "status": "active",
         "messages": []
     }
     trades.append(trade)
-    chat_messages[trade_id] = []
-
     return templates.TemplateResponse("trade.html", {"request": request, "trade": trade})
 
 @app.post("/chat/{trade_id}")
-def chat(trade_id: str, message: str = Form(...)):
+def post_message(trade_id: str, message: str = Form(...)):
     for trade in trades:
         if trade["id"] == trade_id:
             trade["messages"].append(message)
