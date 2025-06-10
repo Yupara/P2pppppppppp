@@ -1,58 +1,70 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Request, Depends, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from uuid import uuid4
+import datetime
 
 app = FastAPI()
-
-# Подключение папки со статикой и шаблонами
-app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Пример данных объявлений
-ads_data = [
-    {
-        "owner_username": "Savak",
-        "price": "70,96",
-        "volume": "304,7685 USDT",
-        "limits": "500 – 500 000 RUB",
-        "orders": 40,
-        "success_rate": 10,
-        "payment_methods": ["SBP", "Кольнение"]
-    },
-    {
-        "owner_username": "Ищу_Партнеров",
-        "price": "71,03",
-        "volume": "128,8821 USDT",
-        "limits": "500 – 500 000 RUB",
-        "orders": 15,
-        "success_rate": 10,
-        "payment_methods": ["Пиметы", "Овроеол"]
-    },
-    {
-        "owner_username": "ПроданоМейкеро",
-        "price": "71,03",
-        "volume": "100,0000 USDT",
-        "limits": "500 – 500 000 RUB",
-        "orders": 11,
-        "success_rate": 10,
-        "payment_methods": ["SBP"]
-    }
-]
+# Временное хранилище (вместо базы данных)
+ads = []
+trades = []
+chat_messages = {}
 
-# Главная страница — рынок объявлений
+# Модель объявления
+class Ad(BaseModel):
+    id: str
+    type: str  # buy / sell
+    amount: float
+    price: float
+    payment_method: str
+
+# Главная страница с объявлениями
 @app.get("/", response_class=HTMLResponse)
-async def market(request: Request):
-    return templates.TemplateResponse("market.html", {"request": request, "ads": ads_data})
+def index(request: Request):
+    return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
-# Страница сделки /trade/username
-@app.get("/trade/{username}", response_class=HTMLResponse)
-async def open_trade(username: str, request: Request):
-    user_data = {
-        "username": username,
-        "orders": 8,
-        "success_rate": "100%",
-        "avg_transfer": "1 мин.",
-        "avg_pay": "4 мин.",
+# Создание объявления
+@app.post("/create_ad")
+def create_ad(
+    type: str = Form(...),
+    amount: float = Form(...),
+    price: float = Form(...),
+    payment_method: str = Form(...)
+):
+    ad_id = str(uuid4())
+    ad = Ad(id=ad_id, type=type, amount=amount, price=price, payment_method=payment_method)
+    ads.append(ad)
+    return RedirectResponse("/", status_code=302)
+
+# Покупка (создание сделки)
+@app.get("/buy/{ad_id}", response_class=HTMLResponse)
+def buy_ad(ad_id: str, request: Request):
+    ad = next((a for a in ads if a.id == ad_id), None)
+    if not ad:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+    
+    trade_id = str(uuid4())
+    trade = {
+        "id": trade_id,
+        "ad": ad,
+        "start_time": datetime.datetime.utcnow(),
+        "status": "active",
+        "messages": []
     }
-    return templates.TemplateResponse("trade.html", {"request": request, "user": user_data})
+    trades.append(trade)
+    chat_messages[trade_id] = []
+
+    return templates.TemplateResponse("trade.html", {"request": request, "trade": trade})
+
+# Отправка сообщений в чате
+@app.post("/chat/{trade_id}")
+def chat(trade_id: str, message: str = Form(...)):
+    if trade_id not in chat_messages:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    chat_messages[trade_id].append(message)
+    return RedirectResponse(f"/buy/{trade_id}", status_code=302)
