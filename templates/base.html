@@ -1,21 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>P2P</title>
-    <link rel="stylesheet" href="/static/styles.css">
+  <title>P2P Обменник</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <header>
-        <h1><a href="/">Обменник</a></h1>
-        <nav>
-            <a href="/market">Рынок</a>
-            <a href="/login">Вход</a>
-            <a href="/register">Регистрация</a>
-        </nav>
-    </header>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+  <header>
+    <a href="/">Главная</a> | 
+    <a href="/market">Маркет</a> | 
+    <a href="/create">Создать</a>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
 </body>
 </html>
