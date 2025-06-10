@@ -5,36 +5,33 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Создать объявление</h1>
-        <form action="/create_ad" method="post">
-            <label>Тип:</label>
-            <select name="type">
-                <option value="buy">Купить</option>
-                <option value="sell">Продать</option>
-            </select><br>
+    <h1>Создать объявление</h1>
+    <form action="/create_ad" method="post">
+        <label>Тип:</label>
+        <select name="type">
+            <option value="buy">Купить</option>
+            <option value="sell">Продать</option>
+        </select><br>
 
-            <label>Валюта:</label>
-            <input type="text" name="currency" value="USDT" required><br>
+        <label>Валюта:</label>
+        <input type="text" name="currency" value="USDT" required><br>
 
-            <label>Сумма (в USDT):</label>
-            <input type="number" name="amount" required><br>
+        <label>Сумма (USDT):</label>
+        <input type="number" name="amount" required><br>
 
-            <label>Фиат:</label>
-            <input type="text" name="fiat" value="RUB" required><br>
+        <label>Фиат:</label>
+        <input type="text" name="fiat" value="RUB" required><br>
 
-            <label>Метод оплаты:</label>
-            <input type="text" name="payment_method" value="Tinkoff" required><br>
+        <label>Метод оплаты:</label>
+        <input type="text" name="payment_method" required><br>
 
-            <label>Мин сумма (₽):</label>
-            <input type="number" name="min_limit" required><br>
+        <label>Мин сумма (₽):</label>
+        <input type="number" name="min_limit" required><br>
 
-            <label>Макс сумма (₽):</label>
-            <input type="number" name="max_limit" required><br>
+        <label>Макс сумма (₽):</label>
+        <input type="number" name="max_limit" required><br>
 
-            <button type="submit">Создать</button>
-        </form>
-        <a href="/">На главную</a>
-    </div>
+        <button type="submit">Создать</button>
+    </form>
 </body>
 </html>
