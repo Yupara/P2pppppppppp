@@ -1,22 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Маркет</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-    <h1>Объявления</h1>
-    <a href="/create">+ Создать объявление</a>
-    <ul>
-        {% for ad in ads %}
-        <li>
-            <strong>{{ ad.type|capitalize }}</strong> {{ ad.amount }} {{ ad.currency }}
-            за {{ ad.fiat }}₽ ({{ ad.min_limit }}₽ - {{ ad.max_limit }}₽)
-            — Метод: {{ ad.payment_method }}
-            — Продавец: {{ ad.seller }}
-            <a href="/trade/{{ ad.id }}">Купить</a>
-        </li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Объявления</h2>
+{% for ad in ads %}
+  <div class="ad">
+    <p><strong>{{ ad.type|capitalize }}</strong>: {{ ad.amount }} USDT</p>
+    <p>Оплата: {{ ad.payment }}</p>
+    <a href="/trade/{{ ad.id }}">Перейти</a>
+  </div>
+{% else %}
+  <p>Нет объявлений</p>
+{% endfor %}
+{% endblock %}
