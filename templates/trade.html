@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Сделка с {{ user.username }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dark-theme">
+    <div class="container">
+        <div class="profile-header">
+            <div class="avatar">{{ user.username[0] }}</div>
+            <div class="user-info">
+                <h2>{{ user.username }}</h2>
+                <p>Эл. почта ✅  SMS ✅  Верификация личности ✅</p>
+                <div class="badge">Обычный мейкер</div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <p><strong>{{ user.orders }}</strong> ордера за 30 дней</p>
+            <p>Исполнено: <strong>{{ user.rate }}</strong></p>
+            <p>Средн. время перевода: <strong>{{ user.avg_transfer }}</strong></p>
+            <p>Средн. время оплаты: <strong>{{ user.avg_pay }}</strong></p>
+        </div>
+
+        <hr>
+
+        <div class="actions">
+            <button>💳 Способы оплаты</button>
+            <button>📞 Контактные данные</button>
+            <button>💬 Оставить отзыв</button>
+            <button>🔕 Настройки уведомлений</button>
+            <button>📥 Подписаться</button>
+            <button>🚫 Чёрный список</button>
+        </div>
+    </div>
+</body>
+</html>
