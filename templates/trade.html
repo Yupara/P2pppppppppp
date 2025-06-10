@@ -1,53 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Сделка</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <script>
-        function startTimer(deadline) {
-            const countDownDate = new Date(deadline).getTime();
-            const timer = setInterval(function () {
-                const now = new Date().getTime();
-                const distance = countDownDate - now;
+{% extends "base.html" %}
 
-                if (distance < 0) {
-                    clearInterval(timer);
-                    document.getElementById("timer").innerHTML = "⛔ Время вышло!";
-                    return;
-                }
-
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                document.getElementById("timer").innerHTML = minutes + "м " + seconds + "с ";
-            }, 1000);
-        }
-
-        window.onload = function () {
-            startTimer("{{ deadline }}");
-        };
-    </script>
-</head>
-<body>
-    <h1>Сделка по объявлению</h1>
-    <p><strong>{{ ad.amount }} {{ ad.currency }}</strong> за {{ ad.fiat }} ({{ ad.min_limit }}₽ - {{ ad.max_limit }}₽)</p>
-    <p>Продавец: {{ ad.seller }}</p>
-    <p>Метод оплаты: {{ ad.payment_method }}</p>
-
-    <div id="timer" style="font-weight: bold; color: red;"></div>
-
-    <hr>
-    <h3>Чат</h3>
-    <div style="border: 1px solid #ccc; padding: 10px; height: 150px; overflow-y: scroll;">
-        <p><em>Сообщения появятся здесь (в будущем)</em></p>
-    </div>
-    <form>
-        <input type="text" placeholder="Введите сообщение" style="width: 80%;">
-        <button type="submit">Отправить</button>
-    </form>
-
-    <hr>
-    <button>Я оплатил</button>
-    <button>Подтвердить получение</button>
-    <button style="color: red;">Открыть спор</button>
-</body>
-</html>
+{% block content %}
+<h2>Сделка</h2>
+<p><strong>{{ ad.type|capitalize }}</strong>: {{ ad.amount }} USDT</p>
+<p>Оплата: {{ ad.payment }}</p>
+<button>Я оплатил</button>
+<button>Подтвердить получение</button>
+<button>Открыть спор</button>
+{% endblock %}
