@@ -1,31 +1,19 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Создать объявление</title>
-    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h2>Создать новое объявление</h2>
-        <form action="/ads/create" method="post">
-            <label for="type">Тип объявления:</label>
-            <select name="type" id="type" required>
-                <option value="buy">Купить</option>
-                <option value="sell">Продать</option>
-            </select>
-
-            <label for="amount">Сумма (USDT):</label>
-            <input type="number" name="amount" id="amount" required>
-
-            <label for="price">Цена за 1 USDT:</label>
-            <input type="number" name="price" id="price" required step="0.01">
-
-            <label for="payment_method">Способ оплаты:</label>
-            <input type="text" name="payment_method" id="payment_method" required>
-
-            <button type="submit">Разместить объявление</button>
-        </form>
-    </div>
+    <h1>Создание объявления</h1>
+    <form action="/create" method="post">
+        <input type="text" name="username" placeholder="Имя" required><br>
+        <select name="action">
+            <option value="Купить">Купить</option>
+            <option value="Продать">Продать</option>
+        </select><br>
+        <input type="number" name="amount" placeholder="Сумма" required><br>
+        <input type="text" name="payment_method" placeholder="Способ оплаты" required><br>
+        <button type="submit">Создать</button>
+    </form>
 </body>
 </html>
