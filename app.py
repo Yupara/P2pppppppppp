@@ -5,12 +5,12 @@ from fastapi.templating import Jinja2Templates
 import uuid
 
 app = FastAPI()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 ads = []
 messages = {}
-orders = []
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
@@ -43,5 +43,4 @@ def post_message(ad_id: str, sender: str = Form(...), text: str = Form(...)):
 
 @app.post("/trade/{ad_id}/action")
 def handle_action(ad_id: str, action: str = Form(...)):
-    print(f"АCTION: {action} для объявления {ad_id}")
     return RedirectResponse(f"/trade/{ad_id}", status_code=303)
