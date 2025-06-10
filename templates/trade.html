@@ -32,13 +32,17 @@
 
     <h2>⏳ Время до завершения: <span id="timer">15:00</span></h2>
 
-    <h3>💬 Чат сделки</h3>
-    <div style="background:#1a1a1a; padding:10px; margin-bottom:10px;">
-        <p><em>Пользователь:</em> Привет, готов купить</p>
-        <p><em>Продавец:</em> Ок, жду оплату</p>
-    </div>
+  <h3>💬 Чат сделки</h3>
+<div style="background:#1a1a1a; padding:10px; margin-bottom:10px; max-height:200px; overflow:auto;">
+    {% for msg in messages %}
+        <p><em>{{ msg.sender }}:</em> {{ msg.content }}</p>
+    {% endfor %}
+</div>
 
-    <form>
+<form method="post" action="/trade/{{ ad.id }}/send">
+    <input type="text" name="message" placeholder="Введите сообщение" required style="width:70%;">
+    <button type="submit">Отправить</button>
+</form>
         <input type="text" placeholder="Введите сообщение" style="width:70%;">
         <button type="submit">Отправить</button>
     </form>
