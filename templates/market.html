@@ -1,47 +1,23 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Покупка USDT</title>
+    <title>Маркет</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="dark-theme">
-    <div class="header">
-        <button class="tab active">Покупка</button>
-        <button class="tab">Продажа</button>
-    </div>
-
-    <div class="filters">
-        <select><option>USDT</option></select>
-        <select><option>Сумма</option></select>
-        <select><option>Все способы оплаты</option></select>
-        <button class="filter-btn">Фильтр</button>
-    </div>
-
-    <div class="ads-list">
+<body>
+    <h1>Список объявлений</h1>
+    <a href="/create_ad">+ Создать объявление</a>
+    <ul>
         {% for ad in ads %}
-        <div class="ad-card">
-            <div class="ad-header">
-                <div class="username">{{ ad.owner_username }}</div>
-                <div class="stats">{{ ad.orders }} Ордеров | {{ ad.success_rate }}%</div>
-            </div>
-            <div class="ad-body">
-                <div class="price">₽ {{ ad.price }}</div>
-                <div class="volume">Количество {{ ad.volume }}</div>
-                <div class="limits">Лимиты {{ ad.limits }}</div>
-                <div class="payments">
-                    {% for method in ad.payment_methods %}
-                        <span class="payment">{{ method }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="ad-footer">
-                <a href="/trade/{{ ad.owner_username }}">
-                    <button class="buy-btn">Покупка</button>
-                </a>
-            </div>
-        </div>
+        <li>
+            <strong>{{ ad.type|capitalize }}</strong> {{ ad.amount }} {{ ad.currency }}
+            за {{ ad.fiat }} | Метод: {{ ad.payment_method }}
+            ({{ ad.min_limit }}₽ - {{ ad.max_limit }}₽) —
+            Продавец: {{ ad.seller }}
+        </li>
+        {% else %}
+        <li>Объявлений пока нет.</li>
         {% endfor %}
-    </div>
+    </ul>
 </body>
 </html>
