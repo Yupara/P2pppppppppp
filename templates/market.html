@@ -1,14 +1,31 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Маркет</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Добро пожаловать на маркет</h1>
 
-{% block content %}
-<h2>Объявления</h2>
-{% for ad in ads %}
-  <div class="ad">
-    <p><strong>{{ ad.type|capitalize }}</strong>: {{ ad.amount }} USDT</p>
-    <p>Оплата: {{ ad.payment }}</p>
-    <a href="/trade/{{ ad.id }}">Перейти</a>
-  </div>
-{% else %}
-  <p>Нет объявлений</p>
-{% endfor %}
-{% endblock %}
+    <h2>Создать объявление</h2>
+    <form action="/create-ad" method="post">
+        <input type="text" name="title" placeholder="Название" required>
+        <input type="number" step="0.01" name="price" placeholder="Цена" required>
+        <select name="type">
+            <option value="buy">Купить</option>
+            <option value="sell">Продать</option>
+        </select>
+        <button type="submit">Создать</button>
+    </form>
+
+    <h2>Объявления</h2>
+    <ul>
+        {% for ad in ads %}
+            <li>
+                [{{ ad.type|capitalize }}] {{ ad.title }} — {{ ad.price }} USDT
+                <a href="/trade/{{ ad.id }}">Открыть</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
