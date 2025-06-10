@@ -1,19 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head><title>Создать объявление</title></head>
-<body>
-    <h2>Создание Объявления</h2>
-    <form method="post" action="/create-ad">
-        <label>Тип:</label>
-        <select name="type">
-            <option value="buy">Купить</option>
-            <option value="sell">Продать</option>
-        </select><br>
-        <label>Количество:</label><input type="number" step="0.01" name="amount"><br>
-        <label>Валюта:</label><input type="text" name="currency" value="USDT"><br>
-        <label>Метод оплаты:</label><input type="text" name="payment_method"><br>
-        <label>Цена:</label><input type="number" step="0.01" name="price"><br>
-        <button type="submit">Создать</button>
-    </form>
-</body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2>Создать объявление</h2>
+  <form method="post" action="/create" class="form">
+    <label>Тип:</label>
+    <select name="type" required>
+      <option value="buy">Купить</option>
+      <option value="sell">Продать</option>
+    </select>
+
+    <label>Сумма (в USDT):</label>
+    <input type="number" step="0.01" name="amount" required>
+
+    <label>Цена (₽):</label>
+    <input type="number" step="0.01" name="price" required>
+
+    <label>Способ оплаты:</label>
+    <input type="text" name="payment" placeholder="Сбербанк, Тинькофф..." required>
+
+    <label>Ваше имя (временно):</label>
+    <input type="text" name="seller" required>
+
+    <button type="submit" class="btn">Создать</button>
+  </form>
+</div>
+{% endblock %}
