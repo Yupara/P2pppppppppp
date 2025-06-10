@@ -1,34 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Сделка</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        let endTime = new Date("{{ end_time }}Z").getTime();
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const diff = endTime - now;
+            const mins = Math.floor(diff / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            document.getElementById("timer").innerText =
+                mins + " мин " + secs + " сек";
+            if (diff > 0) {
+                setTimeout(updateTimer, 1000);
+            } else {
+                document.getElementById("timer").innerText = "Время истекло";
+            }
+        }
+        window.onload = updateTimer;
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h2>Сделка</h2>
-        <p><strong>Сумма:</strong> {{ amount }} USDT</p>
-        <p><strong>Цена:</strong> {{ price }} USD</p>
-        <p><strong>Оплата:</strong> {{ payment_method }}</p>
+    <h1>Сделка по объявлению</h1>
+    <p><strong>Тип:</strong> {{ ad.ad_type.upper() }}</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
+    <p><strong>Цена:</strong> {{ ad.price }} $</p>
+    <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
+    <p><strong>Описание:</strong> {{ ad.description }}</p>
 
-        <div>
-            <button>Я оплатил</button>
-            <button>Подтвердить получение</button>
-            <button>Открыть спор</button>
-        </div>
+    <h2>⏳ Время до завершения: <span id="timer">15:00</span></h2>
 
-        <h3>Чат</h3>
-        <div style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: scroll;">
-            {% for msg in messages %}
-                <p>{{ msg }}</p>
-            {% endfor %}
-        </div>
-
-        <form method="post" action="/trade/{{ order_id }}/message">
-            <input type="text" name="message" placeholder="Сообщение..." required>
-            <button type="submit">Отправить</button>
-        </form>
+    <h3>💬 Чат сделки</h3>
+    <div style="background:#1a1a1a; padding:10px; margin-bottom:10px;">
+        <p><em>Пользователь:</em> Привет, готов купить</p>
+        <p><em>Продавец:</em> Ок, жду оплату</p>
     </div>
+
+    <form>
+        <input type="text" placeholder="Введите сообщение" style="width:70%;">
+        <button type="submit">Отправить</button>
+    </form>
+
+    <hr>
+    <button>✅ Я оплатил</button>
+    <button>💰 Подтвердить получение</button>
+    <button>⚠️ Открыть спор</button>
+
+    <p><a href="/market">⬅️ Назад к объявлениям</a></p>
 </body>
 </html>
