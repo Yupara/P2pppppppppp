@@ -1,57 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Сделка</title>
-    <script>
-        let minutes = 15;
-        let seconds = 0;
-        function startTimer() {
-            const timer = setInterval(() => {
-                if (seconds === 0) {
-                    if (minutes === 0) {
-                        clearInterval(timer);
-                        alert("Время вышло");
-                    } else {
-                        minutes--;
-                        seconds = 59;
-                    }
-                } else {
-                    seconds--;
-                }
-                document.getElementById("timer").innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-        window.onload = startTimer;
-    </script>
-</head>
-<body>
-    <h2>Сделка</h2>
-    <p>Продавец: {{ ad.seller }}</p>
-    <p>Сумма: {{ ad.amount }} {{ ad.currency }}</p>
-    <p>Цена: {{ ad.price }}</p>
-    <p>Метод оплаты: {{ ad.payment_method }}</p>
-    <p>Осталось времени: <span id="timer">15:00</span></p>
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2>Сделка: {{ ad.type|capitalize }} {{ ad.amount }} USDT</h2>
+  <div class="trade-box">
+    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
+    <p><strong>Способ оплаты:</strong> {{ ad.payment }}</p>
+    <p><strong>Продавец:</strong> {{ ad.seller }}</p>
 
-    <form action="/trade-action/{{ order.id }}" method="post">
-        <button name="action" value="paid">Я оплатил</button>
-        <button name="action" value="confirmed">Подтвердить получение</button>
-        <button name="action" value="dispute">Открыть спор</button>
-    </form>
+    <div class="trade-actions">
+      <button class="btn">Я оплатил</button>
+      <button class="btn">Подтвердить получение</button>
+      <button class="btn btn-danger">Открыть спор</button>
+    </div>
 
-    <h3>Чат</h3>
-    <div id="chat-box" style="border:1px solid #ccc; height:200px; overflow:auto;"></div>
-    <input type="text" id="message" placeholder="Сообщение...">
-    <button onclick="sendMessage()">Отправить</button>
-
-    <script>
-        function sendMessage() {
-            const box = document.getElementById("chat-box");
-            const msg = document.getElementById("message").value;
-            if (msg.trim()) {
-                box.innerHTML += "<p><b>Вы:</b> " + msg + "</p>";
-                document.getElementById("message").value = "";
-            }
-        }
-    </script>
-</body>
-</html>
+    <h3>Чат:</h3>
+    <div class="chat-box">
+      <p><em>чат пока не реализован</em></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
