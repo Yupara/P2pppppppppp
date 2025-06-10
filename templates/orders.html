@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Мои сделки</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>📂 Мои сделки</h1>
+
+    <ul>
+        {% for order in orders %}
+            <li>
+                {% set ad = ads | selectattr("id", "equalto", order.ad_id) | list | first %}
+                <strong>{{ ad.username }}</strong> | {{ ad.amount }} {{ ad.currency }} | {{ ad.type }}
+                <br>
+                Статус: {{ order.status }}
+                <br>
+                <a href="/trade/{{ ad.id }}">Перейти к сделке</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <a href="/">← Вернуться на маркет</a>
+</body>
+</html>
