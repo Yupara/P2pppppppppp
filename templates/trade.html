@@ -31,23 +31,26 @@
     <p>Цена: {{ ad.price }}</p>
     <p>Метод оплаты: {{ ad.payment_method }}</p>
     <p>Осталось времени: <span id="timer">15:00</span></p>
-    <div>
-        <button>Я оплатил</button>
-        <button>Подтвердить получение</button>
-        <button>Открыть спор</button>
-    </div>
-    <div>
-        <h3>Чат</h3>
-        <div id="chat-box" style="border:1px solid #ccc; height:200px; overflow:auto;"></div>
-        <input type="text" id="message" placeholder="Сообщение...">
-        <button onclick="sendMessage()">Отправить</button>
-    </div>
+
+    <form action="/trade-action/{{ order.id }}" method="post">
+        <button name="action" value="paid">Я оплатил</button>
+        <button name="action" value="confirmed">Подтвердить получение</button>
+        <button name="action" value="dispute">Открыть спор</button>
+    </form>
+
+    <h3>Чат</h3>
+    <div id="chat-box" style="border:1px solid #ccc; height:200px; overflow:auto;"></div>
+    <input type="text" id="message" placeholder="Сообщение...">
+    <button onclick="sendMessage()">Отправить</button>
+
     <script>
         function sendMessage() {
             const box = document.getElementById("chat-box");
             const msg = document.getElementById("message").value;
-            box.innerHTML += "<p><b>Вы:</b> " + msg + "</p>";
-            document.getElementById("message").value = "";
+            if (msg.trim()) {
+                box.innerHTML += "<p><b>Вы:</b> " + msg + "</p>";
+                document.getElementById("message").value = "";
+            }
         }
     </script>
 </body>
