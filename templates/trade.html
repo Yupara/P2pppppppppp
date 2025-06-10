@@ -2,52 +2,42 @@
 <html>
 <head>
     <title>Сделка</title>
-    <style>
-        body { font-family: Arial; background-color: #0e0e0e; color: #aaffaa; padding: 20px; }
-        .chat-box { background-color: #111; padding: 10px; margin: 10px 0; border-radius: 5px; }
-        .button { padding: 10px; background-color: #228822; color: white; border: none; margin: 5px; cursor: pointer; }
-        .timer { font-size: 18px; color: #ff4444; margin-top: 10px; }
-    </style>
-    <script>
-        let minutes = 15;
-        let seconds = 0;
-        function updateTimer() {
-            const timer = document.getElementById("timer");
-            if (seconds === 0) {
-                if (minutes === 0) {
-                    timer.textContent = "Время вышло!";
-                    clearInterval(interval);
-                    return;
-                }
-                minutes--;
-                seconds = 59;
-            } else {
-                seconds--;
-            }
-            timer.textContent = `${minutes} мин ${seconds} сек`;
-        }
-        let interval = setInterval(updateTimer, 1000);
-    </script>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Сделка</h1>
-    <p><strong>Продавец:</strong> {{ ad.username }}</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }}</p>
-    <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
-    <div id="timer" class="timer">15 мин 00 сек</div>
+    <h1>💼 Сделка с {{ ad.username }}</h1>
 
-    <form action="/trade/{{ ad.id }}/chat" method="post">
-        <input type="text" name="message" placeholder="Введите сообщение" required>
-        <button type="submit" class="button">Отправить</button>
+    <p><strong>Тип:</strong> {{ ad.type }}</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
+    <p><strong>Оплата:</strong> {{ ad.payment }}</p>
+
+    <p><strong>Статус сделки:</strong> {{ order.status }}</p>
+
+    {% if order.status == "created" %}
+        <form method="post" action="/trade/{{ ad.id }}/pay">
+            <button>Я оплатил</button>
+        </form>
+    {% elif order.status == "paid" %}
+        <form method="post" action="/trade/{{ ad.id }}/confirm">
+            <button>Подтвердить получение</button>
+        </form>
+    {% endif %}
+
+    <form method="post" action="/trade/{{ ad.id }}/dispute">
+        <button style="background-color: darkred;">Открыть спор</button>
     </form>
 
-    <h3>Сообщения:</h3>
-    {% for msg in messages %}
-        <div class="chat-box">{{ msg }}</div>
-    {% endfor %}
+    <h3>💬 Чат:</h3>
+    <ul>
+        {% for msg in messages %}
+            <li><strong>{{ msg.username }}:</strong> {{ msg.message }}</li>
+        {% endfor %}
+    </ul>
 
-    <button class="button">Я оплатил</button>
-    <button class="button">Подтвердить получение</button>
-    <button class="button" style="background-color: #aa2222;">Открыть спор</button>
+    <form method="post" action="/send_message/{{ ad.id }}">
+        <input name="username" placeholder="Имя" required>
+        <input name="message" placeholder="Сообщение" required>
+        <button type="submit">Отправить</button>
+    </form>
 </body>
 </html>
