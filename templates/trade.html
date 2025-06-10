@@ -1,70 +1,53 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Сделка</title>
-    <link rel="stylesheet" href="/static/styles.css">
     <style>
-        body {
-            background-color: #0d0d0d;
-            color: #00ff99;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            max-width: 700px;
-            margin: 50px auto;
-            padding: 20px;
-            background: #111;
-            border: 1px solid #00ff99;
-            border-radius: 10px;
-        }
-        .chat {
-            height: 200px;
-            overflow-y: auto;
-            background: #1a1a1a;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #00ff99;
-        }
-        .chat-message {
-            margin-bottom: 5px;
-        }
-        .btn {
-            background-color: #00ff99;
-            color: #000;
-            padding: 10px;
-            margin: 5px 0;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        .btn:hover {
-            background-color: #00cc77;
-        }
+        body { font-family: Arial; background-color: #0e0e0e; color: #aaffaa; padding: 20px; }
+        .chat-box { background-color: #111; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .button { padding: 10px; background-color: #228822; color: white; border: none; margin: 5px; cursor: pointer; }
+        .timer { font-size: 18px; color: #ff4444; margin-top: 10px; }
     </style>
+    <script>
+        let minutes = 15;
+        let seconds = 0;
+        function updateTimer() {
+            const timer = document.getElementById("timer");
+            if (seconds === 0) {
+                if (minutes === 0) {
+                    timer.textContent = "Время вышло!";
+                    clearInterval(interval);
+                    return;
+                }
+                minutes--;
+                seconds = 59;
+            } else {
+                seconds--;
+            }
+            timer.textContent = `${minutes} мин ${seconds} сек`;
+        }
+        let interval = setInterval(updateTimer, 1000);
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h2>Сделка №{{ ad.id }}</h2>
-        <p><strong>Тип:</strong> {{ ad.type }}</p>
-        <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
-        <p><strong>Цена:</strong> {{ ad.price }}</p>
-        <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
+    <h1>Сделка</h1>
+    <p><strong>Продавец:</strong> {{ ad.username }}</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }}</p>
+    <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
+    <div id="timer" class="timer">15 мин 00 сек</div>
 
-        <div class="chat">
-            {% for msg in messages %}
-                <div class="chat-message"><strong>{{ msg.sender }}:</strong> {{ msg.content }}</div>
-            {% endfor %}
-        </div>
+    <form action="/trade/{{ ad.id }}/chat" method="post">
+        <input type="text" name="message" placeholder="Введите сообщение" required>
+        <button type="submit" class="button">Отправить</button>
+    </form>
 
-        <form method="post" action="/trade/{{ ad.id }}/send">
-            <input type="text" name="message" placeholder="Ваше сообщение..." required>
-            <button type="submit" class="btn">Отправить</button>
-        </form>
+    <h3>Сообщения:</h3>
+    {% for msg in messages %}
+        <div class="chat-box">{{ msg }}</div>
+    {% endfor %}
 
-        <form><button type="button" class="btn">Оплатил</button></form>
-        <form><button type="button" class="btn">Подтвердить получение</button></form>
-        <form><button type="button" class="btn">Открыть спор</button></form>
-    </div>
+    <button class="button">Я оплатил</button>
+    <button class="button">Подтвердить получение</button>
+    <button class="button" style="background-color: #aa2222;">Открыть спор</button>
 </body>
 </html>
