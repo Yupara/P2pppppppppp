@@ -1,23 +1,119 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="container">
-  <h2>Сделка: {{ ad.type|capitalize }} {{ ad.amount }} USDT</h2>
-  <div class="trade-box">
-    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }} USDT</p>
-    <p><strong>Способ оплаты:</strong> {{ ad.payment }}</p>
-    <p><strong>Продавец:</strong> {{ ad.seller }}</p>
+<!-- templates/trade.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Сделка</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ff99;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 30px;
+        }
+        .box {
+            background-color: #1a1a1a;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        .box h2 {
+            color: #00ff99;
+        }
+        .btn {
+            background-color: #00ff99;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin-right: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #00cc77;
+        }
+        .chat-box {
+            background-color: #0d0d0d;
+            border: 1px solid #00ff99;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+        .chat-message {
+            margin: 5px 0;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #00ff99;
+            background-color: #1a1a1a;
+            color: #00ff99;
+            border-radius: 5px;
+        }
+        .timer {
+            font-size: 18px;
+            color: #ffcc00;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Сделка с {{ order.seller_username }}</h1>
 
-    <div class="trade-actions">
-      <button class="btn">Я оплатил</button>
-      <button class="btn">Подтвердить получение</button>
-      <button class="btn btn-danger">Открыть спор</button>
+        <div class="box">
+            <p><strong>Сумма:</strong> {{ order.amount }} {{ order.currency }}</p>
+            <p><strong>Способ оплаты:</strong> {{ order.payment_method }}</p>
+            <p class="timer">⏱️ Время на оплату: <span id="countdown">30:00</span></p>
+
+            <form action="/orders/{{ order.id }}/paid" method="post" style="display: inline;">
+                <button class="btn">Я оплатил</button>
+            </form>
+            <form action="/orders/{{ order.id }}/confirm" method="post" style="display: inline;">
+                <button class="btn">Подтвердить получение</button>
+            </form>
+            <form action="/orders/{{ order.id }}/dispute" method="post" style="display: inline;">
+                <button class="btn">Открыть спор</button>
+            </form>
+        </div>
+
+        <div class="box">
+            <h2>Чат</h2>
+            <div class="chat-box" id="chat-box">
+                {% for msg in messages %}
+                    <div class="chat-message"><strong>{{ msg.user }}:</strong> {{ msg.text }}</div>
+                {% endfor %}
+            </div>
+            <form action="/orders/{{ order.id }}/message" method="post">
+                <input type="text" name="message" placeholder="Напишите сообщение..." required>
+                <button class="btn">Отправить</button>
+            </form>
+        </div>
     </div>
 
-    <h3>Чат:</h3>
-    <div class="chat-box">
-      <p><em>чат пока не реализован</em></p>
-    </div>
-  </div>
-</div>
-{% endblock %}
+    <script>
+        // Таймер на 30 минут
+        let time = 30 * 60;
+        const countdown = document.getElementById("countdown");
+
+        function updateTimer() {
+            const minutes = Math.floor(time / 60);
+            const seconds = time % 60;
+            countdown.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            if (time > 0) time--;
+        }
+
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
