@@ -1,68 +1,41 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Сделка</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <script>
-        let minutes = 15;
-        let seconds = 0;
-
-        function startTimer() {
-            const timerDisplay = document.getElementById("timer");
-            const interval = setInterval(() => {
-                if (seconds === 0) {
-                    if (minutes === 0) {
-                        clearInterval(interval);
-                        timerDisplay.innerText = "Время вышло!";
-                        return;
-                    }
-                    minutes--;
-                    seconds = 59;
-                } else {
-                    seconds--;
-                }
-                timerDisplay.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            }, 1000);
-        }
-
-        window.onload = startTimer;
-    </script>
 </head>
 <body>
     <div class="container">
-        <h1>Сделка №{{ order_id }}</h1>
-        <div class="timer">
-            ⏰ Время до завершения: <span id="timer">15:00</span>
-        </div>
-        <div class="payment-info">
-            <p><strong>Сумма:</strong> {{ amount }} USDT</p>
-            <p><strong>Оплата через:</strong> {{ payment_method }}</p>
-        </div>
-        <div class="actions">
-            <form method="post" action="/orders/{{ order_id }}/paid">
+        <h2>Сделка №{{ trade.id }}</h2>
+        <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
+        <p><strong>Метод оплаты:</strong> {{ trade.payment_method }}</p>
+        <p><strong>Время на оплату:</strong> 15 минут</p>
+
+        <div class="trade-actions">
+            <form method="post" action="/pay/{{ trade.id }}">
                 <button type="submit">Я оплатил</button>
             </form>
-            <form method="post" action="/orders/{{ order_id }}/confirm">
+            <form method="post" action="/confirm/{{ trade.id }}">
                 <button type="submit">Подтвердить получение</button>
             </form>
-            <form method="post" action="/orders/{{ order_id }}/dispute">
-                <button type="submit" style="background-color: red;">Открыть спор</button>
+            <form method="post" action="/dispute/{{ trade.id }}">
+                <button type="submit" class="dispute">Открыть спор</button>
             </form>
         </div>
-        <hr>
+
+        <h3>💬 Чат сделки</h3>
         <div class="chat-box">
-            <h3>Чат сделки</h3>
-            <div class="chat-messages" id="chat-messages">
-                {% for msg in messages %}
-                    <div><strong>{{ msg.sender }}:</strong> {{ msg.text }}</div>
-                {% endfor %}
-            </div>
-            <form method="post" action="/orders/{{ order_id }}/message">
-                <input type="text" name="text" placeholder="Ваше сообщение">
-                <button type="submit">Отправить</button>
-            </form>
+            {% for message in trade.messages %}
+                <div class="chat-message">
+                    <strong>{{ message.sender }}:</strong> {{ message.text }}
+                </div>
+            {% endfor %}
         </div>
+        <form method="post" action="/trade/{{ trade.id }}/message">
+            <input type="text" name="message" placeholder="Напишите сообщение..." required>
+            <button type="submit">Отправить</button>
+        </form>
     </div>
 </body>
 </html>
