@@ -43,3 +43,29 @@ async def create_ad(
     }
     ads.append(ad)
     return RedirectResponse(url="/", status_code=302)
+
+from fastapi import HTTPException
+
+# Хранилище сделок и сообщений
+orders = {}
+messages = {}
+
+@app.get("/trade/{ad_id}", response_class=HTMLResponse)
+async def trade_page(request: Request, ad_id: str):
+    ad = next((a for a in ads if a["id"] == ad_id), None)
+    if not ad:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
+    
+    msg_list = messages.get(ad_id, [])
+    return templates.TemplateResponse("trade.html", {
+        "request": request,
+        "ad": ad,
+        "messages": msg_list
+    })
+
+@app.post("/trade/{ad_id}/chat")
+async def send_message(ad_id: str, request: Request, message: str = Form(...)):
+    if ad_id not in messages:
+        messages[ad_id] = []
+    messages[ad_id].append(message)
+    return RedirectResponse(url=f"/trade/{ad_id}", status_code=302)
