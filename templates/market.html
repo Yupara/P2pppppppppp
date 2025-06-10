@@ -1,39 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Маркет | Обменник</title>
+    <title>Маркет</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>📈 Добро пожаловать в обменник</h1>
-        <a href="/create" class="create-btn">Создать объявление</a>
-
-        <table class="market-table">
-            <thead>
-                <tr>
-                    <th>Описание</th>
-                    <th>Сумма</th>
-                    <th>Оплата</th>
-                    <th>Действие</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ad in ads %}
-                <tr>
-                    <td>{{ ad.title }}</td>
-                    <td>{{ ad.amount }} USDT</td>
-                    <td>{{ ad.payment_method }}</td>
-                    <td><a href="/buy/{{ ad.id }}" class="buy-btn">Купить</a></td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="4">Нет объявлений</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <h1>Объявления</h1>
+    <a href="/create">Создать объявление</a>
+    <table>
+        <tr>
+            <th>Пользователь</th>
+            <th>Тип</th>
+            <th>Сумма</th>
+            <th>Оплата</th>
+            <th>Дата</th>
+        </tr>
+        {% for ad in ads %}
+        <tr>
+            <td>{{ ad.username }}</td>
+            <td>{{ ad.action }}</td>
+            <td>{{ ad.amount }}</td>
+            <td>{{ ad.payment_method }}</td>
+            <td>{{ ad.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
