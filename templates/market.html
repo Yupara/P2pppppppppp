@@ -16,7 +16,10 @@
 
     <ul>
         {% for ad in ads %}
-            <li>{{ ad.type }} {{ ad.price }} {{ ad.currency }} — {{ ad.method }}</li>
+            <li>
+                {{ ad.type }} {{ ad.price }} {{ ad.currency }} — {{ ad.method }}
+                <a href="/trade/{{ ad.id }}"><button>Купить</button></a>
+            </li>
         {% endfor %}
     </ul>
 </body>
