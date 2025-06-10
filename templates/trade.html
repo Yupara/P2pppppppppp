@@ -1,74 +1,53 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Сделка</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        function startTimer(deadline) {
+            const countDownDate = new Date(deadline).getTime();
+            const timer = setInterval(function () {
+                const now = new Date().getTime();
+                const distance = countDownDate - now;
 
-{% block content %}
-<div class="trade-container">
-  <h2>Сделка №{{ trade.id }}</h2>
+                if (distance < 0) {
+                    clearInterval(timer);
+                    document.getElementById("timer").innerHTML = "⛔ Время вышло!";
+                    return;
+                }
 
-  <div class="trade-details">
-    <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
-    <p><strong>Цена:</strong> {{ trade.price }} {{ trade.fiat_currency }}</p>
-    <p><strong>Метод оплаты:</strong> {{ trade.payment_method }}</p>
-  </div>
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                document.getElementById("timer").innerHTML = minutes + "м " + seconds + "с ";
+            }, 1000);
+        }
 
-  <div class="trade-timer">
-    <strong>Оставшееся время:</strong>
-    <span id="countdown">30:00</span>
-  </div>
+        window.onload = function () {
+            startTimer("{{ deadline }}");
+        };
+    </script>
+</head>
+<body>
+    <h1>Сделка по объявлению</h1>
+    <p><strong>{{ ad.amount }} {{ ad.currency }}</strong> за {{ ad.fiat }} ({{ ad.min_limit }}₽ - {{ ad.max_limit }}₽)</p>
+    <p>Продавец: {{ ad.seller }}</p>
+    <p>Метод оплаты: {{ ad.payment_method }}</p>
 
-  <div class="trade-buttons">
-    <button onclick="markPaid()">Я оплатил</button>
-    <button onclick="confirmReceived()">Подтвердить получение</button>
-    <button onclick="openDispute()">Открыть спор</button>
-  </div>
+    <div id="timer" style="font-weight: bold; color: red;"></div>
 
-  <div class="chat-section">
-    <h3>Чат сделки</h3>
-    <div id="chat-box" class="chat-box"></div>
-    <input type="text" id="chat-input" placeholder="Напишите сообщение..." />
-    <button onclick="sendMessage()">Отправить</button>
-  </div>
-</div>
+    <hr>
+    <h3>Чат</h3>
+    <div style="border: 1px solid #ccc; padding: 10px; height: 150px; overflow-y: scroll;">
+        <p><em>Сообщения появятся здесь (в будущем)</em></p>
+    </div>
+    <form>
+        <input type="text" placeholder="Введите сообщение" style="width: 80%;">
+        <button type="submit">Отправить</button>
+    </form>
 
-<script>
-  // Таймер 30 минут (1800 секунд)
-  let timeLeft = 1800;
-  const countdown = document.getElementById("countdown");
-
-  function updateTimer() {
-    const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-    const seconds = String(timeLeft % 60).padStart(2, "0");
-    countdown.textContent = `${minutes}:${seconds}`;
-    if (timeLeft > 0) timeLeft--;
-  }
-
-  setInterval(updateTimer, 1000);
-
-  // Обработка кнопок (заглушки)
-  function markPaid() {
-    alert("Вы отметили сделку как оплачено.");
-  }
-
-  function confirmReceived() {
-    alert("Вы подтвердили получение.");
-  }
-
-  function openDispute() {
-    alert("Вы открыли спор.");
-  }
-
-  // Чат (локальный вывод)
-  function sendMessage() {
-    const input = document.getElementById("chat-input");
-    const message = input.value.trim();
-    if (message !== "") {
-      const chatBox = document.getElementById("chat-box");
-      const msgEl = document.createElement("div");
-      msgEl.classList.add("chat-message");
-      msgEl.innerHTML = `<strong>Вы:</strong> ${message}`;
-      chatBox.appendChild(msgEl);
-      input.value = "";
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-  }
-</script>
-{% endblock %}
+    <hr>
+    <button>Я оплатил</button>
+    <button>Подтвердить получение</button>
+    <button style="color: red;">Открыть спор</button>
+</body>
+</html>
