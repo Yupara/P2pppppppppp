@@ -1,104 +1,73 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Сделка с {{ user.username }}</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body class="dark-theme">
-    <div class="container">
-        <div class="profile-header">
-            <div class="avatar">{{ user.username[0] }}</div>
-            <div class="user-info">
-                <h2>{{ user.username }}</h2>
-                <p>Эл. почта ✅  SMS ✅  Верификация личности ✅</p>
-                <div class="badge">Обычный мейкер</div>
-            </div>
-        </div>
-
-        <div class="stats">
-            <p><strong>{{ user.orders }}</strong> ордера за 30 дней</p>
-            <p>Исполнено: <strong>{{ user.rate }}</strong></p>
-            <p>Средн. время перевода: <strong>{{ user.avg_transfer }}</strong></p>
-            <p>Средн. время оплаты: <strong>{{ user.avg_pay }}</strong></p>
-        </div>
-
-        <hr>
-
-        <div class="actions">
-            <button>💳 Способы оплаты</button>
-            <button>📞 Контактные данные</button>
-            <button>💬 Оставить отзыв</button>
-            <button>🔕 Настройки уведомлений</button>
-            <button>📥 Подписаться</button>
-            <button>🚫 Чёрный список</button>
-        </div>
-    </div>
-</body>
-</html>
-
-<!-- templates/trade.html -->
 {% extends "base.html" %}
 
 {% block content %}
-<div class="trade-box">
-  <h2>Сделка #{{ trade.id }}</h2>
+<div class="trade-container">
+  <h2>Сделка №{{ trade.id }}</h2>
 
-  <div class="trade-info">
-    <p>Сумма: {{ trade.amount }} USDT</p>
-    <p>Цена: {{ trade.price }} {{ trade.fiat_currency }}</p>
-    <p>Метод оплаты: {{ trade.payment_method }}</p>
+  <div class="trade-details">
+    <p><strong>Сумма:</strong> {{ trade.amount }} USDT</p>
+    <p><strong>Цена:</strong> {{ trade.price }} {{ trade.fiat_currency }}</p>
+    <p><strong>Метод оплаты:</strong> {{ trade.payment_method }}</p>
   </div>
 
-  <div id="timer">Оставшееся время: <span id="countdown">--:--</span></div>
+  <div class="trade-timer">
+    <strong>Оставшееся время:</strong>
+    <span id="countdown">30:00</span>
+  </div>
 
-  <div class="trade-actions">
+  <div class="trade-buttons">
     <button onclick="markPaid()">Я оплатил</button>
     <button onclick="confirmReceived()">Подтвердить получение</button>
     <button onclick="openDispute()">Открыть спор</button>
   </div>
 
-  <div class="chat-box">
-    <h3>Чат</h3>
-    <div id="messages"></div>
-    <input type="text" id="chat-input" placeholder="Введите сообщение...">
+  <div class="chat-section">
+    <h3>Чат сделки</h3>
+    <div id="chat-box" class="chat-box"></div>
+    <input type="text" id="chat-input" placeholder="Напишите сообщение..." />
     <button onclick="sendMessage()">Отправить</button>
   </div>
 </div>
 
 <script>
-  let timeLeft = 30 * 60; // 30 минут
+  // Таймер 30 минут (1800 секунд)
+  let timeLeft = 1800;
   const countdown = document.getElementById("countdown");
 
   function updateTimer() {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    countdown.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+    const seconds = String(timeLeft % 60).padStart(2, "0");
+    countdown.textContent = `${minutes}:${seconds}`;
     if (timeLeft > 0) timeLeft--;
   }
 
   setInterval(updateTimer, 1000);
 
+  // Обработка кнопок (заглушки)
   function markPaid() {
-    alert("Оплата отмечена! (тут будет логика API)");
+    alert("Вы отметили сделку как оплачено.");
   }
 
   function confirmReceived() {
-    alert("Подтверждение получения! (тут будет логика API)");
+    alert("Вы подтвердили получение.");
   }
 
   function openDispute() {
-    alert("Спор открыт! (тут будет логика API)");
+    alert("Вы открыли спор.");
   }
 
+  // Чат (локальный вывод)
   function sendMessage() {
     const input = document.getElementById("chat-input");
-    const msg = input.value;
-    if (msg) {
-      const box = document.getElementById("messages");
-      box.innerHTML += `<div><b>Вы:</b> ${msg}</div>`;
+    const message = input.value.trim();
+    if (message !== "") {
+      const chatBox = document.getElementById("chat-box");
+      const msgEl = document.createElement("div");
+      msgEl.classList.add("chat-message");
+      msgEl.innerHTML = `<strong>Вы:</strong> ${message}`;
+      chatBox.appendChild(msgEl);
       input.value = "";
-      // В будущем — отправка WebSocket
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
   }
 </script>
