@@ -3,42 +3,52 @@
 <head>
     <title>Сделка</title>
     <script>
-        function startTimer(endTime) {
-            const end = new Date(endTime).getTime();
-            const timerEl = document.getElementById("timer");
-
-            const interval = setInterval(() => {
-                const now = new Date().getTime();
-                const distance = end - now;
-
-                if (distance < 0) {
-                    clearInterval(interval);
-                    timerEl.innerHTML = "Время истекло!";
-                    return;
+        let minutes = 15;
+        let seconds = 0;
+        function startTimer() {
+            const timer = setInterval(() => {
+                if (seconds === 0) {
+                    if (minutes === 0) {
+                        clearInterval(timer);
+                        alert("Время вышло");
+                    } else {
+                        minutes--;
+                        seconds = 59;
+                    }
+                } else {
+                    seconds--;
                 }
-
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                timerEl.innerHTML = minutes + "m " + seconds + "s ";
+                document.getElementById("timer").innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
+        window.onload = startTimer;
     </script>
 </head>
-<body onload="startTimer('{{ end_time }}')">
-    <h1>Сделка</h1>
-    <p>{{ ad.type }} {{ ad.price }} {{ ad.currency }} — {{ ad.method }}</p>
-    <p>⏰ Таймер: <span id="timer"></span></p>
-
-    <h3>Действия:</h3>
-    <button>Я оплатил</button>
-    <button>Подтвердить получение</button>
-    <button>Открыть спор</button>
-
-    <h3>Чат:</h3>
-    <form method="post" action="/chat/send">
-        <input type="hidden" name="trade_id" value="{{ trade_id }}">
-        <input name="message" placeholder="Ваше сообщение" required>
-        <button type="submit">Отправить</button>
-    </form>
+<body>
+    <h2>Сделка</h2>
+    <p>Продавец: {{ ad.seller }}</p>
+    <p>Сумма: {{ ad.amount }} {{ ad.currency }}</p>
+    <p>Цена: {{ ad.price }}</p>
+    <p>Метод оплаты: {{ ad.payment_method }}</p>
+    <p>Осталось времени: <span id="timer">15:00</span></p>
+    <div>
+        <button>Я оплатил</button>
+        <button>Подтвердить получение</button>
+        <button>Открыть спор</button>
+    </div>
+    <div>
+        <h3>Чат</h3>
+        <div id="chat-box" style="border:1px solid #ccc; height:200px; overflow:auto;"></div>
+        <input type="text" id="message" placeholder="Сообщение...">
+        <button onclick="sendMessage()">Отправить</button>
+    </div>
+    <script>
+        function sendMessage() {
+            const box = document.getElementById("chat-box");
+            const msg = document.getElementById("message").value;
+            box.innerHTML += "<p><b>Вы:</b> " + msg + "</p>";
+            document.getElementById("message").value = "";
+        }
+    </script>
 </body>
 </html>
