@@ -1,34 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Маркет</title>
+    <title>Market</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Объявления</h1>
-    <a href="/create">Создать объявление</a>
-    <table>
-        <tr>
-            <th>Пользователь</th>
-            <th>Тип</th>
-            <th>Сумма</th>
-            <th>Оплата</th>
-            <th>Дата</th>
-        </tr>
+    <h1>🔁 Обмен объявлений</h1>
+
+    <form method="post" action="/create_ad">
+        <input name="username" placeholder="Имя" required>
+        <select name="type">
+            <option value="buy">Купить</option>
+            <option value="sell">Продать</option>
+        </select>
+        <input name="amount" placeholder="Сумма" type="number" required>
+        <input name="currency" placeholder="Валюта" required>
+        <input name="payment" placeholder="Оплата (например, карта)" required>
+        <button type="submit">Создать</button>
+    </form>
+
+    <h2>📃 Объявления:</h2>
+    <ul>
         {% for ad in ads %}
-<tr>
-    <td>{{ ad.username }}</td>
-    <td>{{ ad.action }}</td>
-    <td>{{ ad.amount }}</td>
-    <td>{{ ad.payment_method }}</td>
-    <td>{{ ad.created_at }}</td>
-    <td>
-        <a href="/trade/{{ ad.id }}">
-            <button class="button">Купить</button>
-        </a>
-    </td>
-</tr>
-{% endfor %}
-    </table>
+            <li>
+                <strong>{{ ad.username }}</strong> | {{ ad.type }} | {{ ad.amount }} {{ ad.currency }} | {{ ad.payment }}
+                <form method="post" action="/buy/{{ ad.id }}" style="display:inline">
+                    <button type="submit">Купить</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
