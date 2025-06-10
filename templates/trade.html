@@ -1,57 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
     <title>Сделка</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ff99;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: #111;
+            border: 1px solid #00ff99;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .timer {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #ffcc00;
+        }
+        .chat {
+            background-color: #1a1a1a;
+            height: 200px;
+            overflow-y: scroll;
+            padding: 10px;
+            border: 1px solid #00ff99;
+            margin-bottom: 10px;
+        }
+        .chat-message {
+            margin: 5px 0;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .buttons form {
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .btn {
+            background: #00ff99;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background: #00cc77;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Сделка по объявлению #{{ ad.id }}</h2>
+        <p><strong>Тип:</strong> {{ ad.type }}</p>
+        <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
+        <p><strong>Цена:</strong> {{ ad.price }}</p>
+        <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
+
+        <div class="timer">
+            До завершения: <span id="countdown"></span>
+        </div>
+
+        <div class="chat" id="chat-box">
+            {% for msg in messages %}
+                <div class="chat-message"><strong>{{ msg.sender }}:</strong> {{ msg.content }}</div>
+            {% endfor %}
+        </div>
+
+        <form method="post" action="/trade/{{ ad.id }}/send">
+            <input type="text" name="message" placeholder="Введите сообщение..." required style="width: 80%">
+            <button class="btn" type="submit">Отправить</button>
+        </form>
+
+        <div class="buttons">
+            <form><button type="button" class="btn">Оплатил</button></form>
+            <form><button type="button" class="btn">Подтвердить получение</button></form>
+            <form><button type="button" class="btn">Открыть спор</button></form>
+        </div>
+    </div>
+
     <script>
-        let endTime = new Date("{{ end_time }}Z").getTime();
+        const endTime = new Date("{{ end_time }}Z").getTime();
+        const countdown = document.getElementById("countdown");
 
         function updateTimer() {
             const now = new Date().getTime();
-            const diff = endTime - now;
-            const mins = Math.floor(diff / 60000);
-            const secs = Math.floor((diff % 60000) / 1000);
-            document.getElementById("timer").innerText =
-                mins + " мин " + secs + " сек";
-            if (diff > 0) {
-                setTimeout(updateTimer, 1000);
-            } else {
-                document.getElementById("timer").innerText = "Время истекло";
+            const distance = endTime - now;
+            if (distance < 0) {
+                countdown.innerHTML = "Время вышло";
+                return;
             }
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            countdown.innerHTML = `${minutes}м ${seconds}с`;
         }
-        window.onload = updateTimer;
+
+        updateTimer();
+        setInterval(updateTimer, 1000);
     </script>
-</head>
-<body>
-    <h1>Сделка по объявлению</h1>
-    <p><strong>Тип:</strong> {{ ad.ad_type.upper() }}</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
-    <p><strong>Цена:</strong> {{ ad.price }} $</p>
-    <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
-    <p><strong>Описание:</strong> {{ ad.description }}</p>
-
-    <h2>⏳ Время до завершения: <span id="timer">15:00</span></h2>
-
-  <h3>💬 Чат сделки</h3>
-<div style="background:#1a1a1a; padding:10px; margin-bottom:10px; max-height:200px; overflow:auto;">
-    {% for msg in messages %}
-        <p><em>{{ msg.sender }}:</em> {{ msg.content }}</p>
-    {% endfor %}
-</div>
-
-<form method="post" action="/trade/{{ ad.id }}/send">
-    <input type="text" name="message" placeholder="Введите сообщение" required style="width:70%;">
-    <button type="submit">Отправить</button>
-</form>
-        <input type="text" placeholder="Введите сообщение" style="width:70%;">
-        <button type="submit">Отправить</button>
-    </form>
-
-    <hr>
-    <button>✅ Я оплатил</button>
-    <button>💰 Подтвердить получение</button>
-    <button>⚠️ Открыть спор</button>
-
-    <p><a href="/market">⬅️ Назад к объявлениям</a></p>
 </body>
 </html>
