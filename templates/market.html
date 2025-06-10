@@ -1,42 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Market</title>
-    <link rel="stylesheet" href="/static/styles.css">
+  <title>Market</title>
 </head>
 <body>
-    <h1>🔁 Обмен объявлений</h1>
+  <h2>Создать объявление</h2>
+  <form action="/ads/create" method="post">
+    <input type="text" name="type" placeholder="buy/sell" required>
+    <input type="number" name="price" placeholder="Цена" step="0.01" required>
+    <input type="text" name="currency" placeholder="Валюта (например, USDT)" required>
+    <input type="text" name="method" placeholder="Метод оплаты" required>
+    <button type="submit">Создать</button>
+  </form>
 
-    <form method="post" action="/create_ad">
-        <input name="username" placeholder="Имя" required>
-        <select name="type">
-            <option value="buy">Купить</option>
-            <option value="sell">Продать</option>
-        </select>
-        <input name="amount" placeholder="Сумма" type="number" required>
-        <input name="currency" placeholder="Валюта" required>
-        <input name="payment" placeholder="Оплата (например, карта)" required>
-        <button type="submit">Создать</button>
-    </form>
-
-    <h2>📃 Объявления:</h2>
-    <ul>
-        {% for ad in ads %}
-            <li>
-                <strong>{{ ad.username }}</strong> | {{ ad.type }} | {{ ad.amount }} {{ ad.currency }} | {{ ad.payment }}
-                <form method="post" action="/buy/{{ ad.id }}" style="display:inline">
-                    <button type="submit">Купить</button>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
+  <h2>Объявления</h2>
+  <ul>
+    {% for ad in ads %}
+      <li>
+        {{ ad.type }} {{ ad.price }} {{ ad.currency }} — {{ ad.method }}
+        <form action="/trade/{{ ad.id }}" method="get" style="display:inline;">
+          <button type="submit">Купить</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
 </body>
 </html>
-
-<form action="/ads/create" method="post">
-  <input type="text" name="type" placeholder="buy/sell" required>
-  <input type="number" name="price" step="0.01" required>
-  <input type="text" name="currency" required>
-  <input type="text" name="method" required>
-  <button type="submit">Создать</button>
-</form>
