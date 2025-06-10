@@ -2,41 +2,42 @@
 <html>
 <head>
     <title>Сделка</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        function startTimer(endTime) {
+            const end = new Date(endTime).getTime();
+            const timerEl = document.getElementById("timer");
+
+            const interval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = end - now;
+
+                if (distance < 0) {
+                    clearInterval(interval);
+                    timerEl.innerHTML = "Время истекло!";
+                    return;
+                }
+
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                timerEl.innerHTML = minutes + "m " + seconds + "s ";
+            }, 1000);
+        }
+    </script>
 </head>
-<body>
-    <h1>💼 Сделка с {{ ad.username }}</h1>
+<body onload="startTimer('{{ end_time }}')">
+    <h1>Сделка</h1>
+    <p>{{ ad.type }} {{ ad.price }} {{ ad.currency }} — {{ ad.method }}</p>
+    <p>⏰ Таймер: <span id="timer"></span></p>
 
-    <p><strong>Тип:</strong> {{ ad.type }}</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }} {{ ad.currency }}</p>
-    <p><strong>Оплата:</strong> {{ ad.payment }}</p>
+    <h3>Действия:</h3>
+    <button>Я оплатил</button>
+    <button>Подтвердить получение</button>
+    <button>Открыть спор</button>
 
-    <p><strong>Статус сделки:</strong> {{ order.status }}</p>
-
-    {% if order.status == "created" %}
-        <form method="post" action="/trade/{{ ad.id }}/pay">
-            <button>Я оплатил</button>
-        </form>
-    {% elif order.status == "paid" %}
-        <form method="post" action="/trade/{{ ad.id }}/confirm">
-            <button>Подтвердить получение</button>
-        </form>
-    {% endif %}
-
-    <form method="post" action="/trade/{{ ad.id }}/dispute">
-        <button style="background-color: darkred;">Открыть спор</button>
-    </form>
-
-    <h3>💬 Чат:</h3>
-    <ul>
-        {% for msg in messages %}
-            <li><strong>{{ msg.username }}:</strong> {{ msg.message }}</li>
-        {% endfor %}
-    </ul>
-
-    <form method="post" action="/send_message/{{ ad.id }}">
-        <input name="username" placeholder="Имя" required>
-        <input name="message" placeholder="Сообщение" required>
+    <h3>Чат:</h3>
+    <form method="post" action="/chat/send">
+        <input type="hidden" name="trade_id" value="{{ trade_id }}">
+        <input name="message" placeholder="Ваше сообщение" required>
         <button type="submit">Отправить</button>
     </form>
 </body>
