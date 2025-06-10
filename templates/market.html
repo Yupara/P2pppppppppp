@@ -1,44 +1,47 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="tabs">
-  <button class="tab active">Покупка</button>
-  <button class="tab">Продажа</button>
-</div>
-
-<div class="filters">
-  <select>
-    <option>USDT</option>
-  </select>
-  <input type="text" placeholder="Сумма" />
-  <select>
-    <option>Все способы оплаты</option>
-  </select>
-  <button class="filter-btn">Фильтр</button>
-</div>
-
-<div class="ad-banner">
-  <span>Попробуйте P2P HotSwap – лучшие ставки и больше ликвидности!</span>
-  <button>Узнать волью</button>
-</div>
-
-<div class="ads">
-  <div class="ad-card">
-    <div class="left">
-      <div class="avatar green"></div>
-      <div class="info">
-        <div class="name">Savak</div>
-        <div class="price">₽ 70,96</div>
-        <div class="details">Количество: 304,7685 USDT</div>
-        <div class="limits">Лимиты: 500 – 500 000 RUB</div>
-        <div class="tags">SBP | ЮKольнение</div>
-      </div>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Покупка USDT</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dark-theme">
+    <div class="header">
+        <button class="tab active">Покупка</button>
+        <button class="tab">Продажа</button>
     </div>
-    <div class="right">
-      <div>40 Ордеров | 10%</div>
-      <button class="buy-btn">Покупка</button>
-    </div>
-  </div>
 
-  <!-- можно добавить ещё карточек по аналогии -->
-</div>
-{% endblock %}
+    <div class="filters">
+        <select><option>USDT</option></select>
+        <select><option>Сумма</option></select>
+        <select><option>Все способы оплаты</option></select>
+        <button class="filter-btn">Фильтр</button>
+    </div>
+
+    <div class="ads-list">
+        {% for ad in ads %}
+        <div class="ad-card">
+            <div class="ad-header">
+                <div class="username">{{ ad.owner_username }}</div>
+                <div class="stats">{{ ad.orders }} Ордеров | {{ ad.success_rate }}%</div>
+            </div>
+            <div class="ad-body">
+                <div class="price">₽ {{ ad.price }}</div>
+                <div class="volume">Количество {{ ad.volume }}</div>
+                <div class="limits">Лимиты {{ ad.limits }}</div>
+                <div class="payments">
+                    {% for method in ad.payment_methods %}
+                        <span class="payment">{{ method }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="ad-footer">
+                <a href="/trade/{{ ad.owner_username }}">
+                    <button class="buy-btn">Покупка</button>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
