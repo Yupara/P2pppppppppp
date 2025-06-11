@@ -36,7 +36,7 @@ def create_ad(request: Request, type: str = Form(...), amount: float = Form(...)
 def buy_ad(request: Request, ad_id: str):
     ad = next((ad for ad in ads_db if ad.id == ad_id), None)
     if not ad:
-        return templates.TemplateResponse("404.html", {"request": request})
+        return HTMLResponse(content="Объявление не найдено", status_code=404)
     trade = Trade(id=str(uuid4()), ad=ad)
     trades_db.append(trade)
     return templates.TemplateResponse("trade.html", {"request": request, "trade": trade})
