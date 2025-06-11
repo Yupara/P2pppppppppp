@@ -4,33 +4,76 @@
   <meta charset="UTF-8">
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <style>
+    body { background:#0d0d0d; color:#00ff99; font-family:Arial,sans-serif; margin:0; padding:0; }
+    .container { max-width:600px; margin:20px auto; padding:20px; background:#111; border-radius:8px; }
+    h1, h2, h3 { color:#00ff99; }
+    .field { margin-bottom:15px; }
+    .field label { display:block; margin-bottom:5px; }
+    .field input, .field select { width:100%; padding:8px; background:#222; color:#0f0; border:1px solid #0f0; border-radius:4px; }
+    .btn { background:#00aa66; color:#000; border:none; padding:10px 20px; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold; }
+    .btn:hover { background:#008855; }
+    .info-box { background:#1a1a1a; padding:15px; border:1px solid #0f0; border-radius:6px; margin-top:20px; }
+    .info-box p { margin:5px 0; }
+  </style>
   <script>
-    let remaining = {{ remaining }};
-    function tick() {
-      const el = document.getElementById("timer");
-      if (remaining<=0) { el.innerText="Время вышло"; return; }
-      const m = Math.floor(remaining/60), s=remaining%60;
-      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
-      remaining--;
-      setTimeout(tick,1000);
+    function calculate() {
+      const price = parseFloat(document.getElementById('price').innerText);
+      const rubInput = document.getElementById('sum_rub');
+      const usdtInput = document.getElementById('sum_usdt');
+      if (rubInput.value) {
+        usdtInput.value = (parseFloat(rubInput.value) / price).toFixed(6);
+      } else if (usdtInput.value) {
+        rubInput.value = (parseFloat(usdtInput.value) * price).toFixed(2);
+      }
     }
-    window.onload = tick;
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('sum_rub').addEventListener('input', () => { document.getElementById('sum_usdt').value=''; calculate(); });
+      document.getElementById('sum_usdt').addEventListener('input', () => { document.getElementById('sum_rub').value=''; calculate(); });
+    });
   </script>
 </head>
 <body>
   <div class="container">
     <h1>Сделка</h1>
-    <p><strong>Тип:</strong> {{ ad.type }}</p>
-    <p><strong>Сумма:</strong> {{ ad.amount }}</p>
-    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
-    <p><strong>Оплата:</strong> {{ ad.payment_method }}</p>
-    <p>Осталось времени: <span id="timer">15:00</span></p>
-    <div class="buttons">
-      <button class="btn">Я оплатил</button>
-      <button class="btn">Подтвердить</button>
-      <button class="btn btn-danger">Открыть спор</button>
+    <div class="field">
+      <label>Цена: <span id="price">{{ ad.price }} RUB</span> за 1 USDT</label>
     </div>
-    <a href="/market"><button class="btn">Назад</button></a>
+    <div class="field">
+      <label>Длительность оплаты: 15–30 мин (после создания сделки таймер запустится)</label>
+    </div>
+    <div class="field">
+      <label>Способ оплаты:</label>
+      <select id="payment_method" disabled>
+        <option>{{ ad.payment_method }}</option>
+      </select>
+    </div>
+
+    <h2>За Фиат RUB → За Крипту USDT</h2>
+    <div class="field">
+      <label>Введите сумму (RUB):</label>
+      <input id="sum_rub" type="number" placeholder="₽" />
+    </div>
+    <div class="field">
+      <label>Введите количество (USDT):</label>
+      <input id="sum_usdt" type="number" placeholder="USDT" />
+    </div>
+    <button class="btn" onclick="calculate()">Рассчитать</button>
+
+    <div class="field">
+      <button class="btn">Купить</button>
+    </div>
+
+    <div class="info-box">
+      <h3>Условия мейкера</h3>
+      <p>Перевод по карте</p>
+    </div>
+    <div class="info-box">
+      <h3>Сведения о продавце</h3>
+      <p><strong>Никнейм:</strong> Павел</p>
+      <p><strong>Рейтинг:</strong> 99%</p>
+      <p><strong>Исполненные ордера:</strong> 55</p>
+    </div>
   </div>
 </body>
 </html>
