@@ -1,15 +1,28 @@
-<!DOCTYPE html><html><head><title>Создать объявление</title><link rel="stylesheet" href="/static/styles.css"></head><body>
-<div class="container"><h1>Новое объявление</h1>
-<form method="post">
-  <select name="action">
-    <option value="buy">Купить</option>
-    <option value="sell">Продать</option>
-  </select>
-  <select name="crypto">{% for c in cryptos %}<option value="{{c}}">{{c.upper()}}</option>{% endfor %}</select>
-  <select name="fiat">{% for f in fiats %}<option value="{{f}}">{{f}}</option>{% endfor %}</select>
-  <input name="rate" type="number" step="0.01" placeholder="Курс" required>
-  <input name="amount" type="number" step="0.01" placeholder="Сумма" required>
-  <input name="payment" placeholder="Метод оплаты" required>
-  <button class="btn">Создать</button>
-</form>
-<a href="/market" class="btn">На рынок</a></div></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Создать объявление</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Создать объявление</h1>
+    <form action="/create" method="post">
+      <label>Тип:</label>
+      <select name="type" required>
+        <option value="buy">Купить</option>
+        <option value="sell">Продать</option>
+      </select><br>
+      <label>Сумма:</label>
+      <input type="number" name="amount" step="0.01" required><br>
+      <label>Цена (₽):</label>
+      <input type="number" name="price" step="0.01" required><br>
+      <label>Способ оплаты:</label>
+      <input type="text" name="payment_method" required><br>
+      <button type="submit" class="btn">Создать</button>
+    </form>
+    <a href="/market"><button class="btn">Назад</button></a>
+  </div>
+</body>
+</html>
