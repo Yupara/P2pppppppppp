@@ -1,156 +1,97 @@
-from fastapi import FastAPI, Request, Form, Depends, status
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from typing import List, Optional
 from uuid import uuid4
-from starlette.middleware.sessions import SessionMiddleware
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ==== Временные БД ====
-users_db = {}
-ads_db = []
+# Temporary in-memory databases
+users = {}
+ads = []
+trades = []
 
-# ==== Константы крипты и фиатов ====
-CRYPTOCURRENCIES = ["usdt", "btc", "eth", "trump"]
-FIATS = [
-    "USD", "EUR", "GBP", "RUB", "UAH", "KZT", "TRY", "AED", "NGN", "INR", "VND", "BRL",
-    "ARS", "COP", "PEN", "MXN", "CLP", "ZAR", "EGP", "GHS", "KES", "MAD", "PKR", "BDT",
-    "LKR", "IDR", "THB", "MYR", "PHP", "KRW", "TJS"
-]
+# Supported currencies
+CRYPTOS = ["usdt", "btc", "eth", "trump"]
+FIATS = ["USD","EUR","GBP","RUB","UAH","KZT","TRY","AED","NGN","INR","VND",
+         "BRL","ARS","COP","PEN","MXN","CLP","ZAR","EGP","GHS","KES","MAD",
+         "PKR","BDT","LKR","IDR","THB","MYR","PHP","KRW","TJS"]
 
-# ==== Модели ====
-class User(BaseModel):
-    username: str
-    password: str
+def get_user(request: Request):
+    return request.session.get("user")
 
-class Ad(BaseModel):
-    id: str
-    user: str
-    action: str  # buy/sell
-    crypto: str
-    fiat: str
-    rate: float
-    amount: float
-    payment: str
-
-# ==== Хелперы ====
-def get_current_user(request: Request):
-    username = request.session.get("user")
-    if username and username in users_db:
-        return users_db[username]
-    return None
-
-# ==== Маршруты ====
+# Add middleware manually without actual secret; you can skip sessions:
+from starlette.middleware.sessions import SessionMiddleware
+app.add_middleware(SessionMiddleware, secret_key="secret")
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    user = get_current_user(request)
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "user": get_user(request)})
 
 @app.get("/register", response_class=HTMLResponse)
-def register_get(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+def reg_get(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request, "msg": ""})
 
 @app.post("/register")
-def register_post(request: Request, username: str = Form(...), password: str = Form(...)):
-    if username in users_db:
-        return RedirectResponse("/register", status_code=302)
-    users_db[username] = {"username": username, "password": password}
+def reg_post(request: Request, username: str = Form(...), password: str = Form(...)):
+    if username in users:
+        return templates.TemplateResponse("register.html", {"request": request, "msg": "User exists"})
+    users[username] = password
     request.session["user"] = username
     return RedirectResponse("/", status_code=302)
 
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html", {"request": request, "msg": ""})
 
 @app.post("/login")
 def login_post(request: Request, username: str = Form(...), password: str = Form(...)):
-    user = users_db.get(username)
-    if user and user["password"] == password:
+    if users.get(username) == password:
         request.session["user"] = username
         return RedirectResponse("/", status_code=302)
-    return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "msg": "Invalid credentials"})
 
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/", status_code=302)
 
-@app.get("/ads/create", response_class=HTMLResponse)
+@app.get("/create_ad", response_class=HTMLResponse)
 def create_ad_get(request: Request):
-    user = get_current_user(request)
-    if not user:
+    if not get_user(request):
         return RedirectResponse("/login", status_code=302)
-    return templates.TemplateResponse("create_ad.html", {
-        "request": request,
-        "user": user,
-        "cryptos": CRYPTOCURRENCIES,
-        "fiats": FIATS
-    })
+    return templates.TemplateResponse("create_ad.html", {"request": request, "cryptos": CRYPTOS, "fiats": FIATS})
 
-@app.post("/ads/create")
-def create_ad_post(
-    request: Request,
-    action: str = Form(...),
-    crypto: str = Form(...),
-    fiat: str = Form(...),
-    rate: float = Form(...),
-    amount: float = Form(...),
-    payment: str = Form(...)
-):
-    user = get_current_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=302)
-    ad = Ad(
-        id=str(uuid4()),
-        user=user["username"],
-        action=action,
-        crypto=crypto,
-        fiat=fiat,
-        rate=rate,
-        amount=amount,
-        payment=payment
-    )
-    ads_db.append(ad)
+@app.post("/create_ad")
+def create_ad_post(request: Request,
+                   action: str = Form(...),
+                   crypto: str = Form(...),
+                   fiat: str = Form(...),
+                   rate: float = Form(...),
+                   amount: float = Form(...),
+                   payment: str = Form(...)):
+    ad = {
+        "id": str(uuid4()),
+        "user": get_user(request),
+        "action": action,
+        "crypto": crypto,
+        "fiat": fiat,
+        "rate": rate,
+        "amount": amount,
+        "payment": payment
+    }
+    ads.append(ad)
     return RedirectResponse("/market", status_code=302)
 
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request):
-    user = get_current_user(request)
-    return templates.TemplateResponse("market.html", {
-        "request": request,
-        "user": user,
-        "ads": ads_db
-    })
+    return templates.TemplateResponse("market.html", {"request": request, "ads": ads, "user": get_user(request)})
 
-@app.get("/ads/{ad_id}", response_class=HTMLResponse)
-def view_ad(request: Request, ad_id: str):
-    user = get_current_user(request)
-    ad = next((a for a in ads_db if a.id == ad_id), None)
+@app.get("/trade/{ad_id}", response_class=HTMLResponse)
+def trade_get(request: Request, ad_id: str):
+    ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
-        return RedirectResponse("/market", status_code=302)
-    return templates.TemplateResponse("trade.html", {
-        "request": request,
-        "user": user,
-        "ad": ad
-    })
-
-# ==== Фейковый продавец для тестов ====
-users_db["seller"] = {"username": "seller", "password": "123456"}
-ads_db.append(Ad(
-    id=str(uuid4()),
-    user="seller",
-    action="sell",
-    crypto="usdt",
-    fiat="USD",
-    rate=1.0,
-    amount=1000.0,
-    payment="Bank Transfer"
-))
+        return HTMLResponse("Not found", status_code=404)
+    return templates.TemplateResponse("trade.html", {"request": request, "ad": ad, "user": get_user(request)})
