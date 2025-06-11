@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class Ad(BaseModel):
     id: str
-    type: str  # buy/sell
+    type: str  # buy or sell
     amount: float
     price: float
     payment: str
