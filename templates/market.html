@@ -6,19 +6,29 @@
 </head>
 <body>
     <div class="container">
-        <h2>Список объявлений</h2>
+        <h2>Объявления</h2>
         <a href="/ads/create" class="btn">Создать объявление</a>
         <table>
-            <tr><th>Тип</th><th>Сумма</th><th>Цена</th><th>Оплата</th><th>Действие</th></tr>
-            {% for ad in ads %}
-            <tr>
-                <td>{{ ad.type }}</td>
-                <td>{{ ad.amount }}</td>
-                <td>{{ ad.price }}</td>
-                <td>{{ ad.payment }}</td>
-                <td><a href="/ads/{{ ad.id }}/buy" class="btn">Купить</a></td>
-            </tr>
-            {% endfor %}
+            <thead>
+                <tr>
+                    <th>Тип</th>
+                    <th>Сумма</th>
+                    <th>Цена</th>
+                    <th>Оплата</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ad in ads %}
+                <tr>
+                    <td>{{ ad.type }}</td>
+                    <td>{{ ad.amount }}</td>
+                    <td>{{ ad.price }}</td>
+                    <td>{{ ad.payment }}</td>
+                    <td><a href="/ads/{{ ad.id }}/buy" class="btn">Купить</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
 </body>
