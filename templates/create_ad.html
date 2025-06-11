@@ -6,43 +6,46 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dark-theme">
+  <header class="header">
+    <div class="header-left">
+      <p class="user-name">👤 Павел</p>
+      <p class="user-info">✅ Ордера: 55</p>
+      <p class="user-info">⭐ Рейтинг: 99%</p>
+      <p class="user-info">💳 Оплата: Сбербанк</p>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn">🔔</button>
+    </div>
+  </header>
   <div class="container">
     <h1>Новое объявление</h1>
     <form action="/create" method="post">
       <div class="field"><label>Тип:</label>
         <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
       </div>
-      <div class="field"><label>Крипта:</label>
+      <div class="field"><label>Криптовалюта:</label>
         <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
       </div>
       <div class="field"><label>Фиат:</label>
         <select name="fiat">
-          <option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option>
-          <option>UAH</option><option>KZT</option><option>TRY</option><option>AED</option>
-          <option>NGN</option><option>INR</option><option>VND</option><option>BRL</option>
-          <option>ARS</option><option>COP</option><option>PEN</option><option>MXN</option>
-          <option>CLP</option><option>ZAR</option><option>EGP</option><option>GHS</option>
-          <option>KES</option><option>MAD</option><option>PKR</option><option>BDT</option>
-          <option>LKR</option><option>IDR</option><option>THB</option><option>MYR</option>
-          <option>PHP</option><option>KRW</option><option>TJS</option>
+          <option>USD – Доллар США</option><option>EUR – Евро</option><option>GBP – Британский фунт</option><option>RUB – Российский рубль</option>
+          <option>UAH – Украинская гривна</option><option>KZT – Казахстанский тенге</option><option>TRY – Турецкая лира</option>
+          <option>AED – Дирхам ОАЭ</option><option>NGN – Нигерийская найра</option><option>INR – Индийская рупия</option>
+          <option>VND – Вьетнамский донг</option><option>BRL – Бразильский реал</option><option>ARS – Аргентинское песо</option>
+          <option>COP – Колумбийское песо</option><option>PEN – Перuvianский соль</option><option>MXN – Мексиканский песо</option>
+          <option>CLP – Чилийское песо</option><option>ZAR – Южноафриканский рэнд</option><option>EGP – Египетский фунт</option>
+          <option>GHS – Ганский седи</option><option>KES – Кенийский шиллинг</option><option>MAD – Марокканский дирхам</option>
+          <option>PKR – Пакистанская рупия</option><option>BDT – Бангладешская така</option><option>LKR – Шри-Ланкийская рупия</option>
+          <option>IDR – Индонезийская рупия</option><option>THB – Тайский бат</option><option>MYR – Малайзийский ринггит</option>
+          <option>PHP – Филиппинское песо</option><option>KRW – Южнокорейская вона</option><option>TJS – Таджикский сомони</option>
         </select>
       </div>
-      <div class="field"><label>Курс:</label>
-        <input type="number" name="rate" step="0.0001" required>
-      </div>
-      <div class="field"><label>Мин. сумма:</label>
-        <input type="number" name="min_amount" step="0.0001" required>
-      </div>
-      <div class="field"><label>Макс. сумма:</label>
-        <input type="number" name="max_amount" step="0.0001" required>
-      </div>
-      <div class="field"><label>Оплата:</label>
-        <input type="text" name="payment_method" required>
-      </div>
-      <div class="field"><label>Условия:</label>
-        <textarea name="comment"></textarea>
-      </div>
-      <button class="btn">Создать</button>
+      <div class="field"><label>Курс:</label><input type="number" name="rate" step="0.0001" required></div>
+      <div class="field"><label>Мин. сумма:</label><input type="number" name="min_amount" step="0.0001" required></div>
+      <div class="field"><label>Макс. сумма:</label><input type="number" name="max_amount" step="0.0001" required></div>
+      <div class="field"><label>Способ оплаты:</label><input type="text" name="payment_method" required></div>
+      <div class="field"><label>Условия:</label><textarea name="comment"></textarea></div>
+      <button class="btn" type="submit">Создать</button>
       <a href="/market"><button type="button" class="btn">Отмена</button></a>
     </form>
   </div>
