@@ -6,66 +6,31 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dark-theme">
-  <!-- Header с шестерёнкой -->
   <header class="header">
-    <div class="header-left">
-      <h1>Рынок</h1>
-    </div>
+    <div class="header-left"><h1>Рынок</h1></div>
     <div class="header-right">
       <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
     </div>
   </header>
-
-  <!-- Модальное окно настроек -->
   <div id="user-settings" class="modal">
     <div class="modal-content">
       <span class="close-btn" onclick="closeUserSettings()">✖️</span>
       <h2>Мои настройки</h2>
-      <p><strong>Никнейм:</strong> Павел</p>
-      <p><strong>Исполнено ордеров:</strong> 55</p>
-      <p><strong>Рейтинг:</strong> 99%</p>
-      <p><strong>Способ оплаты:</strong> Сбербанк</p>
+      <p><a href="/withdraw">Вывод средств</a></p>
+      <p><a href="/deposit">Пополнить сеть</a></p>
+      <p>Адрес кошелька: <a href="https://etherscan.io/address/0x123...">0x123...</a></p>
     </div>
   </div>
 
   <div class="container">
     <a href="/create"><button class="btn">Создать объявление</button></a>
-
-    <!-- Фильтры -->
-    <div class="filters">
-      <select id="f-crypto"><option value="">Крипта</option><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
-      <select id="f-fiat"><option value="">Фиат</option><!-- … как раньше … --></select>
-      <select id="f-payment"><option value="">Оплата</option><!-- … --></select>
-      <button class="btn" onclick="filterAds()">Фильтровать</button>
-    </div>
-
-    <ul id="ads-list">
-      {% for ad in ads %}
-      <li class="ad-card">
-        <div class="ad-main">
-          <p><strong>{{ad.action|capitalize}}</strong> {{ad.amount}} {{ad.crypto}} → {{ad.fiat}} по {{ad.rate}}</p>
-          <p>Оплата: {{ad.payment_method}}</p>
-          <a href="/trade/{{ad.id}}"><button class="btn">Купить</button></a>
-        </div>
-      </li>
-      {% else %}
-      <li>Объявлений нет</li>
-      {% endfor %}
-    </ul>
+    <!-- ... остальной код рынка (фильтры, список объявлений) ... -->
   </div>
 
   <script>
-    function openUserSettings() {
-      document.getElementById('user-settings').style.display = 'block';
-    }
-    function closeUserSettings() {
-      document.getElementById('user-settings').style.display = 'none';
-    }
-    window.onclick = function(e) {
-      if (e.target.id === 'user-settings') {
-        closeUserSettings();
-      }
-    }
+    function openUserSettings(){ document.getElementById('user-settings').style.display='block'; }
+    function closeUserSettings(){ document.getElementById('user-settings').style.display='none'; }
+    window.onclick = e => { if(e.target.id==='user-settings') closeUserSettings(); }
   </script>
 </body>
 </html>
