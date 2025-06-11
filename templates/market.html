@@ -2,15 +2,23 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Маркет P2P</title>
+  <title>Рынок P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dark-theme">
+  <header class="header">
+    <div class="header-left">
+      <p class="user-name">👤 Павел</p>
+      <p class="user-info">✅ Ордера: 55</p>
+      <p class="user-info">⭐ Рейтинг: 99%</p>
+      <p class="user-info">💳 Оплата: Сбербанк</p>
+    </div>
+    <div class="header-right"><button class="icon-btn">🔔</button></div>
+  </header>
   <div class="container">
     <h1>Рынок</h1>
     <a href="/create"><button class="btn">Создать объявление</button></a>
 
-    <!-- Фильтры -->
     <div class="filters">
       <select id="f-crypto"><option value="">Крипта</option><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
       <select id="f-fiat"><option value="">Фиат</option><option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option><option>UAH</option><option>KZT</option><option>TRY</option><option>AED</option><option>NGN</option><option>INR</option><option>VND</option><option>BRL</option><option>ARS</option><option>COP</option><option>PEN</option><option>MXN</option><option>CLP</option><option>ZAR</option><option>EGP</option><option>GHS</option><option>KES</option><option>MAD</option><option>PKR</option><option>BDT</option><option>LKR</option><option>IDR</option><option>THB</option><option>MYR</option><option>PHP</option><option>KRW</option><option>TJS</option></select>
@@ -30,7 +38,7 @@
           <div id="settings-{{ad.id}}" class="settings-modal">
             <p>Продавец: {{ad.user}}</p>
             <p>Рейтинг: {{ad.rating}}%</p>
-            <p>Ордеров: {{ad.orders}}</p>
+            <p>Ордера: {{ad.orders}}</p>
             <button onclick="closeSettings('{{ad.id}}')">Закрыть</button>
           </div>
           <a href="/trade/{{ad.id}}"><button class="btn">Купить</button></a>
@@ -41,7 +49,6 @@
       {% endfor %}
     </ul>
   </div>
-
   <script>
     function filterAds(){
       const c=document.getElementById('f-crypto').value;
