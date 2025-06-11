@@ -1,81 +1,55 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Создать объявление</title>
-    <link rel="stylesheet" href="/static/styles.css">
+  <meta charset="UTF-8">
+  <title>Создать объявление</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dark-theme">
-    <div class="container">
-        <h2>Создать объявление</h2>
-        <form action="/create" method="post" class="order-form">
-            <!-- Тип объявления -->
-            <label>Действие:</label>
-            <select name="type" required>
-                <option value="buy">Купить</option>
-                <option value="sell">Продать</option>
-            </select>
-
-            <!-- Криптовалюта -->
-            <label>Криптовалюта:</label>
-            <select name="crypto" required>
-                <option value="usdt">USDT</option>
-                <option value="btc">BTC</option>
-                <option value="eth">ETH</option>
-                <option value="trump">TRUMP</option>
-            </select>
-
-            <!-- Фиат -->
-            <label>Фиат:</label>
-            <select name="fiat" required>
-                <option value="USD">USD – Доллар США</option>
-                <option value="EUR">EUR – Евро</option>
-                <option value="GBP">GBP – Британский фунт</option>
-                <option value="RUB">RUB – Российский рубль</option>
-                <option value="UAH">UAH – Украинская гривна</option>
-                <option value="KZT">KZT – Казахстанский тенге</option>
-                <option value="TRY">TRY – Турецкая лира</option>
-                <option value="AED">AED – Дирхам ОАЭ</option>
-                <option value="NGN">NGN – Нигерийская найра</option>
-                <option value="INR">INR – Индийская рупия</option>
-                <option value="VND">VND – Вьетнамский донг</option>
-                <option value="BRL">BRL – Бразильский реал</option>
-                <option value="ARS">ARS – Аргентинское песо</option>
-                <option value="COP">COP – Колумбийское песо</option>
-                <option value="PEN">PEN – Перуанский соль</option>
-                <option value="MXN">MXN – Мексиканский песо</option>
-                <option value="CLP">CLP – Чилийский песо</option>
-                <option value="ZAR">ZAR – Южноафриканский рэнд</option>
-                <option value="EGP">EGP – Египетский фунт</option>
-                <option value="GHS">GHS – Ганский седи</option>
-                <option value="KES">KES – Кенийский шиллинг</option>
-                <option value="MAD">MAD – Марокканский дирхам</option>
-                <option value="PKR">PKR – Пакистанская рупия</option>
-                <option value="BDT">BDT – Бангладешская така</option>
-                <option value="LKR">LKR – Шри-Ланкийская рупия</option>
-                <option value="IDR">IDR – Индонезийская рупия</option>
-                <option value="THB">THB – Тайский бат</option>
-                <option value="MYR">MYR – Малайзийский ринггит</option>
-                <option value="PHP">PHP – Филиппинское песо</option>
-                <option value="KRW">KRW – Южнокорейская вона</option>
-                <option value="TJS">TJS – Таджикский сомони</option>
-            </select>
-
-            <!-- Курс -->
-            <label>Курс (фиат за 1 единицу крипты):</label>
-            <input type="number" name="rate" step="0.0001" required placeholder="Например, 1.00">
-
-            <!-- Сумма -->
-            <label>Сумма (криптовалюта):</label>
-            <input type="number" name="amount" step="0.0001" required placeholder="Например, 100">
-
-            <!-- Способ оплаты -->
-            <label>Способ оплаты:</label>
-            <input type="text" name="payment_method" required placeholder="Сбербанк, PayPal и т.п.">
-
-            <button type="submit" class="btn">Создать объявление</button>
-        </form>
-        <a href="/market"><button class="btn">Назад на рынок</button></a>
-    </div>
+  <div class="container">
+    <h1>Новое объявление</h1>
+    <form action="/create" method="post">
+      <div class="field"><label>Действие:</label>
+        <select name="type">
+          <option value="buy">Купить</option>
+          <option value="sell">Продать</option>
+        </select>
+      </div>
+      <div class="field"><label>Криптовалюта:</label>
+        <select name="crypto">
+          <option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option>
+        </select>
+      </div>
+      <div class="field"><label>Фиат:</label>
+        <select name="fiat">
+          <option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option>
+          <option>UAH</option><option>KZT</option><option>TRY</option><option>AED</option>
+          <option>NGN</option><option>INR</option><option>VND</option><option>BRL</option>
+          <option>ARS</option><option>COP</option><option>PEN</option><option>MXN</option>
+          <option>CLP</option><option>ZAR</option><option>EGP</option><option>GHS</option>
+          <option>KES</option><option>MAD</option><option>PKR</option><option>BDT</option>
+          <option>LKR</option><option>IDR</option><option>THB</option><option>MYR</option>
+          <option>PHP</option><option>KRW</option><option>TJS</option>
+        </select>
+      </div>
+      <div class="field"><label>Курс:</label>
+        <input type="number" name="rate" step="0.0001" required>
+      </div>
+      <div class="field"><label>Мин. сумма:</label>
+        <input type="number" name="min_amount" step="0.0001" required>
+      </div>
+      <div class="field"><label>Макс. сумма:</label>
+        <input type="number" name="max_amount" step="0.0001" required>
+      </div>
+      <div class="field"><label>Способ оплаты:</label>
+        <input type="text" name="payment_method" required>
+      </div>
+      <div class="field"><label>Условия / комментарий:</label>
+        <textarea name="comment" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn">Создать</button>
+      <a href="/market"><button type="button" class="btn">Отмена</button></a>
+    </form>
+  </div>
 </body>
 </html>
