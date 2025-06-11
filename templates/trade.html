@@ -1,119 +1,62 @@
 <!-- templates/trade.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Сделка</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        body {
-            background-color: #0d0d0d;
-            color: #00ff99;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 30px;
-        }
-        .box {
-            background-color: #1a1a1a;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 8px;
-        }
-        .box h2 {
-            color: #00ff99;
-        }
-        .btn {
-            background-color: #00ff99;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            margin-right: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .btn:hover {
-            background-color: #00cc77;
-        }
-        .chat-box {
-            background-color: #0d0d0d;
-            border: 1px solid #00ff99;
-            border-radius: 5px;
-            padding: 10px;
-            max-height: 200px;
-            overflow-y: scroll;
-            margin-bottom: 10px;
-        }
-        .chat-message {
-            margin: 5px 0;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #00ff99;
-            background-color: #1a1a1a;
-            color: #00ff99;
-            border-radius: 5px;
-        }
-        .timer {
-            font-size: 18px;
-            color: #ffcc00;
-            margin-top: 10px;
-        }
-    </style>
+    <meta charset="utf-8">
+    <title>Сделка #{{ trade.id }}</title>
+    <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>Сделка с {{ order.seller_username }}</h1>
-
-        <div class="box">
-            <p><strong>Сумма:</strong> {{ order.amount }} {{ order.currency }}</p>
-            <p><strong>Способ оплаты:</strong> {{ order.payment_method }}</p>
-            <p class="timer">⏱️ Время на оплату: <span id="countdown">30:00</span></p>
-
-            <form action="/orders/{{ order.id }}/paid" method="post" style="display: inline;">
-                <button class="btn">Я оплатил</button>
-            </form>
-            <form action="/orders/{{ order.id }}/confirm" method="post" style="display: inline;">
-                <button class="btn">Подтвердить получение</button>
-            </form>
-            <form action="/orders/{{ order.id }}/dispute" method="post" style="display: inline;">
-                <button class="btn">Открыть спор</button>
-            </form>
-        </div>
-
-        <div class="box">
-            <h2>Чат</h2>
-            <div class="chat-box" id="chat-box">
-                {% for msg in messages %}
-                    <div class="chat-message"><strong>{{ msg.user }}:</strong> {{ msg.text }}</div>
-                {% endfor %}
-            </div>
-            <form action="/orders/{{ order.id }}/message" method="post">
-                <input type="text" name="message" placeholder="Напишите сообщение..." required>
-                <button class="btn">Отправить</button>
-            </form>
-        </div>
-    </div>
-
+    <h1>Сделка №{{ trade.id }}</h1>
+    <p><strong>Тип:</strong> {{ trade.ad.type }}, 
+       <strong>Сумма:</strong> {{ trade.ad.amount }}, 
+       <strong>Цена:</strong> {{ trade.ad.price }}, 
+       <strong>Оплата:</strong> {{ trade.ad.payment }}</p>
+    <p>Осталось времени: <span id="timer">{{ remaining }}</span> сек</p>
     <script>
-        // Таймер на 30 минут
-        let time = 30 * 60;
-        const countdown = document.getElementById("countdown");
-
-        function updateTimer() {
-            const minutes = Math.floor(time / 60);
-            const seconds = time % 60;
-            countdown.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            if (time > 0) time--;
-        }
-
-        setInterval(updateTimer, 1000);
+        // Countdown timer (updates every second) [oai_citation_attribution:11‡w3schools.com](https://www.w3schools.com/howto/howto_js_countdown.asp#:~:text=%2F%2F%20Get%20today%27s%20date%20and,getTime)
+        var seconds = {{ remaining }};
+        var timerEl = document.getElementById('timer');
+        var countdown = setInterval(function() {
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                timerEl.innerHTML = "0";
+            } else {
+                seconds -= 1;
+                timerEl.innerHTML = seconds;
+            }
+        }, 1000);
     </script>
+    <p><strong>Статус:</strong>
+        {% if trade.is_dispute %}
+            Спор открыт
+        {% elif trade.is_confirmed %}
+            Завершено
+        {% elif trade.is_paid %}
+            Оплачено (ожидает подтверждения получения)
+        {% else %}
+            Активна
+        {% endif %}
+    </p>
+    <form action="/trade/{{ trade.id }}/paid" method="post">
+        <button type="submit">Я оплатил</button>
+    </form>
+    <form action="/trade/{{ trade.id }}/confirm" method="post">
+        <button type="submit">Подтвердить получение</button>
+    </form>
+    <form action="/trade/{{ trade.id }}/dispute" method="post">
+        <button type="submit">Открыть спор</button>
+    </form>
+    <h3>Чат:</h3>
+    <div id="chat" style="border:1px solid #0f0; padding:5px; background:#111; margin-bottom:10px;">
+        {% for msg in trade.messages %}
+            <p>{{ msg }}</p>
+        {% endfor %}
+    </div>
+    <form action="/trade/{{ trade.id }}/chat" method="post">
+        <input type="text" name="message" required placeholder="Введите сообщение" size="50">
+        <button type="submit">Отправить</button>
+    </form>
+    <p><a href="/market">Вернуться на рынок</a></p>
 </body>
 </html>
