@@ -5,12 +5,12 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    let seconds = {{remaining}};
-    function tick(){ 
+    let sec={{remaining}};
+    function tick(){
       const el=document.getElementById('timer');
-      const m=Math.floor(seconds/60), s=seconds%60;
+      const m=Math.floor(sec/60), s=sec%60;
       el.innerText=`${m}:${String(s).padStart(2,'0')}`;
-      if(seconds>0){ seconds--; setTimeout(tick,1000); }
+      if(sec>0){sec--;setTimeout(tick,1000);}
     }
     window.onload=tick;
   </script>
@@ -25,42 +25,26 @@
     <p><strong>Оплата:</strong> {{ad.payment_method}}</p>
     <p class="timer">Осталось: <span id="timer">15:00</span></p>
 
-    <h2>Введите сумму</h2>
-    <input id="sum_rub" oninput="usd.value='';calc()" type="number" placeholder="RUB">
-    <input id="sum_usdt" oninput="sum_rub.value='';calc()" type="number" placeholder="USDT">
-    <script>
-      function calc(){
-        const rate={{ad.rate}};
-        const r=sum_rub.value, u=sum_usdt.value;
-        if(r) usd.value=(r/rate).toFixed(6);
-        if(u) sum_rub.value=(u*rate).toFixed(2);
-      }
-    </script>
-
-    <div class="buttons">
-      <button class="btn" onclick="alert('Оплачено')">Я оплатил</button>
-      <button class="btn" onclick="alert('Подтверждено')">Подтвердить получение</button>
-      <button class="btn btn-danger" onclick="alert('Спор')">Открыть спор</button>
+    <div class="calc">
+      <input id="sum_rub" oninput="sum_usdt.value='';calc()" type="number" placeholder="RUB">
+      <input id="sum_usdt" oninput="sum_rub.value='';calc()" type="number" placeholder="USDT">
     </div>
 
+    <button class="btn">Купить</button>
+
     <div class="info-box">
-      <h3>Условия мейкера</h3>
-      <p>{{ad.comment||'Нет условий'}}</p>
+      <h3>Условия мейкера</h3><p>{{ad.comment or 'Нет условий'}}</p>
     </div>
     <div class="info-box">
-      <h3>Продавец: Павел</h3>
-      <p>Рейтинг: 99%</p>
-      <p>Ордеров: 55</p>
+      <h3>Продавец: {{ad.user}}</h3><p>Рейтинг: {{ad.rating}}%</p><p>Ордера: {{ad.orders}}</p>
     </div>
 
     <h2>Чат</h2>
     <div class="chat-box">
-      {% for msg in ad.chat %}
-        <p><strong>{{msg.user}}:</strong> {{msg.text}}</p>
-      {% endfor %}
+      {% for msg in messages %}<p><strong>{{msg.user}}:</strong> {{msg.text}}</p>{% endfor %}
     </div>
     <form method="post" action="/trade/{{ad.id}}/message">
-      <input type="text" name="message" placeholder="Сообщение" required>
+      <input name="message" placeholder="Сообщение" required>
       <button class="btn">Отправить</button>
     </form>
 
