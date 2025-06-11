@@ -3,79 +3,87 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from uuid import uuid4
-from typing import List, Dict
 from datetime import datetime, timedelta
 
 app = FastAPI()
 
-# Подключаем статические файлы и шаблоны
+# Статика и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# In-memory хранилище объявлений
-ads: List[Dict] = []
+# In-memory хранилище
+ads = []  # список объявлений
+chats = {}  # chat per ad_id
 
-# Главная: перенаправляем сразу на рынок
 @app.get("/", response_class=RedirectResponse)
 def root():
-    return RedirectResponse(url="/market", status_code=302)
+    return RedirectResponse("/market", status_code=302)
 
-# Рынок: список объявлений
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request):
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
-# Форма создания объявления
 @app.get("/create", response_class=HTMLResponse)
-def create_ad_form(request: Request):
+def create_form(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
 
-# Обработка формы создания объявления
 @app.post("/create")
 def create_ad(
     request: Request,
-    type: str = Form(...),
+    action: str = Form(...),
     crypto: str = Form(...),
     fiat: str = Form(...),
     rate: float = Form(...),
-    amount: float = Form(...),
+    min_amount: float = Form(...),
+    max_amount: float = Form(...),
     payment_method: str = Form(...),
+    comment: str = Form("")
 ):
+    ad_id = str(uuid4())
     ad = {
-        "id": str(uuid4()),
-        "type": type,
+        "id": ad_id,
+        "action": action,
         "crypto": crypto,
         "fiat": fiat,
         "rate": rate,
-        "amount": amount,
+        "min_amount": min_amount,
+        "max_amount": max_amount,
         "payment_method": payment_method,
-        "created": datetime.utcnow().isoformat()
+        "comment": comment,
+        "user": "Павел",
+        "rating": 99,
+        "completed": 55
     }
     ads.append(ad)
-    return RedirectResponse(url="/market", status_code=302)
+    chats[ad_id] = []
+    return RedirectResponse("/market", status_code=302)
 
-# Сделка: просмотр объявления и создание чата
 @app.get("/trade/{ad_id}", response_class=HTMLResponse)
-def trade(request: Request, ad_id: str):
+def trade_page(request: Request, ad_id: str):
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
         raise HTTPException(status_code=404, detail="Объявление не найдено")
-    # вставляем таймер на 15 минут
-    end_time = (datetime.utcnow() + timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%S")
-    # чат в памяти
-    if "chat" not in ad:
-        ad["chat"] = []
+    # Таймер 15 мин
+    end_time = datetime.utcnow() + timedelta(minutes=15)
+    remaining = int((end_time - datetime.utcnow()).total_seconds())
     return templates.TemplateResponse("trade.html", {
-        "request": request,
-        "ad": ad,
-        "end_time": end_time
+        "request": request, "ad": ad, "remaining": remaining, "messages": chats[ad_id]
     })
 
-# Отправка сообщения в чат
 @app.post("/trade/{ad_id}/message")
-def send_message(ad_id: str, message: str = Form(...)):
-    ad = next((a for a in ads if a["id"] == ad_id), None)
-    if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-    ad["chat"].append({"user": "You", "text": message})
-    return RedirectResponse(url=f"/trade/{ad_id}", status_code=302)
+def post_message(ad_id: str, message: str = Form(...)):
+    if ad_id in chats:
+        chats[ad_id].append({"user": "Вы", "text": message})
+    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
+
+@app.post("/trade/{ad_id}/paid")
+def mark_paid(ad_id: str):
+    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
+
+@app.post("/trade/{ad_id}/confirm")
+def mark_confirm(ad_id: str):
+    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
+
+@app.post("/trade/{ad_id}/dispute")
+def mark_dispute(ad_id: str):
+    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
