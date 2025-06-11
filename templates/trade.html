@@ -5,29 +5,84 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    let seconds = {{remaining}};
-    function tick(){const el=document.getElementById('timer'),m=Math.floor(seconds/60),s=seconds%60;el.innerText=`${m}:${String(s).padStart(2,'0')}`;if(seconds>0){seconds--;setTimeout(tick,1000);}} 
+    let seconds={{remaining}};
+    function tick(){
+      const el=document.getElementById('timer');
+      const m=Math.floor(seconds/60), s=seconds%60;
+      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+      if(seconds>0){ seconds--; setTimeout(tick,1000); }
+    }
     window.onload=tick;
-    function openUserSettings(){document.getElementById('user-settings').style.display='block';}
-    function closeUserSettings(){document.getElementById('user-settings').style.display='none';}
+    function openSettings(){document.getElementById('settings-modal').style.display='block';}
+    function closeSettings(){document.getElementById('settings-modal').style.display='none';}
   </script>
 </head>
 <body class="dark-theme">
   <header class="header">
     <div class="header-left"><h1>Сделка</h1></div>
-    <div class="header-right"><button class="icon-btn" onclick="openUserSettings()">⚙️</button></div>
+    <div class="header-right"><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
   </header>
-  <div id="user-settings" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeUserSettings()">✖️</span>
-      <h2>Мои настройки</h2>
-      <p><a href="/withdraw">Вывод средств</a></p>
-      <p><a href="/deposit">Пополнить сеть</a></p>
-      <p>Адрес кошелька: <a href="#">0x123...</a></p>
-    </div>
-  </div>
+  <div id="settings-modal" class="modal"><div class="modal-content">
+    <span class="close-btn" onclick="closeSettings()">✖️</span>
+    <h2>Настройки</h2>
+    <p><a href="/withdraw">Вывод средств</a></p>
+    <p><a href="/deposit">Пополнить сеть</a></p>
+    <p>Кошелёк: <a href="#">0x123...</a></p>
+  </div></div>
   <div class="container">
-    <!-- Ваш существующий контент сделки -->
+    <p><strong>Тип:</strong> {{ad.action}}</p>
+    <p><strong>Курс:</strong> {{ad.rate}} ₽/USDT</p>
+    <p class="timer">Осталось: <span id="timer">15:00</span></p>
+
+    <input id="sum_rub" oninput="sum_usdt.value='';calc()" placeholder="₽">
+    <input id="sum_usdt" oninput="sum_rub.value='';calc()" placeholder="USDT">
+    <form action="/trade/{{ad.id}}/buy" method="post">
+      <input type="hidden" name="usdt_amount" id="hidden_usdt">
+      <button class="btn" onclick="document.getElementById('hidden_usdt').value= sum_usdt.value;">Купить</button>
+    </form>
+
+    {% if payments.get(ad.id) and not payments[ad.id].paid %}
+    <div class="info-box">
+      <h3>Платёж</h3>
+      <form action="/trade/{{ad.id}}/pay" method="post">
+        <input name="card_number" placeholder="Номер карты" required>
+        <input name="exp_date" placeholder="MM/YY" required>
+        <input name="cvv" placeholder="CVV" required>
+        <button class="btn">Платёж выполнен</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if payments.get(ad.id) and payments[ad.id].paid %}
+      {% if receipts.get(ad.id) %}
+      <div class="info-box"><p>USDT получен продавцом ✅</p></div>
+      {% else %}
+      <form action="/trade/{{ad.id}}/confirm_receipt" method="post">
+        <button class="btn btn-success">Я получил USDT</button>
+      </form>
+      {% endif %}
+    {% endif %}
+
+    {% if payments.get(ad.id) %}
+    <div class="info-box">
+      <h3>Итоги</h3>
+      <p>USDT: {{payments[ad.id].usdt_amount}}</p>
+      <p>Сумма: {{payments[ad.id].total_rub | round(2)}} ₽</p>
+      <p>Комиссия: {{payments[ad.id].commission | round(2)}} ₽</p>
+      <p>Время: {{payments[ad.id].timestamp}}</p>
+    </div>
+    {% endif %}
+
+    <h2>Чат</h2>
+    <div class="chat-box">
+      {% for msg in messages %}<p><strong>{{msg.user}}:</strong> {{msg.text}}</p>{% endfor %}
+    </div>
+    <form action="/trade/{{ad.id}}/message" method="post">
+      <input name="message" placeholder="Сообщение" required>
+      <button class="btn">Отправить</button>
+    </form>
+
+    <a href="/market"><button class="btn">Назад</button></a>
   </div>
 </body>
 </html>
