@@ -1,9 +1,36 @@
-<!DOCTYPE html><html><head><title>Сделка</title><link rel="stylesheet" href="/static/styles.css"></head><body>
-<div class="container"><h1>Сделка</h1>
-<p>{{ ad.user }} {{ ad.action }} {{ ad.amount }} {{ ad.crypto }}/{{ ad.fiat }} по {{ ad.rate }}</p>
-<form method="post">
-  <input name="amount" type="number" step="0.01" value="{{ ad.amount }}" required>
-  <input name="payment" value="{{ ad.payment }}" required>
-  <button class="btn">Подтвердить</button>
-</form>
-<a href="/market" class="btn">Назад</a></div></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Сделка</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    let remaining = {{ remaining }};
+    function tick() {
+      const el = document.getElementById("timer");
+      if (remaining<=0) { el.innerText="Время вышло"; return; }
+      const m = Math.floor(remaining/60), s=remaining%60;
+      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+      remaining--;
+      setTimeout(tick,1000);
+    }
+    window.onload = tick;
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>Сделка</h1>
+    <p><strong>Тип:</strong> {{ ad.type }}</p>
+    <p><strong>Сумма:</strong> {{ ad.amount }}</p>
+    <p><strong>Цена:</strong> {{ ad.price }} ₽</p>
+    <p><strong>Оплата:</strong> {{ ad.payment_method }}</p>
+    <p>Осталось времени: <span id="timer">15:00</span></p>
+    <div class="buttons">
+      <button class="btn">Я оплатил</button>
+      <button class="btn">Подтвердить</button>
+      <button class="btn btn-danger">Открыть спор</button>
+    </div>
+    <a href="/market"><button class="btn">Назад</button></a>
+  </div>
+</body>
+</html>
