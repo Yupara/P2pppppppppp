@@ -1,11 +1,25 @@
-<!DOCTYPE html><html><head><title>Рынок</title><link rel="stylesheet" href="/static/styles.css"></head><body>
-<div class="container"><h1>Рынок</h1>
-{% for ad in ads %}
-  <div style="border:1px solid #444; padding:10px; margin:5px;">
-    <p>{{ ad.user }} предлагает {{ ad.action }} {{ ad.amount }} {{ ad.crypto }}/{{ ad.fiat }} по {{ ad.rate }}</p>
-    <a href="/trade/{{ ad.id }}" class="btn">Купить/Продать</a>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Рынок</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Маркет</h1>
+    <a href="/create"><button class="btn">Создать объявление</button></a>
+    <ul>
+      {% for ad in ads %}
+        <li>
+          <strong>{{ ad.type|capitalize }}</strong> {{ ad.amount }} по {{ ad.price }} ₽ 
+          [{{ ad.payment_method }}]
+          <a href="/trade/{{ ad.id }}"><button class="btn">Купить</button></a>
+        </li>
+      {% else %}
+        <li>Объявлений нет.</li>
+      {% endfor %}
+    </ul>
   </div>
-{% else %}
-  <p>Объявлений нет</p>
-{% endfor %}
-<a href="/" class="btn">Назад</a></div></body></html>
+</body>
+</html>
