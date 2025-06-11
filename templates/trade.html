@@ -5,22 +5,17 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    let sec={{remaining}};
-    function tick(){ 
-      const el=document.getElementById('timer');
-      const m=Math.floor(sec/60), s=sec%60;
-      el.innerText=`${m}:${String(s).padStart(2,'0')}`;
-      if(sec>0){ sec--; setTimeout(tick,1000); }
-    }
+    let seconds = {{remaining}};
+    function tick(){const el=document.getElementById('timer'),m=Math.floor(seconds/60),s=seconds%60;el.innerText=`${m}:${String(s).padStart(2,'0')}`;if(seconds>0){seconds--;setTimeout(tick,1000);}} 
     window.onload=tick;
+    function openUserSettings(){document.getElementById('user-settings').style.display='block';}
+    function closeUserSettings(){document.getElementById('user-settings').style.display='none';}
   </script>
 </head>
 <body class="dark-theme">
   <header class="header">
     <div class="header-left"><h1>Сделка</h1></div>
-    <div class="header-right">
-      <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
-    </div>
+    <div class="header-right"><button class="icon-btn" onclick="openUserSettings()">⚙️</button></div>
   </header>
   <div id="user-settings" class="modal">
     <div class="modal-content">
@@ -28,18 +23,11 @@
       <h2>Мои настройки</h2>
       <p><a href="/withdraw">Вывод средств</a></p>
       <p><a href="/deposit">Пополнить сеть</a></p>
-      <p>Адрес кошелька: <a href="https://etherscan.io/address/0x123...">0x123...</a></p>
+      <p>Адрес кошелька: <a href="#">0x123...</a></p>
     </div>
   </div>
-
   <div class="container">
-    <!-- ... существующий код сделки (расчёты, чат, кнопки) ... -->
+    <!-- Ваш существующий контент сделки -->
   </div>
-
-  <script>
-    function openUserSettings(){ document.getElementById('user-settings').style.display='block'; }
-    function closeUserSettings(){ document.getElementById('user-settings').style.display='none'; }
-    window.onclick = e => { if(e.target.id==='user-settings') closeUserSettings(); }
-  </script>
 </body>
 </html>
