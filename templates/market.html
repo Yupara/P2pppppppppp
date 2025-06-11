@@ -4,73 +4,119 @@
   <meta charset="UTF-8">
   <title>Рынок P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    /* Дополнительные стили только для меню */
-    .tabs {
-      display: flex;
-      justify-content: center;
-      background-color: #0a1a14;
-      padding: 10px;
-      position: relative;
-    }
-    .tab {
-      margin: 0 20px;
-      font-size: 1.2rem;
-      color: #577f65;
-      cursor: pointer;
-      position: relative;
-      padding-bottom: 5px;
-    }
-    .tab.active {
-      color: #cce3cd;
-    }
-    .tab.active::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background-color: #cce3cd;
-      border-radius: 2px;
-    }
-    .gear {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1.4rem;
-      color: #cce3cd;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
 </head>
 <body class="dark-theme">
-  <!-- Меню вкладок -->
-  <div class="tabs">
-    <div id="tab-buy" class="tab active" onclick="selectTab('buy')">Покупка</div>
-    <div id="tab-sell" class="tab" onclick="selectTab('sell')">Продажа</div>
-    <button class="gear" onclick="alert('Открыть настройки')">⚙️</button>
+  <!-- Header с шестерёнкой -->
+  <header class="header">
+    <div class="header-left">
+      <h1>Рынок P2P</h1>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Модальное окно настроек -->
+  <div id="user-settings" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeUserSettings()">✖️</span>
+      <h2>Настройки</h2>
+      <p><strong>Способ оплаты:</strong> Сбербанк, Тинькофф</p>
+      <p><a href="/deposit">Пополнить кошелёк</a></p>
+      <p><a href="/withdraw">Вывести средства</a></p>
+      <p><strong>Адрес кошелька:</strong> <a href="#">0x1234...abcd</a></p>
+    </div>
   </div>
 
-  <!-- Контент вкладок -->
-  <div id="content-buy" class="tab-content">
-    <!-- Сюда включите фильтры и список объявлений для Покупки -->
-    {% include 'market_buy_list.html' %}
-  </div>
-  <div id="content-sell" class="tab-content" style="display:none">
-    <!-- Сюда включите фильтры и список объявлений для Продажи -->
-    {% include 'market_sell_list.html' %}
+  <div class="container">
+    <!-- Форма создания объявления -->
+    <section class="create-section">
+      <h2>Создать объявление</h2>
+      <form action="/create" method="post" class="form">
+        <select name="action" required>
+          <option value="buy">Купить</option>
+          <option value="sell">Продать</option>
+        </select>
+        <select name="crypto" required>
+          <option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option>
+        </select>
+        <select name="fiat" required>
+          <option>USD – Доллар США</option><option>EUR – Евро</option><option>GBP – Британский фунт</option>
+          <option>RUB – Российский рубль</option><option>UAH – Украинская гривна</option><option>KZT – Тенге</option>
+          <option>TRY – Лира</option><option>AED – Дирхам</option><option>NGN – Найра</option>
+          <option>INR – Рупия</option><option>VND – Донг</option><option>BRL – Реал</option>
+          <option>ARS – Песо</option><option>COP – Песо</option><option>PEN – Соль</option>
+          <option>MXN – Песо</option><option>CLP – Песо</option><option>ZAR – Рэнд</option>
+          <option>EGP – Фунт</option><option>GHS – Седи</option><option>KES – Шиллинг</option>
+          <option>MAD – Дирхам</option><option>PKR – Рупия</option><option>BDT – Така</option>
+          <option>LKR – Рупия</option><option>IDR – Рупия</option><option>THB – Бат</option>
+          <option>MYR – Ринггит</option><option>PHP – Песо</option><option>KRW – Вона</option>
+          <option>TJS – Сомони</option>
+        </select>
+        <input type="number" name="rate" step="0.0001" placeholder="Курс" required>
+        <input type="number" name="min_amount" step="0.0001" placeholder="Мин. сумма" required>
+        <input type="number" name="max_amount" step="0.0001" placeholder="Макс. сумма" required>
+        <input type="text" name="payment_method" placeholder="Способ оплаты" required>
+        <input type="text" name="full_name" placeholder="Ф.И.О." required>
+        <input type="text" name="card_number" placeholder="Номер карты" required>
+        <textarea name="comment" placeholder="Комментарий"></textarea>
+        <button class="btn" type="submit">Создать</button>
+      </form>
+    </section>
+
+    <!-- Фильтры -->
+    <section class="filters">
+      <select id="f-crypto">
+        <option value="">Крипта</option><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option>
+      </select>
+      <select id="f-fiat">
+        <option value="">Фиат</option><option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option>
+      </select>
+      <select id="f-payment">
+        <option value="">Оплата</option><option>Сбербанк</option><option>Тинькофф</option><option>PayPal</option>
+      </select>
+      <button class="btn" onclick="filterAds()">Применить фильтр</button>
+    </section>
+
+    <!-- Список объявлений -->
+    <ul id="ads-list" class="ads-list">
+      {% for ad in ads %}
+      <li class="ad-card" data-crypto="{{ad.crypto}}" data-fiat="{{ad.fiat}}" data-payment="{{ad.payment_method}}">
+        <div class="ad-main">
+          <p><strong>{{ad.action|capitalize}}</strong> {{ad.amount}} {{ad.crypto}} → {{ad.fiat}} по {{ad.rate}}</p>
+          <p>Оплата: {{ad.payment_method}}</p>
+        </div>
+        <div class="ad-footer">
+          <a href="/trade/{{ad.id}}"><button class="btn">Купить</button></a>
+        </div>
+      </li>
+      {% else %}
+      <li>Объявлений нет</li>
+      {% endfor %}
+    </ul>
   </div>
 
   <script>
-    function selectTab(tab) {
-      document.getElementById('tab-buy').classList.toggle('active', tab === 'buy');
-      document.getElementById('tab-sell').classList.toggle('active', tab === 'sell');
-      document.getElementById('content-buy').style.display = tab === 'buy' ? 'block' : 'none';
-      document.getElementById('content-sell').style.display = tab === 'sell' ? 'block' : 'none';
+    function openUserSettings() {
+      document.getElementById('user-settings').style.display = 'block';
+    }
+    function closeUserSettings() {
+      document.getElementById('user-settings').style.display = 'none';
+    }
+    window.onclick = function(e) {
+      if (e.target.id === 'user-settings') closeUserSettings();
+    }
+
+    function filterAds() {
+      const c = document.getElementById('f-crypto').value;
+      const f = document.getElementById('f-fiat').value;
+      const p = document.getElementById('f-payment').value;
+      document.querySelectorAll('.ad-card').forEach(el => {
+        const ok = (!c || el.dataset.crypto === c) &&
+                   (!f || el.dataset.fiat === f) &&
+                   (!p || el.dataset.payment === p);
+        el.style.display = ok ? '' : 'none';
+      });
     }
   </script>
 </body>
