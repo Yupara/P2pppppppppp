@@ -2,71 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Рынок P2P</title>
+  <title>Рынок</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dark-theme">
-  <!-- Header -->
   <header class="header">
-    <div class="header-left">
-      <h1>Рынок P2P</h1>
-    </div>
-    <div class="header-right">
-      <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
-    </div>
+    <div class="header-left"><h1>Рынок P2P</h1></div>
+    <div class="header-right"><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
   </header>
-
-  <!-- Modal Settings -->
-  <div id="user-settings" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeUserSettings()">✖️</span>
-      <h2>Настройки</h2>
-      <p><strong>Способ оплаты:</strong> Сбербанк, Тинькофф</p>
-      <p><a href="/deposit">Пополнить кошелёк</a></p>
-      <p><a href="/withdraw">Вывести средства</a></p>
-      <p><strong>Адрес кошелька:</strong> <a href="#">0x1234...abcd</a></p>
-    </div>
-  </div>
-
+  <div id="settings-modal" class="modal"><div class="modal-content">
+    <span class="close-btn" onclick="closeSettings()">✖️</span>
+    <h2>Настройки</h2>
+    <p><a href="/withdraw">Вывод средств</a></p>
+    <p><a href="/deposit">Пополнить сеть</a></p>
+    <p>Кошелёк: <a href="#">0x123...</a></p>
+  </div></div>
   <div class="container">
-    <!-- Форма создания объявления -->
-    <section class="create-section">
-      <h2>Создать объявление</h2>
-      <form action="/create" method="post" class="form">
-        <select name="action" required>
-          <option value="buy">Купить</option>
-          <option value="sell">Продать</option>
-        </select>
-        <select name="crypto" required>
-          <option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option>
-        </select>
-        <select name="fiat" required>
-          <option>RUB</option><option>USD</option><option>EUR</option><!-- ... -->
-        </select>
-        <input type="number" name="rate" step="0.0001" placeholder="Курс" required>
-        <input type="number" name="min_amount" step="0.0001" placeholder="Мин. сумма" required>
-        <input type="number" name="max_amount" step="0.0001" placeholder="Макс. сумма" required>
-        <input type="text" name="payment_method" placeholder="Способ оплаты" required>
-        <input type="text" name="full_name" placeholder="Ф.И.О." required>
-        <input type="text" name="card_number" placeholder="Номер карты" required>
-        <textarea name="comment" placeholder="Комментарий"></textarea>
-        <button class="btn" type="submit">Создать</button>
-      </form>
-    </section>
-
-    <!-- Фильтры -->
-    <section class="filters">
-      <select id="f-crypto"><option value="">Крипта</option><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
-      <select id="f-fiat"><option value="">Фиат</option><option>RUB</option><option>USD</option><option>EUR</option><!-- ... --></select>
-      <select id="f-payment"><option value="">Оплата</option><option>Сбербанк</option><option>Тинькофф</option><option>PayPal</option></select>
-      <button class="btn" onclick="filterAds()">Применить фильтр</button>
-    </section>
-
-    <!-- Список объявлений -->
-    <ul id="ads-list" class="ads-list">
+    <a href="/create"><button class="btn">Создать объявление</button></a>
+    <div class="filters">
+      <select id="f-crypto"><option>Крипта</option><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
+      <select id="f-fiat"><option>Фиат</option><option>RUB</option><option>USD</option><option>EUR</option></select>
+      <select id="f-payment"><option>Оплата</option><option>Сбербанк</option><option>Тинькофф</option><option>PayPal</option></select>
+      <button class="btn" onclick="filterAds()">Фильтровать</button>
+    </div>
+    <ul id="ads-list">
       {% for ad in ads %}
-      <li class="ad-card" data-crypto="{{ad.crypto}}" data-fiat="{{ad.fiat}}" data-payment="{{ad.payment_method}}">
-        <p><strong>{{ad.action|capitalize}}</strong> {{ad.amount}} {{ad.crypto}} → {{ad.fiat}} по {{ad.rate}}</p>
+      <li class="ad-card">
+        <p><strong>{{ad.action|capitalize}}</strong> {{ad.amount}} {{ad.crypto}} → {{ad.fiat}}</p>
         <p>Оплата: {{ad.payment_method}}</p>
         <a href="/trade/{{ad.id}}"><button class="btn">Купить</button></a>
       </li>
@@ -75,29 +37,15 @@
       {% endfor %}
     </ul>
   </div>
-
   <script>
-    // Модалка настроек
-    function openUserSettings() {
-      document.getElementById('user-settings').style.display = 'block';
-    }
-    function closeUserSettings() {
-      document.getElementById('user-settings').style.display = 'none';
-    }
-    window.onclick = function(e) {
-      if (e.target.id === 'user-settings') closeUserSettings();
-    };
-
-    // Фильтрация объявлений
-    function filterAds() {
-      const c = document.getElementById('f-crypto').value;
-      const f = document.getElementById('f-fiat').value;
-      const p = document.getElementById('f-payment').value;
-      document.querySelectorAll('.ad-card').forEach(el => {
-        const ok = (!c || el.dataset.crypto === c)
-                && (!f || el.dataset.fiat === f)
-                && (!p || el.dataset.payment === p);
-        el.style.display = ok ? '' : 'none';
+    function openSettings(){document.getElementById('settings-modal').style.display='block';}
+    function closeSettings(){document.getElementById('settings-modal').style.display='none';}
+    function filterAds(){
+      const c=document.getElementById('f-crypto').value;
+      const f=document.getElementById('f-fiat').value;
+      const p=document.getElementById('f-payment').value;
+      document.querySelectorAll('.ad-card').forEach(el=>{
+        el.style.display = (!c||el.innerText.includes(c))&&(!f||el.innerText.includes(f))&&(!p||el.innerText.includes(p)) ? '' : 'none';
       });
     }
   </script>
