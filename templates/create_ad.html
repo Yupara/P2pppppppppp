@@ -8,43 +8,38 @@
 <body class="dark-theme">
   <header class="header">
     <div class="header-left"><h1>Новое объявление</h1></div>
-    <div class="header-right"><button class="icon-btn" onclick="openUserSettings()">⚙️</button></div>
+    <div class="header-right"><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
   </header>
-  <div id="user-settings" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeUserSettings()">✖️</span>
-      <h2>Мои настройки</h2>
-      <p><a href="/withdraw">Вывод средств</a></p>
-      <p><a href="/deposit">Пополнить сеть</a></p>
-      <p>Адрес кошелька: <a href="#">0x123...</a></p>
-    </div>
-  </div>
+  <div id="settings-modal" class="modal"><div class="modal-content">
+    <span class="close-btn" onclick="closeSettings()">✖️</span>
+    <h2>Настройки</h2>
+    <p><a href="/withdraw">Вывод средств</a></p>
+    <p><a href="/deposit">Пополнить сеть</a></p>
+    <p>Кошелёк: <a href="#">0x123...</a></p>
+  </div></div>
   <div class="container">
     <form action="/create" method="post">
-      <div class="field"><label>Тип:</label>
-        <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
-      </div>
-      <div class="field"><label>Крипта:</label>
-        <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
-      </div>
-      <div class="field"><label>Фиат:</label>
-        <select name="fiat"><option>RUB</option><option>USD</option><option>EUR</option>…</select>
-      </div>
-      <div class="field"><label>Курс:</label><input type="number" name="rate" step="0.0001" required></div>
-      <div class="field"><label>Мин. сумма:</label><input type="number" name="min_amount" step="0.0001" required></div>
-      <div class="field"><label>Макс. сумма:</label><input type="number" name="max_amount" step="0.0001" required></div>
-      <div class="field"><label>Способ оплаты:</label><input type="text" name="payment_method" required></div>
-      <div class="field"><label>Ф.И.О.:</label><input type="text" name="full_name" required></div>
-      <div class="field"><label>Номер карты:</label><input type="text" name="card_number" required></div>
-      <div class="field"><label>Условия:</label><textarea name="comment"></textarea></div>
-      <button class="btn" type="submit">Создать</button>
+      <label>Тип:</label>
+      <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
+      <label>Крипта:</label>
+      <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
+      <label>Фиат:</label>
+      <select name="fiat"><option>RUB</option><option>USD</option><option>EUR</option></select>
+      <label>Курс:</label><input type="number" name="rate" step="0.0001" required>
+      <label>Мин. сумма:</label><input type="number" name="min_amount" step="0.0001" required>
+      <label>Макс. сумма:</label><input type="number" name="max_amount" step="0.0001" required>
+      <label>Способ оплаты:</label><input type="text" name="payment_method" required>
+      <label>Ф.И.О.:</label><input type="text" name="full_name" required>
+      <label>Номер карты:</label><input type="text" name="card_number" required>
+      <label>Условия:</label><textarea name="comment"></textarea>
+      <button class="btn">Создать</button>
       <a href="/market"><button type="button" class="btn">Отмена</button></a>
     </form>
   </div>
   <script>
-    function openUserSettings(){document.getElementById('user-settings').style.display='block';}
-    function closeUserSettings(){document.getElementById('user-settings').style.display='none';}
-    window.onclick=e=>{ if(e.target.id==='user-settings') closeUserSettings(); }
+    function openSettings(){document.getElementById('settings-modal').style.display='block';}
+    function closeSettings(){document.getElementById('settings-modal').style.display='none';}
+    window.onclick=e=>{ if(e.target.id==='settings-modal') closeSettings(); }
   </script>
 </body>
 </html>
