@@ -7,28 +7,30 @@ from datetime import datetime, timedelta
 
 app = FastAPI()
 
-# Статика и шаблоны
+# Сервируем CSS и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# In-memory хранилище
-ads = []  # список объявлений
-chats = {}  # chat per ad_id
+# В памяти храним объявления и чат
+ads = []  # список словарей
+chats = {}  # ad_id -> list of msgs
 
 @app.get("/", response_class=RedirectResponse)
 def root():
-    return RedirectResponse("/market", status_code=302)
+    return RedirectResponse("/market")
 
+# Рынок: фильтры, список, шестерёнка
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request):
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
+# Форма создания объявления (оставлена без изменений)
 @app.get("/create", response_class=HTMLResponse)
-def create_form(request: Request):
+def create_get(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
 
 @app.post("/create")
-def create_ad(
+def create_post(
     request: Request,
     action: str = Form(...),
     crypto: str = Form(...),
@@ -52,38 +54,30 @@ def create_ad(
         "comment": comment,
         "user": "Павел",
         "rating": 99,
-        "completed": 55
+        "orders": 55
     }
     ads.append(ad)
     chats[ad_id] = []
     return RedirectResponse("/market", status_code=302)
 
+# Сделка: расчёт, таймер, кнопки, чат
 @app.get("/trade/{ad_id}", response_class=HTMLResponse)
-def trade_page(request: Request, ad_id: str):
+def trade_get(request: Request, ad_id: str):
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-    # Таймер 15 мин
+        raise HTTPException(404, "Not found")
+    # Таймер 15 минут
     end_time = datetime.utcnow() + timedelta(minutes=15)
     remaining = int((end_time - datetime.utcnow()).total_seconds())
     return templates.TemplateResponse("trade.html", {
-        "request": request, "ad": ad, "remaining": remaining, "messages": chats[ad_id]
+        "request": request,
+        "ad": ad,
+        "remaining": remaining,
+        "messages": chats[ad_id]
     })
 
 @app.post("/trade/{ad_id}/message")
-def post_message(ad_id: str, message: str = Form(...)):
+def trade_msg(ad_id: str, message: str = Form(...)):
     if ad_id in chats:
         chats[ad_id].append({"user": "Вы", "text": message})
-    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
-
-@app.post("/trade/{ad_id}/paid")
-def mark_paid(ad_id: str):
-    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
-
-@app.post("/trade/{ad_id}/confirm")
-def mark_confirm(ad_id: str):
-    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
-
-@app.post("/trade/{ad_id}/dispute")
-def mark_dispute(ad_id: str):
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
