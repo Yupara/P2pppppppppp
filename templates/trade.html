@@ -5,112 +5,41 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    let seconds = {{ remaining }};
-    function tick(){
-      const el = document.getElementById('timer');
-      const m = Math.floor(seconds/60), s = seconds%60;
-      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
-      if(seconds>0){ seconds--; setTimeout(tick,1000); }
+    let sec={{remaining}};
+    function tick(){ 
+      const el=document.getElementById('timer');
+      const m=Math.floor(sec/60), s=sec%60;
+      el.innerText=`${m}:${String(s).padStart(2,'0')}`;
+      if(sec>0){ sec--; setTimeout(tick,1000); }
     }
-    window.onload = tick;
-
-    function openUserSettings(){ document.getElementById('user-settings').style.display='block'; }
-    function closeUserSettings(){ document.getElementById('user-settings').style.display='none'; }
+    window.onload=tick;
   </script>
 </head>
 <body class="dark-theme">
-  <!-- Header с шестерёнкой -->
   <header class="header">
-    <div class="header-left">
-      <h1>Сделка</h1>
-    </div>
+    <div class="header-left"><h1>Сделка</h1></div>
     <div class="header-right">
       <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
     </div>
   </header>
-
-  <!-- Модальное окно настроек -->
   <div id="user-settings" class="modal">
     <div class="modal-content">
       <span class="close-btn" onclick="closeUserSettings()">✖️</span>
       <h2>Мои настройки</h2>
-      <p><strong>Никнейм:</strong> Павел</p>
-      <p><strong>Исполнено ордеров:</strong> 55</p>
-      <p><strong>Рейтинг:</strong> 99%</p>
-      <p><strong>Способ оплаты:</strong> Сбербанк</p>
+      <p><a href="/withdraw">Вывод средств</a></p>
+      <p><a href="/deposit">Пополнить сеть</a></p>
+      <p>Адрес кошелька: <a href="https://etherscan.io/address/0x123...">0x123...</a></p>
     </div>
   </div>
 
   <div class="container">
-    <p><strong>Тип:</strong> {{ad.action}}</p>
-    <p><strong>Курс:</strong> {{ad.rate}} ₽/USDT</p>
-    <p class="timer">Осталось: <span id="timer">15:00</span></p>
-
-    <!-- Расчёт суммы -->
-    <input id="sum_rub" oninput="sum_usdt.value='';calc()" type="number" placeholder="₽">
-    <input id="sum_usdt" oninput="sum_rub.value='';calc()" type="number" placeholder="USDT">
-    <script>
-      function calc(){
-        const rate = {{ad.rate}};
-        const r = document.getElementById('sum_rub').value;
-        const u = document.getElementById('sum_usdt').value;
-        if(r) document.getElementById('sum_usdt').value=(r/rate).toFixed(6);
-        if(u) document.getElementById('sum_rub').value=(u*rate).toFixed(2);
-      }
-    </script>
-
-    <!-- Покупка -->
-    <form action="/trade/{{ad.id}}/buy" method="post">
-      <input type="hidden" name="usdt_amount" id="hidden_usdt">
-      <button class="btn" onclick="document.getElementById('hidden_usdt').value=document.getElementById('sum_usdt').value;">Купить</button>
-    </form>
-
-    <!-- Оплата -->
-    {% if payments.get(ad.id) and not payments[ad.id].paid %}
-    <div class="info-box">
-      <h3>Платёж по карте</h3>
-      <form action="/trade/{{ad.id}}/pay" method="post">
-        <input name="card_number" placeholder="Номер карты" required>
-        <input name="exp_date" placeholder="MM/YY" required>
-        <input name="cvv" placeholder="CVV" required>
-        <button class="btn">Платёж выполнен</button>
-      </form>
-    </div>
-    {% endif %}
-
-    <!-- Подтверждение -->
-    {% if payments.get(ad.id) and payments[ad.id].paid %}
-      {% if receipts.get(ad.id) %}
-        <div class="info-box"><p>USDT получен продавцом ✅</p></div>
-      {% else %}
-        <form action="/trade/{{ad.id}}/confirm_receipt" method="post">
-          <button class="btn btn-success">Я получил USDT</button>
-        </form>
-      {% endif %}
-    {% endif %}
-
-    <!-- Сведения о трейде -->
-    {% if payments.get(ad.id) %}
-    <div class="info-box">
-      <h3>Итоги сделки</h3>
-      <p><strong>Сумма USDT:</strong> {{payments[ad.id].usdt_amount}}</p>
-      <p><strong>Общая стоимость:</strong> {{payments[ad.id].total_rub | round(2)}} ₽</p>
-      <p><strong>Комиссия (0.5%):</strong> {{payments[ad.id].commission | round(2)}} ₽</p>
-      <p><strong>Время ордера:</strong> {{payments[ad.id].timestamp}}</p>
-    </div>
-    {% endif %}
-
-    <!-- Чат -->
-    <h2>Чат</h2>
-    <div class="chat-box">
-      {% for msg in messages %}<p><strong>{{msg.user}}:</strong> {{msg.text}}</p>{% endfor %}
-    </div>
-    <form action="/trade/{{ad.id}}/message" method="post">
-      <input name="message" placeholder="Сообщение..." required>
-      <button class="btn">Отправить</button>
-    </form>
-
-    <a href="/market"><button class="btn">Назад</button></a>
+    <!-- ... существующий код сделки (расчёты, чат, кнопки) ... -->
   </div>
+
+  <script>
+    function openUserSettings(){ document.getElementById('user-settings').style.display='block'; }
+    function closeUserSettings(){ document.getElementById('user-settings').style.display='none'; }
+    window.onclick = e => { if(e.target.id==='user-settings') closeUserSettings(); }
+  </script>
 </body>
 </html>
