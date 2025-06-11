@@ -1,79 +1,61 @@
-from fastapi import FastAPI, Request, Form, Depends
+from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from uuid import uuid4
-from pydantic import BaseModel
-from typing import List
-import uvicorn
 
 app = FastAPI()
-
-# Подключение папки со статикой (CSS и др.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Подключение шаблонов
 templates = Jinja2Templates(directory="templates")
 
-# Простейшие временные модели
-class Ad(BaseModel):
-    id: str
-    type: str  # 'buy' или 'sell'
-    amount: float
-    price: float
-    payment: str
-    seller: str
+# Данные в памяти
+ads = {}
+orders = {}
+chat = {}
 
-ads_db: List[Ad] = []
+@app.post("/create-ad")
+def create_ad(type: str = Form(...), amount: float = Form(...), currency: str = Form(...), payment_method: str = Form(...)):
+    ad_id = str(uuid4())
+    ads[ad_id] = {
+        "id": ad_id, "type": type, "amount": amount,
+        "currency": currency, "payment_method": payment_method
+    }
+    return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
-
-# Главная страница
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-# Страница рынка (объявления)
-@app.get("/market", response_class=HTMLResponse)
-def market(request: Request):
-    return templates.TemplateResponse("market.html", {"request": request, "ads": ads_db})
-
-
-# Создание объявления (GET форма)
-@app.get("/create", response_class=HTMLResponse)
-def create_ad_form(request: Request):
-    return templates.TemplateResponse("create_ad.html", {"request": request})
-
-
-# Создание объявления (POST)
-@app.post("/create")
-def create_ad(
-    type: str = Form(...),
-    amount: float = Form(...),
-    price: float = Form(...),
-    payment: str = Form(...),
-    seller: str = Form(...)
-):
-    ad = Ad(
-        id=str(uuid4()),
-        type=type,
-        amount=amount,
-        price=price,
-        payment=payment,
-        seller=seller
-    )
-    ads_db.append(ad)
-    return RedirectResponse(url="/market", status_code=302)
-
-
-# Страница сделки (простая заглушка)
-@app.get("/trade/{ad_id}", response_class=HTMLResponse)
-def trade(request: Request, ad_id: str):
-    ad = next((a for a in ads_db if a.id == ad_id), None)
+@app.get("/trade/{order_id}", response_class=HTMLResponse)
+def open_trade(request: Request, order_id: str):
+    ad = ads.get(order_id)
     if not ad:
-        return templates.TemplateResponse("error.html", {"request": request, "msg": "Объявление не найдено"})
-    return templates.TemplateResponse("trade.html", {"request": request, "ad": ad})
+        raise HTTPException(404, "Сделка не найдена")
+    # Инициализировать order и чат, если первый визит
+    orders.setdefault(order_id, {"id": order_id, **ad, "seller": "Продавец", "status": "waiting"})
+    chat.setdefault(order_id, [])
+    return templates.TemplateResponse("trade.html", {
+        "request": request,
+        "order": orders[order_id],
+        "messages": chat[order_id]
+    })
 
+@app.post("/orders/{order_id}/paid")
+def paid(order_id: str):
+    if order_id in orders:
+        orders[order_id]["status"] = "paid"
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+@app.post("/orders/{order_id}/confirm")
+def confirm(order_id: str):
+    if order_id in orders:
+        orders[order_id]["status"] = "confirmed"
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
+
+@app.post("/orders/{order_id}/dispute")
+def dispute(order_id: str):
+    if order_id in orders:
+        orders[order_id]["status"] = "dispute"
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
+
+@app.post("/orders/{order_id}/message")
+def send_message(order_id: str, message: str = Form(...)):
+    if order_id in chat:
+        chat[order_id].append({"user": "Вы", "text": message})
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
