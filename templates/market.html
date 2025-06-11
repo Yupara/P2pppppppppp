@@ -2,24 +2,80 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Рынок</title>
+  <title>Рынок P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body>
+<body class="dark-theme">
   <div class="container">
-    <h1>Маркет</h1>
-    <a href="/create"><button class="btn">Создать объявление</button></a>
-    <ul>
+    <h1>Рынок объявлений</h1>
+
+    <!-- Фильтры -->
+    <div class="filters">
+      <select id="filter-crypto">
+        <option value="">Криптовалюта</option>
+        <option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option>
+      </select>
+      <select id="filter-fiat">
+        <option value="">Фиат</option>
+        <option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option>
+        <option>UAH</option><option>KZT</option><option>TRY</option><option>AED</option>
+        <option>NGN</option><option>INR</option><option>VND</option><option>BRL</option>
+        <option>ARS</option><option>COP</option><option>PEN</option><option>MXN</option>
+        <option>CLP</option><option>ZAR</option><option>EGP</option><option>GHS</option>
+        <option>KES</option><option>MAD</option><option>PKR</option><option>BDT</option>
+        <option>LKR</option><option>IDR</option><option>THB</option><option>MYR</option>
+        <option>PHP</option><option>KRW</option><option>TJS</option>
+      </select>
+      <select id="filter-payment">
+        <option value="">Способ оплаты</option>
+        <option>Сбербанк</option><option>Тинькофф</option><option>PayPal</option>
+        <option>QIWI</option><option>Яндекс.Деньги</option><option>Карточный перевод</option>
+      </select>
+      <button class="btn" onclick="applyFilters()">Фильтровать</button>
+    </div>
+
+    <!-- Список объявлений -->
+    <ul id="ads-list">
       {% for ad in ads %}
-        <li>
-          <strong>{{ ad.type|capitalize }}</strong> {{ ad.amount }} по {{ ad.price }} ₽ 
-          [{{ ad.payment_method }}]
-          <a href="/trade/{{ ad.id }}"><button class="btn">Купить</button></a>
-        </li>
-      {% else %}
-        <li>Объявлений нет.</li>
+      <li class="ad-card" data-crypto="{{ad.crypto}}" data-fiat="{{ad.fiat}}" data-payment="{{ad.payment_method}}">
+        <div class="ad-main">
+          <p><strong>{{ad.action|capitalize}}</strong> {{ad.amount}} {{ad.crypto}} → {{ad.fiat}} по {{ad.rate}}</p>
+          <p>Оплата: {{ad.payment_method}}</p>
+          <a href="/trade/{{ad.id}}"><button class="btn">Купить</button></a>
+        </div>
+        <div class="ad-footer">
+          <button class="settings-btn" onclick="openSettings('{{ad.id}}')">⚙️</button>
+          <div id="settings-{{ad.id}}" class="settings-modal">
+            <p>Продавец: {{ad.user}}</p>
+            <p>Рейтинг: 99%</p>
+            <p>Выполнено ордеров: 55</p>
+            <button onclick="closeSettings('{{ad.id}}')">Закрыть</button>
+          </div>
+        </div>
+      </li>
       {% endfor %}
     </ul>
   </div>
+
+  <script>
+    function applyFilters() {
+      const c = document.getElementById('filter-crypto').value;
+      const f = document.getElementById('filter-fiat').value;
+      const p = document.getElementById('filter-payment').value;
+      document.querySelectorAll('.ad-card').forEach(card => {
+        const match = 
+          (!c || card.dataset.crypto === c.toLowerCase()) &&
+          (!f || card.dataset.fiat === f) &&
+          (!p || card.dataset.payment === p);
+        card.style.display = match ? '' : 'none';
+      });
+    }
+    function openSettings(id) {
+      document.getElementById('settings-'+id).style.display='block';
+    }
+    function closeSettings(id) {
+      document.getElementById('settings-'+id).style.display='none';
+    }
+  </script>
 </body>
 </html>
