@@ -6,33 +6,26 @@ from uuid import uuid4
 from datetime import datetime, timedelta
 
 app = FastAPI()
-
-# Статика и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# In-memory хранилища
-ads = []          # список объявлений
-chats = {}        # chat history: ad_id -> list of messages
-payments = {}     # ad_id -> payment info
-receipts = {}     # ad_id -> bool
+ads = []
+chats = {}
+payments = {}
+receipts = {}
 
-# Главная → Рынок
 @app.get("/", response_class=RedirectResponse)
 def root():
     return RedirectResponse("/market", status_code=302)
 
-# Рынок
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request):
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
-# Форма создания объявления
 @app.get("/create", response_class=HTMLResponse)
 def create_get(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
 
-# Обработка создания объявления
 @app.post("/create")
 def create_post(
     request: Request,
@@ -43,7 +36,9 @@ def create_post(
     min_amount: float = Form(...),
     max_amount: float = Form(...),
     payment_method: str = Form(...),
-    comment: str = Form("")
+    comment: str = Form(""),
+    full_name: str = Form(...),
+    card_number: str = Form(...)
 ):
     ad_id = str(uuid4())
     ad = {
@@ -56,7 +51,8 @@ def create_post(
         "max_amount": max_amount,
         "payment_method": payment_method,
         "comment": comment,
-        "user": "Павел",
+        "user": full_name,
+        "card_number": card_number,
         "rating": 99,
         "orders": 55
     }
@@ -64,12 +60,11 @@ def create_post(
     chats[ad_id] = []
     return RedirectResponse("/market", status_code=302)
 
-# Страница сделки
 @app.get("/trade/{ad_id}", response_class=HTMLResponse)
 def trade_get(request: Request, ad_id: str):
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
+        raise HTTPException(404, "Объявление не найдено")
     end_time = datetime.utcnow() + timedelta(minutes=15)
     remaining = int((end_time - datetime.utcnow()).total_seconds())
     return templates.TemplateResponse("trade.html", {
@@ -81,45 +76,25 @@ def trade_get(request: Request, ad_id: str):
         "receipts": receipts
     })
 
-# Чат
 @app.post("/trade/{ad_id}/message")
 def trade_message(ad_id: str, message: str = Form(...)):
     if ad_id in chats:
         chats[ad_id].append({"user": "Вы", "text": message})
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
-# Покупка USDT
 @app.post("/trade/{ad_id}/buy")
 def trade_buy(ad_id: str, usdt_amount: float = Form(...)):
-    ad = next((a for a in ads if a["id"] == ad_id), None)
-    if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-    total_rub = usdt_amount * ad["rate"]
+    total_rub = usdt_amount * next(a["rate"] for a in ads if a["id"] == ad_id)
     commission = total_rub * 0.005
     timestamp = datetime.utcnow().strftime("%Y.%m.%d %H:%M")
-    payments[ad_id] = {
-        "usdt_amount": usdt_amount,
-        "total_rub": total_rub,
-        "commission": commission,
-        "timestamp": timestamp,
-        "paid": False
-    }
+    payments[ad_id] = {"usdt_amount": usdt_amount, "total_rub": total_rub, "commission": commission, "timestamp": timestamp, "paid": False}
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
-# Ввод данных карты
 @app.post("/trade/{ad_id}/pay")
-def trade_pay(
-    ad_id: str,
-    card_number: str = Form(...),
-    exp_date: str = Form(...),
-    cvv: str = Form(...)
-):
-    if ad_id in payments:
-        payments[ad_id]["paid"] = True
-        payments[ad_id].update({"card": card_number, "exp": exp_date})
+def trade_pay(ad_id: str, card_number: str = Form(...), exp_date: str = Form(...), cvv: str = Form(...)):
+    payments[ad_id].update({"paid": True, "card": card_number, "exp": exp_date})
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
-# Подтверждение получения
 @app.post("/trade/{ad_id}/confirm_receipt")
 def trade_confirm_receipt(ad_id: str):
     if payments.get(ad_id, {}).get("paid"):
