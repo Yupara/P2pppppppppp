@@ -9,6 +9,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# in-memory storage
 ads = []
 chats = {}
 payments = {}
@@ -28,7 +29,6 @@ def create_get(request: Request):
 
 @app.post("/create")
 def create_post(
-    request: Request,
     action: str = Form(...),
     crypto: str = Form(...),
     fiat: str = Form(...),
@@ -38,7 +38,7 @@ def create_post(
     payment_method: str = Form(...),
     comment: str = Form(""),
     full_name: str = Form(...),
-    card_number: str = Form(...)
+    card_number: str = Form(...),
 ):
     ad_id = str(uuid4())
     ad = {
@@ -58,13 +58,14 @@ def create_post(
     }
     ads.append(ad)
     chats[ad_id] = []
+    payments[ad_id] = {}
     return RedirectResponse("/market", status_code=302)
 
 @app.get("/trade/{ad_id}", response_class=HTMLResponse)
 def trade_get(request: Request, ad_id: str):
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
-        raise HTTPException(404, "Объявление не найдено")
+        raise HTTPException(404, "Ad not found")
     end_time = datetime.utcnow() + timedelta(minutes=15)
     remaining = int((end_time - datetime.utcnow()).total_seconds())
     return templates.TemplateResponse("trade.html", {
@@ -78,21 +79,34 @@ def trade_get(request: Request, ad_id: str):
 
 @app.post("/trade/{ad_id}/message")
 def trade_message(ad_id: str, message: str = Form(...)):
-    if ad_id in chats:
-        chats[ad_id].append({"user": "Вы", "text": message})
+    chats.setdefault(ad_id, []).append({"user": "You", "text": message})
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
 @app.post("/trade/{ad_id}/buy")
 def trade_buy(ad_id: str, usdt_amount: float = Form(...)):
-    total_rub = usdt_amount * next(a["rate"] for a in ads if a["id"] == ad_id)
+    ad = next((a for a in ads if a["id"] == ad_id), None)
+    if not ad:
+        raise HTTPException(404, "Ad not found")
+    total_rub = usdt_amount * ad["rate"]
     commission = total_rub * 0.005
     timestamp = datetime.utcnow().strftime("%Y.%m.%d %H:%M")
-    payments[ad_id] = {"usdt_amount": usdt_amount, "total_rub": total_rub, "commission": commission, "timestamp": timestamp, "paid": False}
+    payments[ad_id] = {
+        "usdt_amount": usdt_amount,
+        "total_rub": total_rub,
+        "commission": commission,
+        "timestamp": timestamp,
+        "paid": False
+    }
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
 @app.post("/trade/{ad_id}/pay")
-def trade_pay(ad_id: str, card_number: str = Form(...), exp_date: str = Form(...), cvv: str = Form(...)):
-    payments[ad_id].update({"paid": True, "card": card_number, "exp": exp_date})
+def trade_pay(ad_id: str,
+    card_number: str = Form(...),
+    exp_date: str = Form(...),
+    cvv: str = Form(...),
+):
+    if ad_id in payments:
+        payments[ad_id].update({"paid": True, "card": card_number, "exp": exp_date})
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
 
 @app.post("/trade/{ad_id}/confirm_receipt")
