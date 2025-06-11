@@ -1,36 +1,48 @@
-/* static/styles.css */
 body {
-    background-color: #000;
-    color: #0f0;
+    background-color: #0a0a0a;
+    color: #d0ffd0;
     font-family: Arial, sans-serif;
 }
-h1, h2, h3, label, a {
-    color: #0f0;
+
+.container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background-color: #1a1a1a;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #00ff88;
 }
-a {
+
+h1, h2 {
+    text-align: center;
+}
+
+.btn {
+    display: inline-block;
+    background-color: #00aa66;
+    color: white;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0;
     text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s;
 }
-a:hover {
-    text-decoration: underline;
+
+.btn:hover {
+    background-color: #008855;
 }
-input, select, button {
-    border: 1px solid #0f0;
-    background-color: #111;
-    color: #0f0;
-}
-button {
-    background-color: #0a0;
-    padding: 5px;
-    margin: 2px 0;
-    cursor: pointer;
-}
+
 table {
-    border-collapse: collapse;
     width: 100%;
-    margin-top: 10px;
+    border-collapse: collapse;
+    margin-top: 1rem;
 }
-table th, table td {
-    padding: 5px;
-    border: 1px solid #0f0;
+
+table, th, td {
+    border: 1px solid #444;
+}
+
+th, td {
+    padding: 0.5rem;
     text-align: center;
 }
