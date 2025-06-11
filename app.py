@@ -8,7 +8,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Хранилище объявлений, сделок и чатов в памяти
+# Временные данные
 ads = {}
 orders = {}
 chat = {}
@@ -39,8 +39,7 @@ def open_trade(request: Request, order_id: str):
     ad = ads.get(order_id)
     if not ad:
         raise HTTPException(status_code=404, detail="Объявление не найдено")
-    
-    # Инициализация сделки и чата
+
     if order_id not in orders:
         orders[order_id] = {
             "id": order_id,
