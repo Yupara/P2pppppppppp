@@ -1,96 +1,106 @@
-from fastapi import FastAPI, Request, Form, HTTPException
+# app.py
+from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from uuid import uuid4
+import time, random
 
-# Создание FastAPI-приложения
 app = FastAPI()
-
-# Подключение папки со статикой и шаблонами
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")   # serve static files
 templates = Jinja2Templates(directory="templates")
 
-# Временные базы данных (в памяти)
-ads = {}
-orders = {}
-chat = {}
+# In-memory storage
+ads = []
+trades = []
+ad_counter = 1
+trade_counter = 1
 
-# Главная страница /market
-@app.get("/", response_class=HTMLResponse)
-def homepage(request: Request):
-    return templates.TemplateResponse("market.html", {
-        "request": request,
-        "ads": list(ads.values())
-    })
+@app.get("/create_ad", response_class=HTMLResponse)
+async def get_create_ad(request: Request):
+    # Show the ad creation form
+    return templates.TemplateResponse("create_ad.html", {"request": request})
 
-# Создание объявления
-@app.post("/create-ad")
-def create_ad(
-    type: str = Form(...),
-    amount: float = Form(...),
-    currency: str = Form(...),
-    payment_method: str = Form(...),
-):
-    ad_id = str(uuid4())
-    ads[ad_id] = {
-        "id": ad_id,
-        "type": type,
-        "amount": amount,
-        "currency": currency,
-        "payment_method": payment_method
+@app.post("/create_ad")
+async def create_ad(ad_type: str = Form(...), amount: float = Form(...), 
+                    price: float = Form(...), payment: str = Form(...)):
+    # Handle ad submission and store it in memory
+    global ad_counter
+    ad = {"id": ad_counter, "type": ad_type, "amount": amount, "price": price, "payment": payment}
+    ad_counter += 1
+    ads.append(ad)
+    # After creating the ad, redirect to the market page
+    return RedirectResponse(url="/market", status_code=303)
+
+@app.get("/market", response_class=HTMLResponse)
+async def market(request: Request):
+    # Display all ads
+    return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
+
+@app.get("/trade/new")
+async def new_trade(ad_id: int):
+    # Create a new trade for the given ad_id and redirect to trade page
+    global trade_counter
+    ad = next((a for a in ads if a["id"] == ad_id), None)
+    if ad is None:
+        return RedirectResponse(url="/market")
+    # Initialize the trade object
+    trade = {
+        "id": trade_counter,
+        "ad": ad,
+        "is_paid": False,
+        "is_confirmed": False,
+        "is_dispute": False,
+        "messages": [],
+        "start": time.time(),
+        "expires": time.time() + random.randint(15, 30)*60  # timer 15-30 min
     }
-    return RedirectResponse(url="/", status_code=302)
+    trade_counter += 1
+    trades.append(trade)
+    # Redirect to the trade detail page
+    return RedirectResponse(url=f"/trade/{trade['id']}", status_code=303)
 
-# Страница сделки (trade)
-@app.get("/trade/{order_id}", response_class=HTMLResponse)
-def trade_page(request: Request, order_id: str):
-    ad = ads.get(order_id)
-    if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-
-    if order_id not in orders:
-        orders[order_id] = {
-            "id": order_id,
-            "seller": "Продавец",
-            "amount": ad["amount"],
-            "currency": ad["currency"],
-            "payment_method": ad["payment_method"],
-            "status": "waiting"
-        }
-    if order_id not in chat:
-        chat[order_id] = []
-
+@app.get("/trade/{trade_id}", response_class=HTMLResponse)
+async def get_trade(request: Request, trade_id: int):
+    # Show trade page with details and chat
+    trade = next((t for t in trades if t["id"] == trade_id), None)
+    if trade is None:
+        return RedirectResponse(url="/market")
+    # Calculate remaining time (in seconds)
+    remaining = int(trade["expires"] - time.time())
+    if remaining < 0:
+        remaining = 0
     return templates.TemplateResponse("trade.html", {
-        "request": request,
-        "order": orders[order_id],
-        "messages": chat[order_id]
+        "request": request, "trade": trade, "remaining": remaining
     })
 
-# Кнопка "Я оплатил"
-@app.post("/orders/{order_id}/paid")
-def mark_paid(order_id: str):
-    if order_id in orders:
-        orders[order_id]["status"] = "paid"
-    return RedirectResponse(url=f"/trade/{order_id}", status_code=302)
+@app.post("/trade/{trade_id}/paid")
+async def trade_paid(trade_id: int):
+    # Mark "paid" status
+    trade = next((t for t in trades if t["id"] == trade_id), None)
+    if trade:
+        trade["is_paid"] = True
+    return RedirectResponse(url=f"/trade/{trade_id}", status_code=303)
 
-# Кнопка "Подтвердить получение"
-@app.post("/orders/{order_id}/confirm")
-def mark_confirm(order_id: str):
-    if order_id in orders:
-        orders[order_id]["status"] = "confirmed"
-    return RedirectResponse(url=f"/trade/{order_id}", status_code=302)
+@app.post("/trade/{trade_id}/confirm")
+async def trade_confirm(trade_id: int):
+    # Mark "confirmed receipt"
+    trade = next((t for t in trades if t["id"] == trade_id), None)
+    if trade:
+        trade["is_confirmed"] = True
+    return RedirectResponse(url=f"/trade/{trade_id}", status_code=303)
 
-# Кнопка "Открыть спор"
-@app.post("/orders/{order_id}/dispute")
-def mark_dispute(order_id: str):
-    if order_id in orders:
-        orders[order_id]["status"] = "dispute"
-    return RedirectResponse(url=f"/trade/{order_id}", status_code=302)
+@app.post("/trade/{trade_id}/dispute")
+async def trade_dispute(trade_id: int):
+    # Mark "dispute opened"
+    trade = next((t for t in trades if t["id"] == trade_id), None)
+    if trade:
+        trade["is_dispute"] = True
+    return RedirectResponse(url=f"/trade/{trade_id}", status_code=303)
 
-# Отправка сообщения в чат
-@app.post("/orders/{order_id}/message")
-def send_message(order_id: str, message: str = Form(...)):
-    if order_id in chat:
-        chat[order_id].append({"user": "Вы", "text": message})
-    return RedirectResponse(url=f"/trade/{order_id}", status_code=302)
+@app.post("/trade/{trade_id}/chat")
+async def trade_chat(trade_id: int, message: str = Form(...)):
+    # Add a message to the trade chat history
+    trade = next((t for t in trades if t["id"] == trade_id), None)
+    if trade:
+        trade["messages"].append(message)
+    return RedirectResponse(url=f"/trade/{trade_id}", status_code=303)
