@@ -2,15 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Рынок P2P</title>
+  <title>Рынок</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body class="dark-theme">
   <header class="header">
     <div class="header-left"><h1>Рынок</h1></div>
-    <div class="header-right">
-      <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
-    </div>
+    <div class="header-right"><button class="icon-btn" onclick="openUserSettings()">⚙️</button></div>
   </header>
   <div id="user-settings" class="modal">
     <div class="modal-content">
@@ -18,19 +16,18 @@
       <h2>Мои настройки</h2>
       <p><a href="/withdraw">Вывод средств</a></p>
       <p><a href="/deposit">Пополнить сеть</a></p>
-      <p>Адрес кошелька: <a href="https://etherscan.io/address/0x123...">0x123...</a></p>
+      <p>Адрес кошелька: <a href="#">0x123...</a></p>
     </div>
   </div>
-
   <div class="container">
     <a href="/create"><button class="btn">Создать объявление</button></a>
-    <!-- ... остальной код рынка (фильтры, список объявлений) ... -->
+    <div class="filters">…ваши фильтры…</div>
+    <ul id="ads-list">{% for ad in ads %}<li>…{% endfor %}</ul>
   </div>
-
   <script>
-    function openUserSettings(){ document.getElementById('user-settings').style.display='block'; }
-    function closeUserSettings(){ document.getElementById('user-settings').style.display='none'; }
-    window.onclick = e => { if(e.target.id==='user-settings') closeUserSettings(); }
+    function openUserSettings(){document.getElementById('user-settings').style.display='block';}
+    function closeUserSettings(){document.getElementById('user-settings').style.display='none';}
+    window.onclick=e=>{ if(e.target.id==='user-settings') closeUserSettings(); }
   </script>
 </body>
 </html>
