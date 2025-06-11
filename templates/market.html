@@ -1,27 +1,25 @@
-<!-- templates/market.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Рынок</title>
-    <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
+    <title>Маркет</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Рынок объявлений</h1>
-    <p><a href="/create_ad">Создать объявление</a></p>
-    <table>
-        <tr>
-            <th>Тип</th><th>Сумма</th><th>Цена</th><th>Оплата</th><th>Действие</th>
-        </tr>
-        {% for ad in ads %}
-        <tr>
-            <td>{{ ad.type }}</td>
-            <td>{{ ad.amount }}</td>
-            <td>{{ ad.price }}</td>
-            <td>{{ ad.payment }}</td>
-            <td><a href="/trade/new?ad_id={{ ad.id }}">Купить</a></td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="container">
+        <h2>Список объявлений</h2>
+        <a href="/ads/create" class="btn">Создать объявление</a>
+        <table>
+            <tr><th>Тип</th><th>Сумма</th><th>Цена</th><th>Оплата</th><th>Действие</th></tr>
+            {% for ad in ads %}
+            <tr>
+                <td>{{ ad.type }}</td>
+                <td>{{ ad.amount }}</td>
+                <td>{{ ad.price }}</td>
+                <td>{{ ad.payment }}</td>
+                <td><a href="/ads/{{ ad.id }}/buy" class="btn">Купить</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </body>
 </html>
