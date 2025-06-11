@@ -1,30 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Создать объявление</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
-        <h2>Создать новое объявление</h2>
-        <form method="post" action="/ads/create">
+        <h2>Создать объявление</h2>
+        <form action="/ads/create" method="post">
             <label>Тип:</label>
             <select name="type">
                 <option value="buy">Купить</option>
                 <option value="sell">Продать</option>
             </select>
 
-            <label>Сумма:</label>
-            <input type="number" name="amount" step="0.01" required>
+            <label>Криптовалюта:</label>
+            <select name="crypto">
+                <option value="usdt">USDT</option>
+                <option value="btc">BTC</option>
+                <option value="eth">ETH</option>
+                <option value="trump">TRUMP</option>
+            </select>
+
+            <label>Фиат:</label>
+            <select name="fiat">
+                <option value="USD">USD – Доллар США</option>
+                <option value="EUR">EUR – Евро</option>
+                <option value="GBP">GBP – Британский фунт</option>
+                <option value="RUB">RUB – Российский рубль</option>
+                <option value="UAH">UAH – Украинская гривна</option>
+                <option value="KZT">KZT – Казахстанский тенге</option>
+                <option value="TRY">TRY – Турецкая лира</option>
+                <option value="AED">AED – Дирхам ОАЭ</option>
+                <option value="NGN">NGN – Нигерийская найра</option>
+                <option value="INR">INR – Индийская рупия</option>
+                <option value="VND">VND – Вьетнамский донг</option>
+                <option value="BRL">BRL – Бразильский реал</option>
+                <option value="ARS">ARS – Аргентинское песо</option>
+                <option value="COP">COP – Колумбийское песо</option>
+                <option value="PEN">PEN – Перуанский соль</option>
+                <option value="MXN">MXN – Мексиканский песо</option>
+                <option value="CLP">CLP – Чилийский песо</option>
+                <option value="ZAR">ZAR – Южноафриканский рэнд</option>
+                <option value="EGP">EGP – Египетский фунт</option>
+                <option value="GHS">GHS – Ганский седи</option>
+                <option value="KES">KES – Кенийский шиллинг</option>
+                <option value="MAD">MAD – Марокканский дирхам</option>
+                <option value="PKR">PKR – Пакистанская рупия</option>
+                <option value="BDT">BDT – Бангладешская така</option>
+                <option value="LKR">LKR – Шри-Ланкийская рупия</option>
+                <option value="IDR">IDR – Индонезийская рупия</option>
+                <option value="THB">THB – Тайский бат</option>
+                <option value="MYR">MYR – Малайзийский ринггит</option>
+                <option value="PHP">PHP – Филиппинское песо</option>
+                <option value="KRW">KRW – Южнокорейская вона</option>
+                <option value="TJS">TJS – Таджикский сомони</option>
+            </select>
 
             <label>Цена:</label>
-            <input type="number" name="price" step="0.01" required>
+            <input type="number" step="0.01" name="price" required>
 
-            <label>Оплата:</label>
-            <input type="text" name="payment" required>
+            <label>Мин. сумма сделки:</label>
+            <input type="number" step="0.01" name="min_amount" required>
 
-            <button type="submit" class="btn">Создать</button>
+            <label>Макс. сумма сделки:</label>
+            <input type="number" step="0.01" name="max_amount" required>
+
+            <label>Способ оплаты:</label>
+            <input type="text" name="payment_method" required>
+
+            <label>Комментарий:</label>
+            <textarea name="comment"></textarea>
+
+            <button type="submit">Создать</button>
         </form>
+        <a href="/market">Назад на рынок</a>
     </div>
 </body>
 </html>
