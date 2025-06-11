@@ -4,76 +4,66 @@
   <meta charset="UTF-8">
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    body { background:#0d0d0d; color:#00ff99; font-family:Arial,sans-serif; margin:0; padding:0; }
-    .container { max-width:600px; margin:20px auto; padding:20px; background:#111; border-radius:8px; }
-    h1, h2, h3 { color:#00ff99; }
-    .field { margin-bottom:15px; }
-    .field label { display:block; margin-bottom:5px; }
-    .field input, .field select { width:100%; padding:8px; background:#222; color:#0f0; border:1px solid #0f0; border-radius:4px; }
-    .btn { background:#00aa66; color:#000; border:none; padding:10px 20px; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold; }
-    .btn:hover { background:#008855; }
-    .info-box { background:#1a1a1a; padding:15px; border:1px solid #0f0; border-radius:6px; margin-top:20px; }
-    .info-box p { margin:5px 0; }
-  </style>
   <script>
-    function calculate() {
-      const price = parseFloat(document.getElementById('price').innerText);
-      const rubInput = document.getElementById('sum_rub');
-      const usdtInput = document.getElementById('sum_usdt');
-      if (rubInput.value) {
-        usdtInput.value = (parseFloat(rubInput.value) / price).toFixed(6);
-      } else if (usdtInput.value) {
-        rubInput.value = (parseFloat(usdtInput.value) * price).toFixed(2);
-      }
+    // Таймер 15 минут
+    let seconds = 15*60;
+    function tick(){
+      const el = document.getElementById('timer');
+      const m = Math.floor(seconds/60), s = seconds%60;
+      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+      if(seconds>0){ seconds--; setTimeout(tick,1000); }
     }
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('sum_rub').addEventListener('input', () => { document.getElementById('sum_usdt').value=''; calculate(); });
-      document.getElementById('sum_usdt').addEventListener('input', () => { document.getElementById('sum_rub').value=''; calculate(); });
-    });
+    window.onload = tick;
   </script>
 </head>
-<body>
+<body class="dark-theme">
   <div class="container">
     <h1>Сделка</h1>
-    <div class="field">
-      <label>Цена: <span id="price">{{ ad.price }} RUB</span> за 1 USDT</label>
-    </div>
-    <div class="field">
-      <label>Длительность оплаты: 15–30 мин (после создания сделки таймер запустится)</label>
-    </div>
-    <div class="field">
-      <label>Способ оплаты:</label>
-      <select id="payment_method" disabled>
-        <option>{{ ad.payment_method }}</option>
-      </select>
-    </div>
+    <div class="field"><strong>Цена:</strong> {{ad.price}} {{ad.fiat}}</div>
+    <div class="field"><strong>Сумма:</strong> {{ad.amount}} {{ad.crypto}}</div>
+    <div class="field"><strong>Оплата:</strong> {{ad.payment_method}}</div>
+    <div class="field timer">Осталось: <span id="timer">15:00</span></div>
 
-    <h2>За Фиат RUB → За Крипту USDT</h2>
+    <h2>Введите</h2>
     <div class="field">
-      <label>Введите сумму (RUB):</label>
-      <input id="sum_rub" type="number" placeholder="₽" />
+      <label>RUB → USDT</label><br>
+      <input id="sum_rub" type="number" placeholder="₽" oninput="usd.value=''; calc()">
+      <input id="sum_usdt" type="number" placeholder="USDT" oninput="sum_rub.value=''; calc()">
     </div>
-    <div class="field">
-      <label>Введите количество (USDT):</label>
-      <input id="sum_usdt" type="number" placeholder="USDT" />
-    </div>
-    <button class="btn" onclick="calculate()">Рассчитать</button>
+    <script>
+      function calc(){
+        const price = {{ad.rate}};
+        const r = document.getElementById('sum_rub').value;
+        const u = document.getElementById('sum_usdt').value;
+        if(r) document.getElementById('sum_usdt').value=(r/price).toFixed(6);
+        if(u) document.getElementById('sum_rub').value=(u*price).toFixed(2);
+      }
+    </script>
 
-    <div class="field">
-      <button class="btn">Купить</button>
-    </div>
+    <button class="btn">Купить</button>
 
     <div class="info-box">
       <h3>Условия мейкера</h3>
-      <p>Перевод по карте</p>
+      <p>{{ad.comment or 'Без дополнительных условий'}}</p>
     </div>
+
     <div class="info-box">
-      <h3>Сведения о продавце</h3>
-      <p><strong>Никнейм:</strong> Павел</p>
-      <p><strong>Рейтинг:</strong> 99%</p>
-      <p><strong>Исполненные ордера:</strong> 55</p>
+      <h3>Продавец</h3>
+      <p>Ник: Павел</p>
+      <p>Рейтинг: 99%</p>
+      <p>Ордера: 55</p>
     </div>
+
+    <h2>Чат</h2>
+    <div class="chat-box">
+      {% for msg in ad.chat %}
+        <p><strong>{{msg.user}}:</strong> {{msg.text}}</p>
+      {% endfor %}
+    </div>
+    <form method="post" action="/trade/{{ad.id}}/message">
+      <input type="text" name="message" placeholder="Сообщение" required>
+      <button class="btn">Отправить</button>
+    </form>
   </div>
 </body>
 </html>
