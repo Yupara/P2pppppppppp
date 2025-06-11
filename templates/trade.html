@@ -5,53 +5,52 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    // Таймер 15 минут
-    let seconds = 15*60;
-    function tick(){
-      const el = document.getElementById('timer');
-      const m = Math.floor(seconds/60), s = seconds%60;
-      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+    let seconds = {{remaining}};
+    function tick(){ 
+      const el=document.getElementById('timer');
+      const m=Math.floor(seconds/60), s=seconds%60;
+      el.innerText=`${m}:${String(s).padStart(2,'0')}`;
       if(seconds>0){ seconds--; setTimeout(tick,1000); }
     }
-    window.onload = tick;
+    window.onload=tick;
   </script>
 </head>
 <body class="dark-theme">
   <div class="container">
     <h1>Сделка</h1>
-    <div class="field"><strong>Цена:</strong> {{ad.price}} {{ad.fiat}}</div>
-    <div class="field"><strong>Сумма:</strong> {{ad.amount}} {{ad.crypto}}</div>
-    <div class="field"><strong>Оплата:</strong> {{ad.payment_method}}</div>
-    <div class="field timer">Осталось: <span id="timer">15:00</span></div>
+    <p><strong>Тип:</strong> {{ad.action}}</p>
+    <p><strong>Крипта:</strong> {{ad.crypto}}</p>
+    <p><strong>Фиат:</strong> {{ad.fiat}}</p>
+    <p><strong>Курс:</strong> {{ad.rate}}</p>
+    <p><strong>Оплата:</strong> {{ad.payment_method}}</p>
+    <p class="timer">Осталось: <span id="timer">15:00</span></p>
 
-    <h2>Введите</h2>
-    <div class="field">
-      <label>RUB → USDT</label><br>
-      <input id="sum_rub" type="number" placeholder="₽" oninput="usd.value=''; calc()">
-      <input id="sum_usdt" type="number" placeholder="USDT" oninput="sum_rub.value=''; calc()">
-    </div>
+    <h2>Введите сумму</h2>
+    <input id="sum_rub" oninput="usd.value='';calc()" type="number" placeholder="RUB">
+    <input id="sum_usdt" oninput="sum_rub.value='';calc()" type="number" placeholder="USDT">
     <script>
       function calc(){
-        const price = {{ad.rate}};
-        const r = document.getElementById('sum_rub').value;
-        const u = document.getElementById('sum_usdt').value;
-        if(r) document.getElementById('sum_usdt').value=(r/price).toFixed(6);
-        if(u) document.getElementById('sum_rub').value=(u*price).toFixed(2);
+        const rate={{ad.rate}};
+        const r=sum_rub.value, u=sum_usdt.value;
+        if(r) usd.value=(r/rate).toFixed(6);
+        if(u) sum_rub.value=(u*rate).toFixed(2);
       }
     </script>
 
-    <button class="btn">Купить</button>
-
-    <div class="info-box">
-      <h3>Условия мейкера</h3>
-      <p>{{ad.comment or 'Без дополнительных условий'}}</p>
+    <div class="buttons">
+      <button class="btn" onclick="alert('Оплачено')">Я оплатил</button>
+      <button class="btn" onclick="alert('Подтверждено')">Подтвердить получение</button>
+      <button class="btn btn-danger" onclick="alert('Спор')">Открыть спор</button>
     </div>
 
     <div class="info-box">
-      <h3>Продавец</h3>
-      <p>Ник: Павел</p>
+      <h3>Условия мейкера</h3>
+      <p>{{ad.comment||'Нет условий'}}</p>
+    </div>
+    <div class="info-box">
+      <h3>Продавец: Павел</h3>
       <p>Рейтинг: 99%</p>
-      <p>Ордера: 55</p>
+      <p>Ордеров: 55</p>
     </div>
 
     <h2>Чат</h2>
@@ -64,6 +63,8 @@
       <input type="text" name="message" placeholder="Сообщение" required>
       <button class="btn">Отправить</button>
     </form>
+
+    <a href="/market"><button class="btn">Назад</button></a>
   </div>
 </body>
 </html>
