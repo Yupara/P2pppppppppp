@@ -1,63 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Сделка</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body class="dark-theme">
-    <div class="container">
-        <h1>Сделка с {{ ad.owner.username }}</h1>
-
-        <div class="ad-details">
-            <p><strong>Тип:</strong> {{ ad.type }}</p>
-            <p><strong>Криптовалюта:</strong> {{ ad.crypto }}</p>
-            <p><strong>Фиат:</strong> {{ ad.fiat }}</p>
-            <p><strong>Курс:</strong> {{ ad.rate }}</p>
-            <p><strong>Метод оплаты:</strong> {{ ad.payment_method }}</p>
-            <p><strong>Мин/Макс:</strong> {{ ad.min_amount }} / {{ ad.max_amount }}</p>
-        </div>
-
-        <form action="/orders/create/{{ ad.id }}" method="post" class="order-form">
-            <label for="amount">Сумма:</label>
-            <input type="number" step="0.01" name="amount" required placeholder="Введите сумму">
-
-            <label for="payment">Метод оплаты:</label>
-            <input type="text" name="payment" value="{{ ad.payment_method }}" required>
-
-            <button type="submit" class="btn-primary">Создать сделку</button>
-        </form>
-
-        {% if order %}
-            <hr>
-            <div class="order-section">
-                <h2>Ваша сделка</h2>
-                <p><strong>Статус:</strong> {{ order.status }}</p>
-                <p><strong>Время начала:</strong> {{ order.timestamp }}</p>
-                <form method="post" action="/orders/{{ order.id }}/pay">
-                    <button type="submit" class="btn-warning">Я оплатил</button>
-                </form>
-                <form method="post" action="/orders/{{ order.id }}/confirm">
-                    <button type="submit" class="btn-success">Подтвердить получение</button>
-                </form>
-                <form method="post" action="/orders/{{ order.id }}/dispute">
-                    <button type="submit" class="btn-danger">Открыть спор</button>
-                </form>
-            </div>
-
-            <div class="chat-section">
-                <h3>Чат</h3>
-                <div class="chat-box">
-                    {% for msg in messages %}
-                        <p><strong>{{ msg.sender.username }}:</strong> {{ msg.content }}</p>
-                    {% endfor %}
-                </div>
-                <form method="post" action="/orders/{{ order.id }}/message">
-                    <input type="text" name="message" placeholder="Написать сообщение..." required>
-                    <button type="submit">Отправить</button>
-                </form>
-            </div>
-        {% endif %}
-    </div>
-</body>
-</html>
+<!DOCTYPE html><html><head><title>Сделка</title><link rel="stylesheet" href="/static/styles.css"></head><body>
+<div class="container"><h1>Сделка</h1>
+<p>{{ ad.user }} {{ ad.action }} {{ ad.amount }} {{ ad.crypto }}/{{ ad.fiat }} по {{ ad.rate }}</p>
+<form method="post">
+  <input name="amount" type="number" step="0.01" value="{{ ad.amount }}" required>
+  <input name="payment" value="{{ ad.payment }}" required>
+  <button class="btn">Подтвердить</button>
+</form>
+<a href="/market" class="btn">Назад</a></div></body></html>
