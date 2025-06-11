@@ -8,46 +8,49 @@
 <body class="dark-theme">
   <header class="header">
     <div class="header-left">
-      <p class="user-name">👤 Павел</p>
-      <p class="user-info">✅ Ордера: 55</p>
-      <p class="user-info">⭐ Рейтинг: 99%</p>
-      <p class="user-info">💳 Оплата: Сбербанк</p>
+      <h1>Новое объявление</h1>
     </div>
     <div class="header-right">
-      <button class="icon-btn">🔔</button>
+      <button class="icon-btn" onclick="openUserSettings()">⚙️</button>
     </div>
   </header>
+  <div id="user-settings" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeUserSettings()">✖️</span>
+      <h2>Мои настройки</h2>
+      <p>Вывод средств</p>
+      <p>Пополнить сеть</p>
+      <p>Адрес кошелька: <a href="https://etherscan.io/address/0x123...">0x123...</a></p>
+    </div>
+  </div>
+
   <div class="container">
-    <h1>Новое объявление</h1>
     <form action="/create" method="post">
+      <!-- Существующие поля -->
       <div class="field"><label>Тип:</label>
         <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
       </div>
-      <div class="field"><label>Криптовалюта:</label>
-        <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
+      <!-- ... другие поля ... -->
+
+      <!-- Новый блок: Ф.И.О. и карта -->
+      <div class="field">
+        <label>Ф.И.О.:</label>
+        <input type="text" name="full_name" placeholder="Иванов Иван Иванович" required>
       </div>
-      <div class="field"><label>Фиат:</label>
-        <select name="fiat">
-          <option>USD – Доллар США</option><option>EUR – Евро</option><option>GBP – Британский фунт</option><option>RUB – Российский рубль</option>
-          <option>UAH – Украинская гривна</option><option>KZT – Казахстанский тенге</option><option>TRY – Турецкая лира</option>
-          <option>AED – Дирхам ОАЭ</option><option>NGN – Нигерийская найра</option><option>INR – Индийская рупия</option>
-          <option>VND – Вьетнамский донг</option><option>BRL – Бразильский реал</option><option>ARS – Аргентинское песо</option>
-          <option>COP – Колумбийское песо</option><option>PEN – Перuvianский соль</option><option>MXN – Мексиканский песо</option>
-          <option>CLP – Чилийское песо</option><option>ZAR – Южноафриканский рэнд</option><option>EGP – Египетский фунт</option>
-          <option>GHS – Ганский седи</option><option>KES – Кенийский шиллинг</option><option>MAD – Марокканский дирхам</option>
-          <option>PKR – Пакистанская рупия</option><option>BDT – Бангладешская така</option><option>LKR – Шри-Ланкийская рупия</option>
-          <option>IDR – Индонезийская рупия</option><option>THB – Тайский бат</option><option>MYR – Малайзийский ринггит</option>
-          <option>PHP – Филиппинское песо</option><option>KRW – Южнокорейская вона</option><option>TJS – Таджикский сомони</option>
-        </select>
+      <div class="field">
+        <label>Номер карты:</label>
+        <input type="text" name="card_number" placeholder="1234 5678 9012 3456" required>
       </div>
-      <div class="field"><label>Курс:</label><input type="number" name="rate" step="0.0001" required></div>
-      <div class="field"><label>Мин. сумма:</label><input type="number" name="min_amount" step="0.0001" required></div>
-      <div class="field"><label>Макс. сумма:</label><input type="number" name="max_amount" step="0.0001" required></div>
-      <div class="field"><label>Способ оплаты:</label><input type="text" name="payment_method" required></div>
-      <div class="field"><label>Условия:</label><textarea name="comment"></textarea></div>
+
       <button class="btn" type="submit">Создать</button>
       <a href="/market"><button type="button" class="btn">Отмена</button></a>
     </form>
   </div>
+
+  <script>
+    function openUserSettings(){ document.getElementById('user-settings').style.display='block'; }
+    function closeUserSettings(){ document.getElementById('user-settings').style.display='none'; }
+    window.onclick = e => { if(e.target.id==='user-settings') closeUserSettings(); }
+  </script>
 </body>
 </html>
