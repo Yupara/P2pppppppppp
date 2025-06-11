@@ -1,18 +1,27 @@
+<!-- templates/market.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Market</title>
+    <meta charset="utf-8">
+    <title>Рынок</title>
+    <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <h1>Объявления</h1>
-    <a href="/create-ad">Создать объявление</a>
-    <ul>
+    <h1>Рынок объявлений</h1>
+    <p><a href="/create_ad">Создать объявление</a></p>
+    <table>
+        <tr>
+            <th>Тип</th><th>Сумма</th><th>Цена</th><th>Оплата</th><th>Действие</th>
+        </tr>
         {% for ad in ads %}
-            <li>
-                {{ ad.type|capitalize }} {{ ad.amount }} {{ ad.currency }} по {{ ad.price }} {{ ad.payment_method }}
-                <a href="/trade/{{ ad.id }}">Купить</a>
-            </li>
+        <tr>
+            <td>{{ ad.type }}</td>
+            <td>{{ ad.amount }}</td>
+            <td>{{ ad.price }}</td>
+            <td>{{ ad.payment }}</td>
+            <td><a href="/trade/new?ad_id={{ ad.id }}">Купить</a></td>
+        </tr>
         {% endfor %}
-    </ul>
+    </table>
 </body>
 </html>
