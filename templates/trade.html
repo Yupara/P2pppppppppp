@@ -5,82 +5,83 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    let seconds = {{ remaining }};
+    let seconds = {{remaining}};
     function tick(){
-      const el = document.getElementById('timer');
-      const m = Math.floor(seconds/60), s = seconds%60;
-      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+      const el=document.getElementById('timer');
+      const m=Math.floor(seconds/60), s=seconds%60;
+      el.innerText=`${m}:${String(s).padStart(2,'0')}`;
       if(seconds>0){ seconds--; setTimeout(tick,1000); }
     }
-    window.onload = tick;
+    window.onload=tick;
     function calc(){
-      const rate = {{ ad.rate }};
-      const r = document.getElementById('sum_rub').value;
-      const u = document.getElementById('sum_usdt').value;
+      const rate = {{ad.rate}};
+      const r=document.getElementById('sum_rub').value;
+      const u=document.getElementById('sum_usdt').value;
       if(r) document.getElementById('sum_usdt').value=(r/rate).toFixed(6);
       if(u) document.getElementById('sum_rub').value=(u*rate).toFixed(2);
     }
   </script>
 </head>
 <body class="dark-theme">
+  <header class="header">
+    <div class="header-left">
+      <p class="user-name">👤 Павел</p>
+      <p class="user-info">✅ Ордера: 55</p>
+      <p class="user-info">⭐ Рейтинг: 99%</p>
+      <p class="user-info">💳 Оплата: Сбербанк</p>
+    </div>
+    <div class="header-right"><button class="icon-btn">🔔</button></div>
+  </header>
   <div class="container">
     <h1>Сделка</h1>
-    <p><strong>Тип:</strong> {{ ad.action }}</p>
-    <p><strong>Крипта:</strong> {{ ad.crypto }}</p>
-    <p><strong>Фиат:</strong> {{ ad.fiat }}</p>
-    <p><strong>Курс:</strong> {{ ad.rate }} ₽</p>
-    <p><strong>Способ оплаты:</strong> {{ ad.payment_method }}</p>
-    <p><strong>Условия:</strong> {{ ad.comment }}</p>
-    
+    <p><strong>Тип:</strong> {{ad.action}}</p>
+    <p><strong>Крипта:</strong> {{ad.crypto}}</p>
+    <p><strong>Фиат:</strong> {{ad.fiat}}</p>
+    <p><strong>Курс:</strong> {{ad.rate}} ₽</p>
+    <p><strong>Условия:</strong> {{ad.comment}}</p>
     <p class="timer">Осталось: <span id="timer">15:00</span></p>
 
-    <!-- Форма покупки -->
-    <form action="/trade/{{ ad.id }}/buy" method="post">
-      <label>Сумма (USDT):</label>
-      <input id="sum_usdt" type="number" step="0.0001" name="usdt_amount" oninput="document.getElementById('sum_rub').value=''; calc()" required>
-      <label>Рубли (RUB):</label>
-      <input id="sum_rub" type="number" step="0.01" oninput="document.getElementById('sum_usdt').value=''; calc()">
-      <button class="btn" type="submit">Купить</button>
+    <h2>Покупка {{ad.crypto}}</h2>
+    <input id="sum_rub" oninput="document.getElementById('sum_usdt').value='';calc()" type="number" placeholder="₽">
+    <input id="sum_usdt" oninput="document.getElementById('sum_rub').value='';calc()" type="number" placeholder="USDT">
+    <form action="/trade/{{ad.id}}/buy" method="post">
+      <input type="hidden" name="usdt_amount" id="hidden_usdt">
+      <button class="btn" onclick="document.getElementById('hidden_usdt').value=document.getElementById('sum_usdt').value;">Купить</button>
     </form>
 
-    <!-- Итоги -->
-    {% if payments.get(ad.id) and not payments[ad.id].get('paid') %}
+    {% if payments.get(ad.id) and not payments[ad.id].paid %}
     <div class="info-box">
       <h2>Итоги сделки</h2>
-      <p>Сумма USDT: {{ payments[ad.id].usdt_amount }}</p>
-      <p>Общая стоимость: {{ payments[ad.id].total_rub | round(2) }} ₽</p>
-      <p>Комиссия (0.5%): {{ payments[ad.id].commission | round(2) }} ₽</p>
-      <p>Время создания ордера: {{ payments[ad.id].timestamp }}</p>
-      <h3>Ввод данных карты</h3>
-      <form action="/trade/{{ ad.id }}/pay" method="post">
+      <p>Сумма USDT: {{payments[ad.id].usdt_amount}}</p>
+      <p>Итог (₽): {{payments[ad.id].total_rub | round(2)}}</p>
+      <p>Комиссия: {{payments[ad.id].commission | round(2)}} ₽</p>
+      <p>Время: {{payments[ad.id].timestamp}}</p>
+      <h3>Данные карты</h3>
+      <form action="/trade/{{ad.id}}/pay" method="post">
         <input type="text" name="card_number" placeholder="Номер карты" required>
         <input type="text" name="exp_date" placeholder="MM/YY" required>
         <input type="text" name="cvv" placeholder="CVV" required>
-        <button class="btn" type="submit">Платёж выполнен</button>
+        <button class="btn">Платёж выполнен</button>
       </form>
     </div>
     {% endif %}
 
-    <!-- Подтверждение получения -->
-    {% if receipts.get(ad.id) %}
-    <div class="info-box">
-      <p>USDT успешно получен продавцом ✅</p>
-    </div>
-    {% elif payments.get(ad.id) and payments[ad.id].paid %}
-    <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
-      <button class="btn btn-success">Я получил USDT</button>
-    </form>
+    {% if payments.get(ad.id) and payments[ad.id].paid %}
+      {% if receipts.get(ad.id) %}
+        <div class="info-box"><p>USDT получен продавцом ✅</p></div>
+      {% else %}
+        <form action="/trade/{{ad.id}}/confirm_receipt" method="post">
+          <button class="btn btn-success">Я получил USDT</button>
+        </form>
+      {% endif %}
     {% endif %}
 
-    <!-- Чат -->
     <h2>Чат</h2>
     <div class="chat-box">
-      {% for msg in messages %}
-        <p><strong>{{ msg.user }}:</strong> {{ msg.text }}</p>
-      {% endfor %}
+      {% for msg in messages %}<p><strong>{{msg.user}}:</strong> {{msg.text}}</p>{% endfor %}
     </div>
-    <form action="/trade/{{ ad.id }}/message" method="post">
-      <input type="text" name="message" placeholder="Написать сообщение..." required>
+    <form action="/trade/{{ad.id}}/message" method="post">
+      <input type="text" name="message" placeholder="Сообщение" required>
       <button class="btn">Отправить</button>
     </form>
 
