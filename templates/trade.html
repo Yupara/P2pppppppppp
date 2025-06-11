@@ -4,51 +4,56 @@
   <meta charset="UTF-8">
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <script>
-    let sec={{remaining}};
-    function tick(){
-      const el=document.getElementById('timer');
-      const m=Math.floor(sec/60), s=sec%60;
-      el.innerText=`${m}:${String(s).padStart(2,'0')}`;
-      if(sec>0){sec--;setTimeout(tick,1000);}
-    }
-    window.onload=tick;
-  </script>
 </head>
 <body class="dark-theme">
   <div class="container">
-    <h1>Сделка</h1>
-    <p><strong>Тип:</strong> {{ad.action}}</p>
-    <p><strong>Крипта:</strong> {{ad.crypto}}</p>
-    <p><strong>Фиат:</strong> {{ad.fiat}}</p>
-    <p><strong>Курс:</strong> {{ad.rate}}</p>
-    <p><strong>Оплата:</strong> {{ad.payment_method}}</p>
-    <p class="timer">Осталось: <span id="timer">15:00</span></p>
+    <h1>Сделка с {{ ad.user }}</h1>
 
-    <div class="calc">
-      <input id="sum_rub" oninput="sum_usdt.value='';calc()" type="number" placeholder="RUB">
-      <input id="sum_usdt" oninput="sum_rub.value='';calc()" type="number" placeholder="USDT">
+    <div class="ad-details">
+      <p><strong>Тип:</strong> {{ ad.action }}</p>
+      <p><strong>Криптовалюта:</strong> {{ ad.crypto }}</p>
+      <p><strong>Фиат:</strong> {{ ad.fiat }}</p>
+      <p><strong>Курс:</strong> {{ ad.rate }} ₽</p>
+      <p><strong>Способ оплаты:</strong> {{ ad.payment_method }}</p>
+      <p><strong>Условия:</strong> {{ ad.comment }}</p>
     </div>
 
-    <button class="btn">Купить</button>
+    <!-- Форма покупки -->
+    <h2>Покупка {{ ad.crypto }}</h2>
+    <form action="/trade/{{ ad.id }}/buy" method="post" class="order-form">
+      <div class="field">
+        <label>Сумма ({{ ad.crypto }}):</label>
+        <input type="number" step="0.0001" name="usdt_amount" required placeholder="Например, 100">
+      </div>
+      <button type="submit" class="btn">Купить</button>
+    </form>
 
+    <!-- Итоги покупки -->
+    {% if summary %}
     <div class="info-box">
-      <h3>Условия мейкера</h3><p>{{ad.comment or 'Нет условий'}}</p>
+      <h2>Итоги сделки</h2>
+      <p><strong>Покупка {{ ad.crypto }}:</strong> {{ summary.usdt_amount }}</p>
+      <p><strong>Цена фиксированная:</strong> {{ summary.rate }} ₽</p>
+      <p><strong>Общая стоимость (₽):</strong> {{ summary.total_rub | round(2) }}</p>
+      <p><strong>Комиссия (0.5%):</strong> {{ summary.commission | round(2) }} ₽</p>
+      <p><strong>Время ордера:</strong> {{ summary.timestamp }}</p>
+      <p><strong>Имя покупателя:</strong> {{ summary.buyer }}</p>
     </div>
-    <div class="info-box">
-      <h3>Продавец: {{ad.user}}</h3><p>Рейтинг: {{ad.rating}}%</p><p>Ордера: {{ad.orders}}</p>
-    </div>
+    {% endif %}
 
+    <!-- Чат -->
     <h2>Чат</h2>
     <div class="chat-box">
-      {% for msg in messages %}<p><strong>{{msg.user}}:</strong> {{msg.text}}</p>{% endfor %}
+      {% for msg in chat %}
+        <p><strong>{{ msg.user }}:</strong> {{ msg.text }}</p>
+      {% endfor %}
     </div>
-    <form method="post" action="/trade/{{ad.id}}/message">
-      <input name="message" placeholder="Сообщение" required>
+    <form action="/trade/{{ ad.id }}/message" method="post">
+      <input type="text" name="message" required placeholder="Написать сообщение...">
       <button class="btn">Отправить</button>
     </form>
 
-    <a href="/market"><button class="btn">Назад</button></a>
+    <a href="/market"><button class="btn">Назад на рынок</button></a>
   </div>
 </body>
 </html>
