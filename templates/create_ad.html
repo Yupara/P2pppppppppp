@@ -1,27 +1,25 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="container">
-  <h2>Создать объявление</h2>
-  <form method="post" action="/create" class="form">
-    <label>Тип:</label>
-    <select name="type" required>
-      <option value="buy">Купить</option>
-      <option value="sell">Продать</option>
-    </select>
-
-    <label>Сумма (в USDT):</label>
-    <input type="number" step="0.01" name="amount" required>
-
-    <label>Цена (₽):</label>
-    <input type="number" step="0.01" name="price" required>
-
-    <label>Способ оплаты:</label>
-    <input type="text" name="payment" placeholder="Сбербанк, Тинькофф..." required>
-
-    <label>Ваше имя (временно):</label>
-    <input type="text" name="seller" required>
-
-    <button type="submit" class="btn">Создать</button>
-  </form>
-</div>
-{% endblock %}
+<!-- templates/create_ad.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Создать объявление</title>
+    <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
+</head>
+<body>
+    <h1>Создать объявление</h1>
+    <form action="/create_ad" method="post">
+        <label>Тип сделки:
+            <select name="ad_type">
+                <option value="buy">Покупка</option>
+                <option value="sell">Продажа</option>
+            </select>
+        </label><br>
+        <label>Сумма: <input type="number" step="any" name="amount" required></label><br>
+        <label>Цена: <input type="number" step="any" name="price" required></label><br>
+        <label>Способ оплаты: <input type="text" name="payment" required></label><br><br>
+        <button type="submit">Создать</button>
+    </form>
+    <p><a href="/market">Перейти на рынок</a></p>
+</body>
+</html>
