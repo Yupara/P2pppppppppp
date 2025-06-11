@@ -1,13 +1,137 @@
-/* Header settings gear */
-.modal {
-  display: none; position: fixed; z-index: 100; left: 0; top: 0; 
-  width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+body {
+    background-color: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
 }
-.modal-content {
-  background: #111; margin: 15% auto; padding: 20px; border:1px solid #0f0; width:300px; border-radius:6px;
+
+a {
+    color: #58a6ff;
+    text-decoration: none;
 }
-.close-btn {
-  float:right; cursor:pointer; color:#0f0;
+
+a:hover {
+    text-decoration: underline;
 }
-.settings-btn, .icon-btn { background:none; border:none; color:#0f0; cursor:pointer; font-size:1.2rem; }
-.settings-modal, .modal-content { color:#0f0; }
+
+header {
+    background-color: #161b22;
+    color: #c9d1d9;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #30363d;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #58a6ff;
+}
+
+.menu a {
+    margin-left: 20px;
+    color: #c9d1d9;
+}
+
+main {
+    padding: 30px;
+}
+
+h1, h2, h3 {
+    color: #58a6ff;
+}
+
+form {
+    background-color: #161b22;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+form input, form select, form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #30363d;
+    border-radius: 5px;
+    background-color: #0d1117;
+    color: #c9d1d9;
+}
+
+button, input[type="submit"] {
+    background-color: #238636;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover, input[type="submit"]:hover {
+    background-color: #2ea043;
+}
+
+.ad-card {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.message {
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    background-color: #21262d;
+    color: #c9d1d9;
+}
+
+.chat-box {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #30363d;
+    background-color: #0d1117;
+    border-radius: 5px;
+}
+
+.card-data {
+    background-color: #161b22;
+    padding: 10px;
+    border: 1px dashed #30363d;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.right-top-settings {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #c9d1d9;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.settings-menu {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    padding: 15px;
+    border-radius: 8px;
+    display: none;
+    z-index: 100;
+}
+
+.settings-menu p {
+    margin: 5px 0;
+}
