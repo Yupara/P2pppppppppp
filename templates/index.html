@@ -1,13 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>P2P Платформа</title>
-    <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Добро пожаловать на P2P Платформу</h1>
-        <a href="/market" class="btn">Перейти к объявлениям</a>
-    </div>
-</body>
-</html>
+<!DOCTYPE html><html><head><title>Главная</title><link rel="stylesheet" href="/static/styles.css"></head><body>
+<div class="container">
+  <h1>P2P Platform</h1>
+  {% if user %}
+    <p>Добро пожаловать, {{ user }}! <a href="/logout" class="btn">Logout</a></p>
+    <a href="/create_ad" class="btn">Создать объявление</a>
+    <a href="/market" class="btn">Перейти на рынок</a>
+  {% else %}
+    <a href="/register" class="btn">Регистрация</a>
+    <a href="/login" class="btn">Вход</a>
+  {% endif %}
+</div></body></html>
