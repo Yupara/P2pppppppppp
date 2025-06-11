@@ -4,56 +4,72 @@
   <meta charset="UTF-8">
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    let seconds = {{ remaining }};
+    function tick() {
+      const el = document.getElementById('timer');
+      const m = Math.floor(seconds/60), s = seconds%60;
+      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+      if(seconds>0) { seconds--; setTimeout(tick,1000); }
+    }
+    window.onload = tick;
+  </script>
 </head>
 <body class="dark-theme">
   <div class="container">
-    <h1>Сделка с {{ ad.user }}</h1>
+    <h1>Сделка</h1>
+    <p><strong>Тип:</strong> {{ ad.action }}</p>
+    <p><strong>Крипта:</strong> {{ ad.crypto }}</p>
+    <p><strong>Фиат:</strong> {{ ad.fiat }}</p>
+    <p><strong>Курс:</strong> {{ ad.rate }}</p>
+    <p><strong>Оплата:</strong> {{ ad.payment_method }}</p>
+    <p class="timer">Осталось: <span id="timer">15:00</span></p>
 
-    <div class="ad-details">
-      <p><strong>Тип:</strong> {{ ad.action }}</p>
-      <p><strong>Криптовалюта:</strong> {{ ad.crypto }}</p>
-      <p><strong>Фиат:</strong> {{ ad.fiat }}</p>
-      <p><strong>Курс:</strong> {{ ad.rate }} ₽</p>
-      <p><strong>Способ оплаты:</strong> {{ ad.payment_method }}</p>
-      <p><strong>Условия:</strong> {{ ad.comment }}</p>
-    </div>
-
-    <!-- Форма покупки -->
     <h2>Покупка {{ ad.crypto }}</h2>
-    <form action="/trade/{{ ad.id }}/buy" method="post" class="order-form">
-      <div class="field">
-        <label>Сумма ({{ ad.crypto }}):</label>
-        <input type="number" step="0.0001" name="usdt_amount" required placeholder="Например, 100">
-      </div>
-      <button type="submit" class="btn">Купить</button>
+    <form action="/trade/{{ ad.id }}/buy" method="post">
+      <input type="number" name="usdt_amount" step="0.0001" placeholder="Сумма USDT" required>
+      <button class="btn">Купить</button>
     </form>
 
-    <!-- Итоги покупки -->
-    {% if summary %}
     <div class="info-box">
-      <h2>Итоги сделки</h2>
-      <p><strong>Покупка {{ ad.crypto }}:</strong> {{ summary.usdt_amount }}</p>
-      <p><strong>Цена фиксированная:</strong> {{ summary.rate }} ₽</p>
-      <p><strong>Общая стоимость (₽):</strong> {{ summary.total_rub | round(2) }}</p>
-      <p><strong>Комиссия (0.5%):</strong> {{ summary.commission | round(2) }} ₽</p>
-      <p><strong>Время ордера:</strong> {{ summary.timestamp }}</p>
-      <p><strong>Имя покупателя:</strong> {{ summary.buyer }}</p>
+      <h3>Итоги сделки</h3>
+      <!-- Здесь можно вывести расчет на клиенте с JS -->
+      <p class="note">После нажатия «Купить» расчёт отобразится здесь.</p>
     </div>
+
+    <h2>Оплата</h2>
+    {% if payments.get(ad.id) and payments[ad.id].paid %}
+      <p>Карта: **** **** **** {{ payments[ad.id].card.slice(-4) }}</p>
+      <p>Статус: Оплачено</p>
+    {% else %}
+      <form action="/trade/{{ ad.id }}/pay" method="post">
+        <input type="text" name="card_number" placeholder="Номер карты" required>
+        <input type="text" name="exp_date" placeholder="MM/YY" required>
+        <input type="text" name="cvv" placeholder="CVV" required>
+        <button class="btn">Платеж выполнен</button>
+      </form>
+    {% endif %}
+    <h2>Подтверждение получения</h2>
+    {% if receipts.get(ad.id) %}
+      <p>USDT получен продавцом ✅</p>
+    {% else %}
+      <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
+        <button class="btn btn-success">Я получил USDT</button>
+      </form>
     {% endif %}
 
-    <!-- Чат -->
     <h2>Чат</h2>
     <div class="chat-box">
-      {% for msg in chat %}
+      {% for msg in messages %}
         <p><strong>{{ msg.user }}:</strong> {{ msg.text }}</p>
       {% endfor %}
     </div>
     <form action="/trade/{{ ad.id }}/message" method="post">
-      <input type="text" name="message" required placeholder="Написать сообщение...">
+      <input type="text" name="message" placeholder="Сообщение" required>
       <button class="btn">Отправить</button>
     </form>
 
-    <a href="/market"><button class="btn">Назад на рынок</button></a>
+    <a href="/market"><button class="btn">Назад</button></a>
   </div>
 </body>
 </html>
