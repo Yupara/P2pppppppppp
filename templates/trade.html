@@ -1,62 +1,22 @@
-<!-- templates/trade.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Сделка #{{ trade.id }}</title>
-    <link href="{{ url_for('static', path='styles.css') }}" rel="stylesheet">
+    <title>Сделка</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Сделка №{{ trade.id }}</h1>
-    <p><strong>Тип:</strong> {{ trade.ad.type }}, 
-       <strong>Сумма:</strong> {{ trade.ad.amount }}, 
-       <strong>Цена:</strong> {{ trade.ad.price }}, 
-       <strong>Оплата:</strong> {{ trade.ad.payment }}</p>
-    <p>Осталось времени: <span id="timer">{{ remaining }}</span> сек</p>
-    <script>
-        // Countdown timer (updates every second) [oai_citation_attribution:11‡w3schools.com](https://www.w3schools.com/howto/howto_js_countdown.asp#:~:text=%2F%2F%20Get%20today%27s%20date%20and,getTime)
-        var seconds = {{ remaining }};
-        var timerEl = document.getElementById('timer');
-        var countdown = setInterval(function() {
-            if (seconds <= 0) {
-                clearInterval(countdown);
-                timerEl.innerHTML = "0";
-            } else {
-                seconds -= 1;
-                timerEl.innerHTML = seconds;
-            }
-        }, 1000);
-    </script>
-    <p><strong>Статус:</strong>
-        {% if trade.is_dispute %}
-            Спор открыт
-        {% elif trade.is_confirmed %}
-            Завершено
-        {% elif trade.is_paid %}
-            Оплачено (ожидает подтверждения получения)
-        {% else %}
-            Активна
-        {% endif %}
-    </p>
-    <form action="/trade/{{ trade.id }}/paid" method="post">
-        <button type="submit">Я оплатил</button>
-    </form>
-    <form action="/trade/{{ trade.id }}/confirm" method="post">
-        <button type="submit">Подтвердить получение</button>
-    </form>
-    <form action="/trade/{{ trade.id }}/dispute" method="post">
-        <button type="submit">Открыть спор</button>
-    </form>
-    <h3>Чат:</h3>
-    <div id="chat" style="border:1px solid #0f0; padding:5px; background:#111; margin-bottom:10px;">
-        {% for msg in trade.messages %}
-            <p>{{ msg }}</p>
-        {% endfor %}
+    <div class="container">
+        <h2>Сделка #{{ trade.id }}</h2>
+        <p><strong>Тип:</strong> {{ trade.ad.type }}</p>
+        <p><strong>Сумма:</strong> {{ trade.ad.amount }}</p>
+        <p><strong>Цена:</strong> {{ trade.ad.price }}</p>
+        <p><strong>Оплата:</strong> {{ trade.ad.payment }}</p>
+
+        <div class="buttons">
+            <button class="btn">Я оплатил</button>
+            <button class="btn">Подтвердить получение</button>
+            <button class="btn">Открыть спор</button>
+        </div>
     </div>
-    <form action="/trade/{{ trade.id }}/chat" method="post">
-        <input type="text" name="message" required placeholder="Введите сообщение" size="50">
-        <button type="submit">Отправить</button>
-    </form>
-    <p><a href="/market">Вернуться на рынок</a></p>
 </body>
 </html>
