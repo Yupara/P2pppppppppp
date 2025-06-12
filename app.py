@@ -169,3 +169,40 @@ async def chat_message(
     if any(k in low for k in ["бот","help","чатгпт"]):
         chats[ad_id].append({"user":"Бот","text":f"Привет, {user}! Чем помочь?"})
     return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ====== Пополнение ======
+@app.get("/deposit", response_class=HTMLResponse)
+def deposit_form(request: Request, user: str = Depends(get_current_user)):
+    balance = balances.get(user, 0.0)
+    return templates.TemplateResponse("deposit.html", {
+        "request": request,
+        "current_user": user,
+        "balance": balance
+    })
+
+@app.post("/deposit")
+def deposit(request: Request, amount: float = Form(...), user: str = Depends(get_current_user)):
+    if amount <= 0:
+        raise HTTPException(400, "Введите сумму больше нуля")
+    balances[user] = balances.get(user, 0.0) + amount
+    return RedirectResponse("/market", 302)
+
+# ====== Вывод ======
+@app.get("/withdraw", response_class=HTMLResponse)
+def withdraw_form(request: Request, user: str = Depends(get_current_user)):
+    balance = balances.get(user, 0.0)
+    return templates.TemplateResponse("withdraw.html", {
+        "request": request,
+        "current_user": user,
+        "balance": balance
+    })
+
+@app.post("/withdraw")
+def withdraw(request: Request, amount: float = Form(...), wallet_address: str = Form(...), user: str = Depends(get_current_user)):
+    if amount <= 0 or amount > balances.get(user, 0.0):
+        raise HTTPException(400, "Неверная сумма")
+    if not wallet_address:
+        raise HTTPException(400, "Укажите адрес кошелька")
+    balances[user] -= amount
+    # здесь вы бы инициировали реальный вывод
+    return RedirectResponse("/market", 302)
