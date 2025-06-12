@@ -1,131 +1,86 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Сделка</title>
-  <link rel="stylesheet" href="/static/styles.css">
-  <script>
-    // Таймер 15 минут
-    let seconds = {{ remaining }};
-    function tick() {
-      const el = document.getElementById('timer');
-      const m = Math.floor(seconds / 60), s = seconds % 60;
-      el.innerText = `${m}:${String(s).padStart(2, '0')}`;
-      if (seconds > 0) {
-        seconds--;
-        setTimeout(tick, 1000);
-      }
-    }
-    window.onload = tick;
-
-    // Показ/скрытие меню настроек
-    function toggleSettings() {
-      const menu = document.getElementById('settingsMenu');
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    }
-    window.onclick = e => {
-      if (e.target.id === 'settingsMenu') toggleSettings();
-    };
-  </script>
+    <meta charset="UTF-8">
+    <title>Сделка</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="dark-theme">
-  <!-- Навигация -->
-  <div class="navbar">
-    <a href="/market">🏠 Рынок</a>
-    <a href="/create">➕ Объявление</a>
-    <div class="settings-icon" onclick="toggleSettings()">⚙️</div>
-  </div>
-
-  <!-- Меню настроек -->
-  <div id="settingsMenu" class="settings-menu">
-    <p>👤 Пользователь: {{ ad.owner }}</p>
-    <p>✅ Выполнено ордеров: {{ ad.completed_orders }}</p>
-    <p>⭐ Рейтинг: {{ ad.rating }}%</p>
-    <p>💳 Оплата по умолчанию: {{ ad.payment_method }}</p>
-    <p><button onclick="location.href='/deposit'">Пополнить</button> <button onclick="location.href='/withdraw'">Вывести</button></p>
-    <p>🔗 Адрес кошелька: <a href="#">0x1234...abcd</a></p>
-  </div>
-
-  <div class="container">
-    <h2>Сделка с {{ ad.owner }}</h2>
-
-    <div class="info-box">
-      <p><strong>Тип объявления:</strong> {{ ad.title }}</p>
-      <p><strong>Цена:</strong> {{ ad.price }} за 1 {{ ad.title }}</p>
-      <p><strong>Доступно:</strong> {{ ad.amount }} {{ ad.title }}</p>
-      <p><strong>Лимиты:</strong> от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.payment_method }}</p>
-      <p><strong>Условия:</strong> {{ ad.condition }}</p>
-      <p class="timer">Осталось времени: <span id="timer">15:00</span></p>
+<body>
+    <div class="navbar">
+        <a href="/market">← Назад к рынку</a>
+        <span class="navbar-balance">Баланс: {{ balances.get(current_user, 0) }} USDT</span>
     </div>
 
-    <!-- Форма покупки -->
-    {% if order_status.get(ad.id) not in ['released','cancelled'] %}
-    <form class="form" action="/trade/{{ ad.id }}/buy" method="post">
-      <label>Сколько {{ ad.title }} купить:</label>
-      <input type="number" name="amount" step="0.0001" placeholder="{{ ad.min_limit }}–{{ ad.max_limit }}" required>
-      <button class="btn">Купить</button>
-    </form>
-    {% endif %}
+    <div class="trade-container">
+        <h2>Объявление: {{ ad.type|capitalize }} {{ ad.amount }} {{ ad.crypto }}</h2>
+        <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
+        <p>Мин: {{ ad.min_limit }} / Макс: {{ ad.max_limit }} {{ ad.fiat }}</p>
+        <p>Продавец: {{ ad.owner }}</p>
 
-    <!-- Форма оплаты -->
-    {% if order_status.get(ad.id)=='pending' %}
-    <div class="info-box">
-      <h3>Оплата картой</h3>
-      <form class="form" action="/trade/{{ ad.id }}/pay" method="post">
-        <input type="text" name="card_number" placeholder="Номер карты" required>
-        <input type="text" name="exp_date" placeholder="MM/YY" required>
-        <input type="text" name="cvv" placeholder="CVV" required>
-        <button class="btn">Я оплатил</button>
-      </form>
-    </div>
-    {% endif %}
+        <hr>
 
-    <!-- Подтверждение получения / Спор / Отмена -->
-    <div class="info-box">
-      <p><strong>Статус сделки:</strong> {{ order_status.get(ad.id,'pending')|capitalize }}</p>
+        <form action="/trade/{{ ad.id }}/buy" method="post">
+            <label>Сколько купить:</label>
+            <input type="number" name="amount" step="0.01" min="{{ ad.min_limit }}" max="{{ ad.max_limit }}" required>
+            <button type="submit">Купить</button>
+        </form>
 
-      {% if order_status.get(ad.id)=='paid' %}
-      <form action="/trade/{{ ad.id }}/confirm_receipt" method="post" style="display:inline-block">
-        <button class="btn btn-success">Я получил {{ ad.title }}</button>
-      </form>
-      <form action="/trade/{{ ad.id }}/dispute" method="post" style="display:inline-block">
-        <button class="btn btn-warning">Открыть спор</button>
-      </form>
-      {% endif %}
+        {% if payments.get(ad.id) %}
+            <div class="payment-info">
+                <h3>Сделка в процессе</h3>
+                <p>Покупатель: {{ payments[ad.id].user }}</p>
+                <p>Сумма: {{ payments[ad.id].amount }} {{ ad.crypto }}</p>
+                <p>Итого: {{ payments[ad.id].cost }} {{ ad.fiat }}</p>
+                <p>Статус: {{ order_status.get(ad.id, "неизвестен") }}</p>
 
-      {% if order_status.get(ad.id)=='pending' %}
-      <form action="/trade/{{ ad.id }}/cancel" method="post">
-        <button class="btn btn-danger">Отменить сделку</button>
-      </form>
-      {% endif %}
-
-      {% if order_status.get(ad.id)=='released' %}
-      <p>✅ Сделка успешно завершена.</p>
-      {% elif order_status.get(ad.id)=='cancelled' %}
-      <p>❌ Сделка отменена.</p>
-      {% elif order_status.get(ad.id)=='disputed' %}
-      <p>⚠️ Сделка в споре. Ожидается решение.</p>
-      {% endif %}
-    </div>
-
-    <!-- Чат -->
-    <h3>Чат сделки</h3>
-    <form class="form" action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data">
-      <input type="text" name="message" placeholder="Сообщение..." required>
-      <input type="file" name="image" accept="image/*">
-      <button class="btn">Отправить</button>
-    </form>
-
-    <div class="chat">
-      {% for msg in messages %}
-      <div class="chat-message">
-        <strong>{{ msg.user }}:</strong> {{ msg.text }}
-        {% if msg.image_url %}
-        <div><img src="{{ msg.image_url }}" class="chat-image"></div>
+                {% if order_status.get(ad.id) == "pending" %}
+                    <form action="/trade/{{ ad.id }}/paid" method="post">
+                        <button type="submit">Я оплатил</button>
+                    </form>
+                    <form action="/trade/{{ ad.id }}/cancel" method="post">
+                        <button type="submit" class="cancel-btn">Отменить</button>
+                    </form>
+                {% elif order_status.get(ad.id) == "paid" %}
+                    <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
+                        <button type="submit">Подтвердить получение</button>
+                    </form>
+                {% elif order_status.get(ad.id) == "released" %}
+                    <p class="success">✅ Сделка завершена</p>
+                {% elif order_status.get(ad.id) == "cancelled" %}
+                    <p class="cancelled">❌ Сделка отменена</p>
+                {% endif %}
+            </div>
         {% endif %}
-      </div>
-      {% endfor %}
+
+        <hr>
+
+        <div class="chat-section">
+            <h3>Чат сделки</h3>
+            <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data">
+                <textarea name="message" placeholder="Напишите сообщение..."></textarea><br>
+                <input type="file" name="image"><br>
+                <button type="submit">Отправить</button>
+            </form>
+
+            <div class="messages">
+                {% for msg in messages %}
+                    <div class="message">
+                        <strong>{{ msg.user }}:</strong>
+                        <span>{{ msg.text }}</span><br>
+                        {% if msg.image_url %}
+                            <img src="{{ msg.image_url }}" alt="Изображение" style="max-width:200px;">
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if blocked_until.get(current_user) and (blocked_until[current_user]|as_datetime) > now() %}
+            <div class="info-box">
+                ❌ Вы заблокированы до {{ blocked_until[current_user] }} за частые отмены.
+            </div>
+        {% endif %}
+
     </div>
-  </div>
 </body>
 </html>
