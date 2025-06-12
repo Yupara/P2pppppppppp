@@ -24,18 +24,20 @@
   </div>
 
   <div class="market-container">
-    {% for ad in ads %}
-      <div class="ad-card">
-        <h3>{{ ad.action|capitalize }} {{ ad.crypto }}</h3>
-        <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
-        <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
-        <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
-        <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
-        <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
-      </div>
+    {% if ads %}
+      {% for ad in ads %}
+        <div class="ad-card">
+          <h3>{{ ad.action|capitalize }} {{ ad.crypto }}</h3>
+          <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
+          <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
+          <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
+          <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
+          <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
+        </div>
+      {% endfor %}
     {% else %}
       <p>Объявлений нет.</p>
-    {% endfor %}
+    {% endif %}
   </div>
 
   <script>
