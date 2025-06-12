@@ -20,8 +20,7 @@ cancellations = {}
 balances = {}
 
 def get_current_user():
-    # Здесь ваша реальная логика аутентификации
-    return "Павел"
+    return "Павел"  # ваша логика аутентификации
 
 def check_block(user: str):
     until = blocked_until.get(user)
@@ -102,7 +101,9 @@ def trade_view(request: Request, ad_id: str, user: str = Depends(get_current_use
 @app.post("/trade/{ad_id}/buy")
 def trade_buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_current_user)):
     check_block(user)
-    ad = next(a for a in ads if a["id"] == ad_id)
+    ad = next((a for a in ads if a["id"] == ad_id), None)
+    if not ad:
+        raise HTTPException(404, "Объявление не найдено")
     cost = amount * ad["rate"]
     if balances[user] < cost:
         raise HTTPException(400, "Недостаточно средств")
@@ -114,7 +115,9 @@ def trade_buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_cur
 @app.post("/trade/{ad_id}/pay")
 def trade_pay(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
-    pay = payments[ad_id]
+    pay = payments.get(ad_id)
+    if not pay or pay.get("paid"):
+        raise HTTPException(400, "Нельзя оплатить")
     pay["paid"] = True
     order_status[ad_id] = "paid"
     return RedirectResponse(f"/trade/{ad_id}", 302)
@@ -122,7 +125,7 @@ def trade_pay(ad_id: str, user: str = Depends(get_current_user)):
 @app.post("/trade/{ad_id}/confirm_receipt")
 def confirm_receipt(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
-    if order_status[ad_id] != "paid":
+    if order_status.get(ad_id) != "paid":
         raise HTTPException(400, "Нельзя подтвердить получение")
     order_status[ad_id] = "released"
     seller = payments[ad_id]["user"]
