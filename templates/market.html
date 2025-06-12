@@ -1,44 +1,37 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="UTF-8"><title>Рынок P2P</title>
-<link rel="stylesheet" href="/static/styles.css"></head>
-<body>
-  <div class="header">
-    <h1>Рынок P2P</h1>
-    <a href="/create" class="create-button">+ Создать объявление</a>
-    <button class="icon-btn" onclick="openSettings()">⚙️</button>
+<head>
+  <meta charset="UTF-8">
+  <title>P2P Market</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dark-theme">
+  <h1>Рынок P2P</h1>
+
+  <!-- Кнопки регистрации/входа -->
+  <div>
+    <a href="/register">Регистрация</a> |
+    <a href="/login">Войти</a>
   </div>
-  <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal')closeSettings()">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeSettings()">✖️</span>
-      <h2>Настройки</h2>
-      <p><strong>Пользователь:</strong> {{ current_user }}</p>
-      <p><strong>Баланс:</strong> {{ balances[current_user]|round(2) }} USDT</p>
-      <a href="/deposit"><button>Пополнить</button></a>
-      <a href="/withdraw"><button>Вывести</button></a>
-      <a href="/profile"><button>Профиль</button></a>
-      <p><strong>Адрес:</strong><br><a href="#">usdt:ВАШ_АДРЕС</a></p>
-    </div>
-  </div>
-  <div class="market-container">
-    {% if ads %}
+
+  <hr>
+
+  <!-- Список объявлений -->
+  <div id="ads-list">
+    {% if ads and ads|length > 0 %}
       {% for ad in ads %}
         <div class="ad-card">
-          <h3>{{ ad.action|capitalize }} {{ ad.crypto }}</h3>
-          <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
-          <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
-          <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
-          <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
-          <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
+          <p><strong>Тип:</strong> {{ ad.type }}</p>
+          <p><strong>Крипто:</strong> {{ ad.amount }}</p>
+          <p><strong>Цена:</strong> {{ ad.price }}</p>
+          <p><strong>Продавец:</strong> {{ ad.user.username }}</p>
+          <a href="/create_order/{{ ad.id }}">Купить / Продать</a>
         </div>
+        <hr>
       {% endfor %}
     {% else %}
-      <p>Объявлений нет.</p>
+      <p>Объявлений пока нет.</p>
     {% endif %}
   </div>
-  <script>
-    function openSettings(){document.getElementById('settingsModal').style.display='block';}
-    function closeSettings(){document.getElementById('settingsModal').style.display='none';}
-  </script>
 </body>
 </html>
