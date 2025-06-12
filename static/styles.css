@@ -37,20 +37,14 @@ body {
 .btn-danger { background: #aa0000; }
 .btn-success { background: #29a329; }
 .btn-warning { background: #d47f00; }
-.form label {
-  display: block; margin-top: 10px;
-}
+.form label { display: block; margin-top: 10px; }
 .form input, .form select, .form textarea {
   width: 100%; padding: 8px; margin-top: 5px;
   background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
   color: #c9d1d9;
 }
-.messages {
-  margin-top: 15px;
-}
-.message {
-  margin-bottom: 10px;
-}
+.messages { margin-top: 15px; }
+.message { margin-bottom: 10px; }
 .chat-image {
   max-width: 150px; margin-top: 5px; border-radius: 4px;
 }
