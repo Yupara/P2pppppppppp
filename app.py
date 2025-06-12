@@ -1,14 +1,34 @@
-from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException
+from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from uuid import uuid4
 from datetime import datetime, timedelta
 import os
+import secrets
 
 app = FastAPI()
+
+# Статика и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# HTTP Basic Auth для админа
+ADMIN_USER = "admin"
+ADMIN_PASS = "МойСуперПароль123"
+security = HTTPBasic()
+
+def get_admin_user(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_user = secrets.compare_digest(credentials.username, ADMIN_USER)
+    correct_pass = secrets.compare_digest(credentials.password, ADMIN_PASS)
+    if not (correct_user and correct_pass):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Неверные учётные данные",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 # In-memory хранилища
 ads = []
@@ -20,13 +40,14 @@ cancellations = {}
 balances = {}
 
 def get_current_user():
-    return "Павел"  # ваша логика аутентификации
+    return "Павел"  # замените на вашу логику аутентификации
 
 def check_block(user: str):
     until = blocked_until.get(user)
     if until and datetime.utcnow() < until:
         raise HTTPException(403, f"Заблокирован до {until.strftime('%Y-%m-%d %H:%M')}")
 
+# Главная → рынок
 @app.get("/", response_class=RedirectResponse)
 def root():
     return RedirectResponse("/market", 302)
@@ -41,10 +62,12 @@ def market(request: Request, user: str = Depends(get_current_user)):
         "current_user": user
     })
 
+# Форма создания объявления
 @app.get("/create", response_class=HTMLResponse)
 def create_form(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
 
+# Обработка создания объявления
 @app.post("/create")
 def create_ad(
     action: str = Form(...),
@@ -81,23 +104,27 @@ def create_ad(
     order_status[ad_id] = None
     return RedirectResponse("/market", 302)
 
+# Страница сделки
 @app.get("/trade/{ad_id}", response_class=HTMLResponse)
 def trade_view(request: Request, ad_id: str, user: str = Depends(get_current_user)):
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
         raise HTTPException(404, "Объявление не найдено")
+    seconds_left = 15*60
     return templates.TemplateResponse("trade.html", {
         "request": request,
         "ad": ad,
-        "messages": chats[ad_id],
-        "payments": payments[ad_id],
-        "status": order_status[ad_id],
+        "messages": chats.get(ad_id, []),
+        "payments": payments.get(ad_id, {}),
+        "status": order_status.get(ad_id),
         "balances": balances,
         "current_user": user,
         "blocked_until": blocked_until.get(user),
+        "remaining": seconds_left,
         "now": datetime.utcnow
     })
 
+# Покупка (создание ордера)
 @app.post("/trade/{ad_id}/buy")
 def trade_buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_current_user)):
     check_block(user)
@@ -112,6 +139,7 @@ def trade_buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_cur
     order_status[ad_id] = "pending"
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
+# Отметить оплату
 @app.post("/trade/{ad_id}/pay")
 def trade_pay(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
@@ -122,6 +150,7 @@ def trade_pay(ad_id: str, user: str = Depends(get_current_user)):
     order_status[ad_id] = "paid"
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
+# Подтвердить получение
 @app.post("/trade/{ad_id}/confirm_receipt")
 def confirm_receipt(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
@@ -132,6 +161,7 @@ def confirm_receipt(ad_id: str, user: str = Depends(get_current_user)):
     balances[seller] = balances.get(seller, 0.0) + payments[ad_id]["cost"] * 0.99
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
+# Отменить сделку
 @app.post("/trade/{ad_id}/cancel")
 def cancel_trade(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
@@ -141,12 +171,14 @@ def cancel_trade(ad_id: str, user: str = Depends(get_current_user)):
     order_status[ad_id] = "cancelled"
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
+# Открыть спор
 @app.post("/trade/{ad_id}/dispute")
 def dispute_trade(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
     order_status[ad_id] = "disputed"
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
+# Чат с ботом и изображениями
 @app.post("/trade/{ad_id}/message")
 async def chat_message(
     ad_id: str,
@@ -162,22 +194,20 @@ async def chat_message(
         with open(path, "wb") as f:
             f.write(await image.read())
         entry["image_url"] = path.replace("static", "/static")
-    chats[ad_id].append(entry)
+    chats.setdefault(ad_id, []).append(entry)
     low = message.lower()
     if "оператор" in low:
-        print(f"[УВЕДОМЛЕНИЕ] {user} просит оператора в {ad_id}")
-    if any(k in low for k in ["бот","help","чатгпт"]):
-        chats[ad_id].append({"user":"Бот","text":f"Привет, {user}! Чем помочь?"})
+        print(f"[УВЕДОМЛЕНИЕ] {user} запросил оператора в {ad_id}")
+    if any(k in low for k in ["бот", "help", "чатгпт"]):
+        chats[ad_id].append({"user":"Бот", "text":f"Привет, {user}! Чем помочь?"})
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
-# ====== Пополнение ======
+# Пополнение
 @app.get("/deposit", response_class=HTMLResponse)
 def deposit_form(request: Request, user: str = Depends(get_current_user)):
     balance = balances.get(user, 0.0)
     return templates.TemplateResponse("deposit.html", {
-        "request": request,
-        "current_user": user,
-        "balance": balance
+        "request": request, "current_user": user, "balance": balance
     })
 
 @app.post("/deposit")
@@ -187,14 +217,12 @@ def deposit(request: Request, amount: float = Form(...), user: str = Depends(get
     balances[user] = balances.get(user, 0.0) + amount
     return RedirectResponse("/market", 302)
 
-# ====== Вывод ======
+# Вывод
 @app.get("/withdraw", response_class=HTMLResponse)
 def withdraw_form(request: Request, user: str = Depends(get_current_user)):
     balance = balances.get(user, 0.0)
     return templates.TemplateResponse("withdraw.html", {
-        "request": request,
-        "current_user": user,
-        "balance": balance
+        "request": request, "current_user": user, "balance": balance
     })
 
 @app.post("/withdraw")
@@ -204,21 +232,18 @@ def withdraw(request: Request, amount: float = Form(...), wallet_address: str = 
     if not wallet_address:
         raise HTTPException(400, "Укажите адрес кошелька")
     balances[user] -= amount
-    # здесь вы бы инициировали реальный вывод
     return RedirectResponse("/market", 302)
 
+# Профиль
 @app.get("/profile", response_class=HTMLResponse)
 def profile(request: Request, user: str = Depends(get_current_user)):
-    # объявления пользователя
     my_ads = [ad for ad in ads if ad["owner"] == user]
-    # сделки пользователя (как покупателя)
     my_trades = [
         {"id": ad_id, "status": order_status[ad_id], **payments.get(ad_id, {})}
         for ad_id in payments if payments[ad_id].get("user") == user
     ]
-    # статистика
-    completed = sum(1 for status in order_status.values() if status == "released")
-    cancelled = sum(1 for status in order_status.values() if status == "cancelled")
+    completed = sum(1 for s in order_status.values() if s == "released")
+    cancelled = sum(1 for s in order_status.values() if s == "cancelled")
     return templates.TemplateResponse("profile.html", {
         "request": request,
         "current_user": user,
@@ -229,3 +254,33 @@ def profile(request: Request, user: str = Depends(get_current_user)):
         "my_ads": my_ads,
         "my_trades": my_trades
     })
+
+# Админ-панель (Basic Auth)
+@app.get("/admin", dependencies=[Depends(get_admin_user)], response_class=HTMLResponse)
+def admin_panel(request: Request):
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "ads": ads,
+        "chats": chats,
+        "payments": payments,
+        "order_status": order_status,
+        "balances": balances,
+        "current_user": ADMIN_USER
+    })
+
+@app.post("/admin/ad/{ad_id}/delete", dependencies=[Depends(get_admin_user)])
+def admin_delete_ad(ad_id: str):
+    global ads
+    ads = [ad for ad in ads if ad["id"] != ad_id]
+    chats.pop(ad_id, None)
+    payments.pop(ad_id, None)
+    order_status.pop(ad_id, None)
+    return RedirectResponse("/admin", 302)
+
+@app.post("/admin/ad/{ad_id}/resolve", dependencies=[Depends(get_admin_user)])
+def admin_resolve_dispute(ad_id: str):
+    if order_status.get(ad_id) == "disputed":
+        seller = payments[ad_id]["user"]
+        balances[seller] = balances.get(seller, 0.0) + payments[ad_id]["cost"] * 0.99
+        order_status[ad_id] = "released"
+    return RedirectResponse("/admin", 302)
