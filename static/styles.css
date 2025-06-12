@@ -3,12 +3,26 @@ body {
   font-family: Arial, sans-serif;
   background: #0d1117; color: #c9d1d9;
 }
-.navbar {
-  display: flex; align-items: center;
-  background: #003300; padding: 10px 20px;
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #161b22; padding: 10px 20px; border-bottom: 1px solid #30363d;
 }
-.navbar a { color: #7df57d; text-decoration: none; margin-right: 20px; }
-.navbar-balance { margin-left: auto; }
+.icon-btn {
+  background: none; border: none;
+  font-size: 1.5rem; color: #c9d1d9; cursor: pointer;
+}
+.modal {
+  display: none; position: fixed; z-index: 999;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+}
+.modal-content {
+  background: #161b22; margin: 10% auto; padding: 20px;
+  border: 1px solid #30363d; border-radius: 6px; width: 300px;
+}
+.close-btn {
+  float: right; cursor: pointer; color: #c9d1d9; font-size: 1.2rem;
+}
 .market-container, .trade-container, .container {
   padding: 20px; max-width: 800px; margin: auto;
 }
@@ -17,21 +31,28 @@ body {
   padding: 15px; border-radius: 6px; margin-bottom: 15px;
 }
 .buy-button, .btn {
-  background: #238636; color: #fff;
-  padding: 8px 16px; border: none; border-radius: 4px;
-  cursor: pointer; margin-top: 10px;
+  background: #238636; color: white; padding: 8px 16px;
+  border: none; border-radius: 4px; cursor: pointer;
 }
 .btn-danger { background: #aa0000; }
 .btn-success { background: #29a329; }
 .btn-warning { background: #d47f00; }
-.form label { display: block; margin-top: 10px; }
+.form label {
+  display: block; margin-top: 10px;
+}
 .form input, .form select, .form textarea {
   width: 100%; padding: 8px; margin-top: 5px;
   background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
   color: #c9d1d9;
 }
-.messages { margin-top: 15px; }
-.message { margin-bottom: 10px; }
-.chat-image { max-width: 150px; margin-top: 5px; border-radius: 4px; }
+.messages {
+  margin-top: 15px;
+}
+.message {
+  margin-bottom: 10px;
+}
+.chat-image {
+  max-width: 150px; margin-top: 5px; border-radius: 4px;
+}
 .success { color: lightgreen; }
 .cancelled { color: orange; }
