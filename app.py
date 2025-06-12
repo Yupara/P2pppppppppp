@@ -7,19 +7,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from starlette.middleware.sessions import SessionMiddleware
 
-# ================= Настройки БД =================
+# Настройки базы данных
 DATABASE_URL = "sqlite:///./p2p.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
-# ================= Запуск приложения =================
+# Инициализация FastAPI
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
+app.add_middleware(SessionMiddleware, secret_key="secret_key")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ================= Модели =================
+# Модели
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -60,7 +60,7 @@ class Message(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# ================= Утилиты =================
+# Вспомогательные функции
 def get_db():
     db = SessionLocal()
     try:
@@ -68,39 +68,43 @@ def get_db():
     finally:
         db.close()
 
+
 def get_current_user(request: Request, db: Session):
     user_id = request.session.get("user_id")
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Не авторизован")
+        raise HTTPException(status_code=401, detail="Не авторизован")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
     return user
 
-admin_user_id = 1
 
-# ================= Маршруты =================
+# Маршруты
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, db: Session = Depends(get_db)):
+def market(request: Request, db: Session = Depends(get_db)):
     ads = db.query(Ad).all()
     return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
+
 
 @app.get("/register", response_class=HTMLResponse)
 def register_form(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+
 @app.post("/register")
 def register(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == username).first():
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Username already exists"})
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Пользователь уже существует"})
     user = User(username=username, password=password)
     db.add(user)
     db.commit()
     return RedirectResponse("/login", status_code=302)
 
+
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
+
 
 @app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
@@ -110,14 +114,17 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     request.session["user_id"] = user.id
     return RedirectResponse("/", status_code=302)
 
+
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse("/", status_code=302)
 
+
 @app.get("/create_ad", response_class=HTMLResponse)
-def create_ad_form(request: Request):
+def ad_form(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
+
 
 @app.post("/create_ad")
 def create_ad(request: Request, type: str = Form(...), amount: float = Form(...), price: float = Form(...), db: Session = Depends(get_db)):
@@ -127,55 +134,26 @@ def create_ad(request: Request, type: str = Form(...), amount: float = Form(...)
     db.commit()
     return RedirectResponse("/", status_code=302)
 
+
 @app.get("/create_order/{ad_id}")
 def create_order(ad_id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     ad = db.query(Ad).filter(Ad.id == ad_id).first()
-    if not ad or ad.user_id == user.id:
-        raise HTTPException(status_code=400, detail="Невозможно создать сделку")
+    if not ad:
+        raise HTTPException(status_code=404, detail="Объявление не найдено")
     order = Order(buyer_id=user.id, ad_id=ad.id, amount=ad.amount)
     db.add(order)
     db.commit()
     return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
+
 @app.get("/trade/{order_id}", response_class=HTMLResponse)
-def trade_view(order_id: int, request: Request, db: Session = Depends(get_db)):
+def trade_page(order_id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     order = db.query(Order).filter(Order.id == order_id).first()
     messages = db.query(Message).filter(Message.order_id == order_id).all()
     return templates.TemplateResponse("trade.html", {"request": request, "order": order, "messages": messages, "user": user})
 
-@app.post("/pay/{order_id}")
-def pay_order(order_id: int, request: Request, db: Session = Depends(get_db)):
-    get_current_user(request, db)
-    order = db.query(Order).filter(Order.id == order_id).first()
-    order.status = "paid"
-    db.commit()
-    return RedirectResponse(f"/trade/{order.id}", status_code=302)
-
-@app.post("/confirm/{order_id}")
-def confirm_order(order_id: int, request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
-    order = db.query(Order).filter(Order.id == order_id).first()
-    ad_owner = db.query(User).filter(User.id == order.ad.user_id).first()
-    buyer = db.query(User).filter(User.id == order.buyer_id).first()
-    admin = db.query(User).filter(User.id == admin_user_id).first()
-
-    if user.id != ad_owner.id:
-        raise HTTPException(status_code=403, detail="Вы не продавец")
-
-    commission = order.amount * 0.005
-    final_amount = order.amount - commission
-
-    if ad_owner.balance < order.amount:
-        raise HTTPException(status_code=400, detail="Недостаточно средств")
-
-    ad_owner.balance -= order.amount
-    buyer.balance += final_amount
-    admin.balance += commission
-    order.status = "confirmed"
-    db.commit()
-    return RedirectResponse("/orders/mine", status_code=302)
 
 @app.post("/message/{order_id}")
 def send_message(order_id: int, text: str = Form(...), request: Request, db: Session = Depends(get_db)):
@@ -184,16 +162,3 @@ def send_message(order_id: int, text: str = Form(...), request: Request, db: Ses
     db.add(msg)
     db.commit()
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
-
-@app.get("/orders/mine", response_class=HTMLResponse)
-def my_orders(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
-    orders = db.query(Order).filter(
-        (Order.buyer_id == user.id) | (Order.ad.has(user_id=user.id))
-    ).all()
-    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders})
-
-@app.get("/profile", response_class=HTMLResponse)
-def profile(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
-    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
