@@ -156,7 +156,7 @@ def trade_page(order_id: int, request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/message/{order_id}")
-def send_message(order_id: int, text: str = Form(...), request: Request, db: Session = Depends(get_db)):
+def send_message(request: Request, order_id: int, text: str = Form(...), db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     msg = Message(order_id=order_id, sender_id=user.id, text=text)
     db.add(msg)
