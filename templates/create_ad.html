@@ -1,92 +1,29 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Создать объявление</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
+<head><meta charset="UTF-8"><title>Создать объявление</title>
+<link rel="stylesheet" href="/static/styles.css"></head>
 <body>
   <div class="header">
     <h1>Новое объявление</h1>
-    <a href="/market" class="create-button">← Назад к рынку</a>
+    <a href="/market" class="create-button">← Назад</a>
   </div>
-
   <div class="container">
     <form action="/create" method="post" class="form">
-      <label>Тип объявления:</label>
-      <select name="action" required>
-        <option value="buy">Купить</option>
-        <option value="sell">Продать</option>
-      </select>
-
+      <label>Тип:</label>
+      <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
       <label>Криптовалюта:</label>
-      <select name="crypto" required>
-        <option>USDT</option>
-        <option>BTC</option>
-        <option>ETH</option>
-        <option>TRUMP</option>
-      </select>
-
+      <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
       <label>Фиат:</label>
-      <select name="fiat" required>
-        <option>USD – Доллар США</option>
-        <option>EUR – Евро</option>
-        <option>GBP – Британский фунт</option>
-        <option>RUB – Российский рубль</option>
-        <option>UAH – Украинская гривна</option>
-        <option>KZT – Казахстанский тенге</option>
-        <option>TRY – Турецкая лира</option>
-        <option>AED – Дирхам ОАЭ</option>
-        <option>NGN – Нигерийская найра</option>
-        <option>INR – Индийская рупия</option>
-        <option>VND – Вьетнамский донг</option>
-        <option>BRL – Бразильский реал</option>
-        <option>ARS – Аргентинское песо</option>
-        <option>COP – Колумбийское песо</option>
-        <option>PEN – Перуанский соль</option>
-        <option>MXN – Мексиканский песо</option>
-        <option>CLP – Чилийское песо</option>
-        <option>ZAR – Южноафриканский рэнд</option>
-        <option>EGP – Египетский фунт</option>
-        <option>GHS – Ганский седи</option>
-        <option>KES – Кенийский шиллинг</option>
-        <option>MAD – Марокканский дирхам</option>
-        <option>PKR – Пакистанская рупия</option>
-        <option>BDT – Бангладешская така</option>
-        <option>LKR – Шри-Ланкийская рупия</option>
-        <option>IDR – Индонезийская рупия</option>
-        <option>THB – Тайский бат</option>
-        <option>MYR – Малайзийский ринггит</option>
-        <option>PHP – Филиппинское песо</option>
-        <option>KRW – Южнокорейская вона</option>
-        <option>TJS – Таджикский сомони</option>
-      </select>
-
-      <label>Курс (цена за 1 единицу крипты):</label>
-      <input type="number" name="rate" step="0.0001" required>
-
-      <label>Доступно (крипты):</label>
-      <input type="number" name="amount" step="0.0001" required>
-
-      <label>Минимум (в фиате):</label>
-      <input type="number" name="min_limit" step="0.01" required>
-
-      <label>Максимум (в фиате):</label>
-      <input type="number" name="max_limit" step="0.01" required>
-
-      <label>Способ оплаты:</label>
-      <input type="text" name="payment_method" placeholder="Сбербанк, Тинькофф…" required>
-
-      <label>Ваше Ф.И.О.:</label>
-      <input type="text" name="full_name" placeholder="Иванов Иван Иванович" required>
-
-      <label>Номер карты:</label>
-      <input type="text" name="card_number" placeholder="1234 5678 9012 3456" required>
-
-      <label>Условия (комментарий):</label>
-      <textarea name="comment" rows="3" placeholder="Дополнительные условия"></textarea>
-
-      <button class="btn" type="submit">Создать объявление</button>
+      <select name="fiat"><option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option><option>TJS</option></select>
+      <label>Курс:</label><input type="number" name="rate" step="0.0001" required>
+      <label>Доступно:</label><input type="number" name="amount" step="0.0001" required>
+      <label>Мин. лимит:</label><input type="number" name="min_limit" step="0.01" required>
+      <label>Макс. лимит:</label><input type="number" name="max_limit" step="0.01" required>
+      <label>Способ оплаты:</label><input type="text" name="payment_method" required>
+      <label>Ф.И.О.:</label><input type="text" name="full_name" required>
+      <label>Номер карты:</label><input type="text" name="card_number" required>
+      <label>Условия:</label><textarea name="comment"></textarea>
+      <button class="btn" type="submit">Создать</button>
     </form>
   </div>
 </body>
