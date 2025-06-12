@@ -1,26 +1,32 @@
 # app.py
 
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
+from fastapi import (
+    FastAPI, Request, Form, Depends,
+    HTTPException, status
+)
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from sqlalchemy import (
-    create_engine, Column, Integer, String, Float, ForeignKey
+    create_engine, Column, Integer,
+    String, Float, ForeignKey
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
-# ================= Database Setup =================
+# ================= Database setup =================
 
 DATABASE_URL = "sqlite:///./p2p.db"
-
 engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}
 )
 SessionLocal = sessionmaker(
-    bind=engine, autoflush=False, autocommit=False
+    autocommit=False,
+    autoflush=False,
+    bind=engine
 )
 Base = declarative_base()
 
@@ -37,7 +43,7 @@ class Ad(Base):
     __tablename__ = "ads"
     id      = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    type    = Column(String, nullable=False)  # "buy" или "sell"
+    type    = Column(String, nullable=False)   # "buy" или "sell"
     amount  = Column(Float, nullable=False)
     price   = Column(Float, nullable=False)
     user    = relationship("User")
@@ -61,12 +67,13 @@ class Message(Base):
     order     = relationship("Order")
     sender    = relationship("User")
 
+# Создаем все таблицы
 Base.metadata.create_all(bind=engine)
 
-# ================= FastAPI Setup =================
+# ================= FastAPI setup =================
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="CHANGE_ME_TO_RANDOM_SECRET")
+app.add_middleware(SessionMiddleware, secret_key="CHANGE_THIS_SECRET")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -79,23 +86,26 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> User:
     user_id = request.session.get("user_id")
     if not user_id:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Не авторизован")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Не авторизован")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь не найден")
     return user
 
-# Админ — первый зарегистрировавшийся (ID=1) получает комиссию
+# Админ — первый зарегистрированный (ID=1) получает комиссии
 admin_user_id = 1
 
 # ================= Routes =================
 
 @app.get("/", response_class=RedirectResponse)
 def root():
-    return RedirectResponse(url="/market", status_code=302)
+    return RedirectResponse("/market", status_code=302)
 
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request, db: Session = Depends(get_db)):
@@ -107,7 +117,10 @@ def market(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/register", response_class=HTMLResponse)
 def register_form(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request, "error": None})
+    return templates.TemplateResponse("register.html", {
+        "request": request,
+        "error": None
+    })
 
 @app.post("/register")
 def register(
@@ -124,11 +137,16 @@ def register(
     user = User(username=username, password=password)
     db.add(user)
     db.commit()
-    return RedirectResponse(url="/login", status_code=302)
+    # сразу залогиним
+    request.session["user_id"] = user.id
+    return RedirectResponse("/market", status_code=302)
 
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "error": None
+    })
 
 @app.post("/login")
 def login(
@@ -144,16 +162,18 @@ def login(
             "error": "Неверный логин или пароль"
         })
     request.session["user_id"] = user.id
-    return RedirectResponse(url="/market", status_code=302)
+    return RedirectResponse("/market", status_code=302)
 
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/login", status_code=302)
+    return RedirectResponse("/login", status_code=302)
 
 @app.get("/create_ad", response_class=HTMLResponse)
 def create_ad_form(request: Request):
-    return templates.TemplateResponse("create_ad.html", {"request": request})
+    return templates.TemplateResponse("create_ad.html", {
+        "request": request
+    })
 
 @app.post("/create_ad")
 def create_ad(
@@ -167,7 +187,7 @@ def create_ad(
     ad = Ad(user_id=user.id, type=type, amount=amount, price=price)
     db.add(ad)
     db.commit()
-    return RedirectResponse(url="/market", status_code=302)
+    return RedirectResponse("/market", status_code=302)
 
 @app.get("/create_order/{ad_id}")
 def create_order(
@@ -178,11 +198,11 @@ def create_order(
     user = get_current_user(request, db)
     ad = db.query(Ad).filter(Ad.id == ad_id).first()
     if not ad or ad.user_id == user.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Нельзя создать эту сделку")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Нельзя создать сделку")
     order = Order(buyer_id=user.id, ad_id=ad.id, amount=ad.amount)
     db.add(order)
     db.commit()
-    return RedirectResponse(url=f"/trade/{order.id}", status_code=302)
+    return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
 @app.get("/trade/{order_id}", response_class=HTMLResponse)
 def trade_page(
@@ -211,7 +231,7 @@ def send_message(
     msg = Message(order_id=order_id, sender_id=user.id, text=text)
     db.add(msg)
     db.commit()
-    return RedirectResponse(url=f"/trade/{order_id}", status_code=302)
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
 @app.post("/pay/{order_id}")
 def pay_order(
@@ -222,10 +242,10 @@ def pay_order(
     user = get_current_user(request, db)
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order or order.buyer_id != user.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Нельзя оплатить")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Нельзя оплатить")
     order.status = "paid"
     db.commit()
-    return RedirectResponse(url=f"/trade/{order_id}", status_code=302)
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
 @app.post("/confirm/{order_id}")
 def confirm_order(
@@ -236,7 +256,7 @@ def confirm_order(
     user = get_current_user(request, db)
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order or order.ad.user_id != user.id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Нельзя подтвердить")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Нельзя подтвердить")
     buyer = db.query(User).filter(User.id == order.buyer_id).first()
     seller = user
     admin  = db.query(User).filter(User.id == admin_user_id).first()
@@ -245,7 +265,8 @@ def confirm_order(
     seller_amount = order.amount - commission
 
     if seller.balance < order.amount:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Недостаточно средств")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Недостаточно средств")
+
     seller.balance -= order.amount
     buyer.balance  += seller_amount
     if admin:
@@ -253,7 +274,7 @@ def confirm_order(
 
     order.status = "confirmed"
     db.commit()
-    return RedirectResponse(url="/orders/mine", status_code=302)
+    return RedirectResponse("/orders/mine", status_code=302)
 
 @app.get("/orders/mine", response_class=HTMLResponse)
 def my_orders(request: Request, db: Session = Depends(get_db)):
