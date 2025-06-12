@@ -181,3 +181,174 @@ def trade_page(request: Request, ad_id: str, user: str = Depends(get_current_use
 # (Остальные /trade/{ad_id}/buy, /pay, /confirm, /cancel, /dispute, /message как раньше...)
 
 # Deposit/Withdraw/Profile/Admin — как было в прошлом примере, без изменений.
+
+# ==== Покупка (создание ордера) ====
+@app.post("/trade/{ad_id}/buy")
+def buy(
+    ad_id: str,
+    amount: float = Form(...),
+    user: str = Depends(get_current_user)
+):
+    check_block(user)
+    ad = next((a for a in ads if a["id"] == ad_id), None)
+    if not ad:
+        raise HTTPException(404, "Объявление не найдено")
+    cost = amount * ad["rate"]
+    if balances[user] < cost:
+        raise HTTPException(400, "Недостаточно средств")
+    balances[user] -= cost
+    payments[ad_id] = {"user": user, "amount": amount, "cost": cost, "paid": False}
+    order_status[ad_id] = "pending"
+    return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ==== Отметить оплату ====
+@app.post("/trade/{ad_id}/pay")
+def pay(ad_id: str, user: str = Depends(get_current_user)):
+    check_block(user)
+    p = payments.get(ad_id)
+    if not p or p["paid"]:
+        raise HTTPException(400, "Нельзя оплатить")
+    p["paid"] = True
+    order_status[ad_id] = "paid"
+    return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ==== Подтвердить получение ====
+@app.post("/trade/{ad_id}/confirm")
+def confirm(ad_id: str, user: str = Depends(get_current_user)):
+    check_block(user)
+    if order_status.get(ad_id) != "paid":
+        raise HTTPException(400, "Нельзя подтвердить получение")
+    order_status[ad_id] = "released"
+    seller = payments[ad_id]["user"]
+    balances[seller] = balances.get(seller, 0.0) + payments[ad_id]["cost"] * 0.99
+    return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ==== Отменить сделку ====
+@app.post("/trade/{ad_id}/cancel")
+def cancel(ad_id: str, user: str = Depends(get_current_user)):
+    check_block(user)
+    cancellations[user] = cancellations.get(user, 0) + 1
+    if cancellations[user] >= 10:
+        blocked_until[user] = datetime.utcnow() + timedelta(hours=24)
+    order_status[ad_id] = "cancelled"
+    return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ==== Открыть спор ====
+@app.post("/trade/{ad_id}/dispute")
+def dispute(ad_id: str, user: str = Depends(get_current_user)):
+    check_block(user)
+    order_status[ad_id] = "disputed"
+    return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ==== Чат в сделке ====
+@app.post("/trade/{ad_id}/message")
+async def message(
+    ad_id: str,
+    message: str = Form(""),
+    image: UploadFile = File(None),
+    user: str = Depends(get_current_user)
+):
+    check_block(user)
+    entry = {"user": user, "text": message}
+    if image:
+        os.makedirs("static/uploads", exist_ok=True)
+        path = f"static/uploads/{uuid4().hex}_{image.filename}"
+        with open(path, "wb") as f:
+            f.write(await image.read())
+        entry["image_url"] = path.replace("static", "/static")
+    chats[ad_id].append(entry)
+
+    low = message.lower()
+    if "оператор" in low:
+        # здесь уведомление для вас
+        print(f"[УВЕДОМЛЕНИЕ] {user} запрашивает оператора в сделке {ad_id}")
+    if any(k in low for k in ["бот", "help", "чатгпт"]):
+        chats[ad_id].append({"user":"Бот","text":f"Привет, {user}! Чем помочь?"})
+
+    return RedirectResponse(f"/trade/{ad_id}", 302)
+
+# ==== Пополнение ====
+@app.get("/deposit", response_class=HTMLResponse)
+def dep_form(request: Request, user: str = Depends(get_current_user)):
+    return templates.TemplateResponse("deposit.html", {
+        "request": request,
+        "balance": balances.get(user, 0.0)
+    })
+
+@app.post("/deposit")
+def deposit(amount: float = Form(...), user: str = Depends(get_current_user)):
+    if amount <= 0:
+        raise HTTPException(400, "Неверная сумма")
+    balances[user] = balances.get(user, 0.0) + amount
+    return RedirectResponse("/market", 302)
+
+# ==== Вывод ====
+@app.get("/withdraw", response_class=HTMLResponse)
+def w_form(request: Request, user: str = Depends(get_current_user)):
+    return templates.TemplateResponse("withdraw.html", {
+        "request": request,
+        "balance": balances.get(user, 0.0)
+    })
+
+@app.post("/withdraw")
+def withdraw(
+    amount: float = Form(...),
+    wallet_address: str = Form(...),
+    user: str = Depends(get_current_user)
+):
+    if amount <= 0 or amount > balances.get(user, 0.0):
+        raise HTTPException(400, "Неверная сумма")
+    if not wallet_address:
+        raise HTTPException(400, "Укажите адрес кошелька")
+    balances[user] -= amount
+    return RedirectResponse("/market", 302)
+
+# ==== Профиль ====
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request: Request, user: str = Depends(get_current_user)):
+    my_ads = [ad for ad in ads if ad["owner"] == user]
+    my_trades = [
+        {"id": aid, "status": order_status[aid], **payments.get(aid, {})}
+        for aid in payments if payments[aid].get("user") == user
+    ]
+    completed = sum(1 for s in order_status.values() if s == "released")
+    cancelled = sum(1 for s in order_status.values() if s == "cancelled")
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "current_user": user,
+        "balance": balances.get(user, 0.0),
+        "rating": (my_ads[0]["rating"] if my_ads else 0),
+        "completed": completed,
+        "cancelled": cancelled,
+        "my_ads": my_ads,
+        "my_trades": my_trades
+    })
+
+# ==== Админ-панель ====
+@app.get("/admin", dependencies=[Depends(get_admin)], response_class=HTMLResponse)
+def admin_panel(request: Request):
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "ads": ads,
+        "chats": chats,
+        "payments": payments,
+        "order_status": order_status,
+        "balances": balances
+    })
+
+@app.post("/admin/ad/{ad_id}/delete", dependencies=[Depends(get_admin)])
+def admin_del(ad_id: str):
+    global ads
+    ads = [ad for ad in ads if ad["id"] != ad_id]
+    chats.pop(ad_id, None)
+    payments.pop(ad_id, None)
+    order_status.pop(ad_id, None)
+    return RedirectResponse("/admin", 302)
+
+@app.post("/admin/ad/{ad_id}/resolve", dependencies=[Depends(get_admin)])
+def admin_res(ad_id: str):
+    if order_status.get(ad_id) == "disputed":
+        seller = payments[ad_id]["user"]
+        balances[seller] = balances.get(seller, 0.0) + payments[ad_id]["cost"] * 0.99
+        order_status[ad_id] = "released"
+    return RedirectResponse("/admin", 302)
