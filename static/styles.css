@@ -1,52 +1,104 @@
+/* Базовые стили */
 body {
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
-  background: #0d1117; color: #c9d1d9;
-}
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  background: #161b22; padding: 10px 20px; border-bottom: 1px solid #30363d;
-}
-.icon-btn {
-  background: none; border: none;
-  font-size: 1.5rem; color: #c9d1d9; cursor: pointer;
-}
-.modal {
-  display: none; position: fixed; z-index: 999;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-}
-.modal-content {
-  background: #161b22; margin: 10% auto; padding: 20px;
-  border: 1px solid #30363d; border-radius: 6px; width: 300px;
-}
-.close-btn {
-  float: right; cursor: pointer; color: #c9d1d9; font-size: 1.2rem;
-}
-.market-container, .trade-container, .container {
-  padding: 20px; max-width: 800px; margin: auto;
-}
-.ad-card, .info-box {
-  background: #161b22; border: 1px solid #30363d;
-  padding: 15px; border-radius: 6px; margin-bottom: 15px;
-}
-.buy-button, .btn {
-  background: #238636; color: white; padding: 8px 16px;
-  border: none; border-radius: 4px; cursor: pointer;
-}
-.btn-danger { background: #aa0000; }
-.btn-success { background: #29a329; }
-.btn-warning { background: #d47f00; }
-.form label { display: block; margin-top: 10px; }
-.form input, .form select, .form textarea {
-  width: 100%; padding: 8px; margin-top: 5px;
-  background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+  background-color: #0d1117;
   color: #c9d1d9;
 }
-.messages { margin-top: 15px; }
-.message { margin-bottom: 10px; }
-.chat-image {
-  max-width: 150px; margin-top: 5px; border-radius: 4px;
+
+/* Шапка */
+.header {
+  display: flex;
+  align-items: center;
+  background-color: #161b22;
+  padding: 10px 20px;
+  border-bottom: 1px solid #30363d;
 }
-.success { color: lightgreen; }
-.cancelled { color: orange; }
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #7df57d;
+}
+
+/* Кнопка создания объявления */
+.create-button {
+  background-color: #29a329;
+  color: #ffffff;
+  padding: 6px 12px;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-left: 20px;
+  font-weight: bold;
+}
+
+/* Иконка настроек */
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #c9d1d9;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* Модальное окно */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 999;
+}
+.modal-content {
+  background-color: #161b22;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  width: 300px;
+  color: #c9d1d9;
+}
+.close-btn {
+  float: right;
+  cursor: pointer;
+  color: #c9d1d9;
+  font-size: 1.2rem;
+}
+
+/* Контейнер объявлений */
+.market-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+}
+.ad-card {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+.ad-card h3 {
+  margin: 0 0 10px 0;
+  color: #58a6ff;
+}
+.ad-card p {
+  margin: 5px 0;
+}
+
+/* Кнопка Купить */
+.buy-button {
+  display: inline-block;
+  background-color: #238636;
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+.buy-button:hover {
+  background-color: #1f7f2f;
+}
