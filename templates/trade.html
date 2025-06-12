@@ -50,7 +50,6 @@
         <button class="btn">Купить</button>
       </form>
     {% endif %}
-
     {% if status=='pending' %}
       <form action="/trade/{{ ad.id }}/pay" method="post"><button class="btn">Я оплатил</button></form>
       <form action="/trade/{{ ad.id }}/cancel" method="post"><button class="btn btn-danger">Отменить</button></form>
@@ -58,20 +57,18 @@
       <form action="/trade/{{ ad.id }}/confirm_receipt" method="post"><button class="btn btn-success">Подтвердить получение</button></form>
       <form action="/trade/{{ ad.id }}/dispute" method="post"><button class="btn btn-warning">Открыть спор</button></form>
     {% elif status=='released' %}
-      <p class="success">✅ Завершено</p>
+      <p class="success">✅ Сделка завершена</p>
     {% elif status=='cancelled' %}
-      <p class="cancelled">❌ Отменено</p>
+      <p class="cancelled">❌ Сделка отменена</p>
     {% endif %}
 
     <hr>
-
     <h3>Чат</h3>
     <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data">
       <textarea name="message" placeholder="Сообщение"></textarea>
       <input type="file" name="image" accept="image/*">
       <button class="btn">Отправить</button>
     </form>
-
     <div class="messages">
       {% for msg in messages %}
         <div class="message">
