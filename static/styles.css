@@ -4,16 +4,11 @@ body {
   background: #0d1117; color: #c9d1d9;
 }
 .navbar {
+  display: flex; align-items: center;
   background: #003300; padding: 10px 20px;
-  display: flex; align-items: center; gap: 20px;
 }
-.navbar-title { font-size: 24px; color: #7df57d; }
-.navbar-balance { margin-left: auto; color: #c9d1d9; }
-.create-button {
-  background: #29a329; color: white;
-  padding: 5px 10px; border-radius: 4px;
-  text-decoration: none;
-}
+.navbar a { color: #7df57d; text-decoration: none; margin-right: 20px; }
+.navbar-balance { margin-left: auto; }
 .market-container, .trade-container, .container {
   padding: 20px; max-width: 800px; margin: auto;
 }
@@ -22,15 +17,21 @@ body {
   padding: 15px; border-radius: 6px; margin-bottom: 15px;
 }
 .buy-button, .btn {
-  background: #238636; color: white;
-  padding: 8px 16px; border: none;
-  border-radius: 4px; cursor: pointer;
+  background: #238636; color: #fff;
+  padding: 8px 16px; border: none; border-radius: 4px;
+  cursor: pointer; margin-top: 10px;
 }
-.buy-button:hover, .btn:hover { background: #1f7f2f; }
+.btn-danger { background: #aa0000; }
+.btn-success { background: #29a329; }
+.btn-warning { background: #d47f00; }
 .form label { display: block; margin-top: 10px; }
 .form input, .form select, .form textarea {
   width: 100%; padding: 8px; margin-top: 5px;
-  background: #0d1117; border: 1px solid #30363d;
-  color: #c9d1d9; border-radius: 4px;
+  background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+  color: #c9d1d9;
 }
-.form textarea { resize: vertical; }
+.messages { margin-top: 15px; }
+.message { margin-bottom: 10px; }
+.chat-image { max-width: 150px; margin-top: 5px; border-radius: 4px; }
+.success { color: lightgreen; }
+.cancelled { color: orange; }
