@@ -7,25 +7,26 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from starlette.middleware.sessions import SessionMiddleware
 
+# ================= Настройки БД =================
 DATABASE_URL = "sqlite:///./p2p.db"
-
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
+# ================= Запуск приложения =================
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ========== MODELS ==========
-
+# ================= Модели =================
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True)
-    password = Column(String)
+    username = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
     balance = Column(Float, default=0.0)
+
 
 class Ad(Base):
     __tablename__ = "ads"
@@ -36,15 +37,17 @@ class Ad(Base):
     price = Column(Float)
     user = relationship("User")
 
+
 class Order(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True, index=True)
     buyer_id = Column(Integer, ForeignKey("users.id"))
     ad_id = Column(Integer, ForeignKey("ads.id"))
     amount = Column(Float)
-    status = Column(String, default="waiting")  # waiting, paid, confirmed
+    status = Column(String, default="waiting")
     buyer = relationship("User", foreign_keys=[buyer_id])
     ad = relationship("Ad")
+
 
 class Message(Base):
     __tablename__ = "messages"
@@ -57,8 +60,7 @@ class Message(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# ========== UTILS ==========
-
+# ================= Утилиты =================
 def get_db():
     db = SessionLocal()
     try:
@@ -75,10 +77,9 @@ def get_current_user(request: Request, db: Session):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
     return user
 
-admin_user_id = 1  # ID первого зарегистрированного пользователя
+admin_user_id = 1
 
-# ========== ROUTES ==========
-
+# ================= Маршруты =================
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     ads = db.query(Ad).all()
@@ -91,7 +92,7 @@ def register_form(request: Request):
 @app.post("/register")
 def register(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == username).first():
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Имя уже занято"})
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Username already exists"})
     user = User(username=username, password=password)
     db.add(user)
     db.commit()
@@ -105,7 +106,7 @@ def login_form(request: Request):
 def login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter_by(username=username, password=password).first()
     if not user:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Неверные данные"})
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Неверный логин или пароль"})
     request.session["user_id"] = user.id
     return RedirectResponse("/", status_code=302)
 
@@ -130,10 +131,8 @@ def create_ad(request: Request, type: str = Form(...), amount: float = Form(...)
 def create_order(ad_id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     ad = db.query(Ad).filter(Ad.id == ad_id).first()
-    if not ad:
-        raise HTTPException(status_code=404, detail="Объявление не найдено")
-    if ad.user_id == user.id:
-        raise HTTPException(status_code=400, detail="Нельзя покупать у себя")
+    if not ad or ad.user_id == user.id:
+        raise HTTPException(status_code=400, detail="Невозможно создать сделку")
     order = Order(buyer_id=user.id, ad_id=ad.id, amount=ad.amount)
     db.add(order)
     db.commit()
@@ -148,7 +147,7 @@ def trade_view(order_id: int, request: Request, db: Session = Depends(get_db)):
 
 @app.post("/pay/{order_id}")
 def pay_order(order_id: int, request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
+    get_current_user(request, db)
     order = db.query(Order).filter(Order.id == order_id).first()
     order.status = "paid"
     db.commit()
@@ -175,7 +174,6 @@ def confirm_order(order_id: int, request: Request, db: Session = Depends(get_db)
     buyer.balance += final_amount
     admin.balance += commission
     order.status = "confirmed"
-
     db.commit()
     return RedirectResponse("/orders/mine", status_code=302)
 
@@ -190,10 +188,12 @@ def send_message(order_id: int, text: str = Form(...), request: Request, db: Ses
 @app.get("/orders/mine", response_class=HTMLResponse)
 def my_orders(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
-    orders = db.query(Order).filter((Order.buyer_id == user.id) | (Order.ad.has(user_id=user.id))).all()
+    orders = db.query(Order).filter(
+        (Order.buyer_id == user.id) | (Order.ad.has(user_id=user.id))
+    ).all()
     return templates.TemplateResponse("orders.html", {"request": request, "orders": orders})
 
 @app.get("/profile", response_class=HTMLResponse)
-def profile_view(request: Request, db: Session = Depends(get_db)):
+def profile(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     return templates.TemplateResponse("profile.html", {"request": request, "user": user})
