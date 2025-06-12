@@ -4,53 +4,27 @@
   <meta charset="UTF-8">
   <title>Рынок P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    /* Дополнительные стили для настроек */
-    .header {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #161b22; padding: 10px 20px; border-bottom: 1px solid #30363d;
-    }
-    .icon-btn { background: none; border: none; color: #c9d1d9; font-size: 1.5rem; cursor: pointer; }
-    .modal { display: none; position: fixed; z-index: 999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
-    .modal-content {
-      background: #161b22; margin: 10% auto; padding: 20px;
-      border: 1px solid #30363d; border-radius: 6px; width: 300px; color: #c9d1d9;
-    }
-    .close-btn { float: right; cursor: pointer; color: #c9d1d9; font-size: 1.2rem; }
-    .modal-content p, .modal-content a, .modal-content button { margin: 8px 0; }
-    .modal-content a { color: #58a6ff; text-decoration: none; }
-    .modal-content button {
-      background: #238636; border: none; padding: 6px 12px;
-      border-radius: 4px; color: white; cursor: pointer;
-    }
-  </style>
 </head>
 <body>
-  <!-- Header с шестерёнкой -->
   <div class="header">
     <h1>Рынок P2P</h1>
     <button class="icon-btn" onclick="openSettings()">⚙️</button>
   </div>
 
-  <!-- Модальное окно настроек -->
-  <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal')closeSettings()">
+  <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal') closeSettings()">
     <div class="modal-content">
       <span class="close-btn" onclick="closeSettings()">✖️</span>
       <h2>Настройки</h2>
       <p><strong>Пользователь:</strong> {{ current_user }}</p>
       <p><strong>Баланс:</strong> {{ balances[current_user] | round(2) }} USDT</p>
-      <p><strong>Способ оплаты:</strong> {{ ads[0].payment_method if ads else '—' }}</p>
       <a href="/deposit"><button>Пополнить кошелек</button></a>
       <a href="/withdraw"><button>Вывести средства</button></a>
-      <p><strong>Адрес кошелька:</strong><br>
-        <a href="#">usdt:ADDRESS123...</a>
-      </p>
+      <p><strong>Адрес кошелька:</strong><br><a href="#">usdt:YOUR_ADDRESS</a></p>
     </div>
   </div>
 
   <div class="market-container">
-    {% if ads %}
-      {% for ad in ads %}
+    {% for ad in ads %}
       <div class="ad-card">
         <h3>{{ ad.action|capitalize }} {{ ad.crypto }}</h3>
         <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
@@ -59,19 +33,14 @@
         <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
         <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
       </div>
-      {% endfor %}
     {% else %}
-      <p>Объявлений пока нет.</p>
-    {% endif %}
+      <p>Объявлений нет.</p>
+    {% endfor %}
   </div>
 
   <script>
-    function openSettings(){
-      document.getElementById('settingsModal').style.display='block';
-    }
-    function closeSettings(){
-      document.getElementById('settingsModal').style.display='none';
-    }
+    function openSettings(){ document.getElementById('settingsModal').style.display='block'; }
+    function closeSettings(){ document.getElementById('settingsModal').style.display='none'; }
   </script>
 </body>
 </html>
