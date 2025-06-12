@@ -5,25 +5,25 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    let seconds={{ remaining }};
-    function tick(){
-      const el=document.getElementById('timer'),m=Math.floor(seconds/60),s=seconds%60;
-      el.innerText=`${m}:${String(s).padStart(2,'0')}`;
-      if(seconds>0){seconds--;setTimeout(tick,1000);}
+    // Таймер 15 минут
+    let seconds = {{ remaining }};
+    function tick() {
+      const el = document.getElementById('timer');
+      const m = Math.floor(seconds / 60), s = seconds % 60;
+      el.innerText = `${m}:${String(s).padStart(2,'0')}`;
+      if (seconds > 0) { seconds--; setTimeout(tick, 1000); }
     }
-    window.onload=tick;
-    function openSettings(){document.getElementById('settingsModal').style.display='block';}
-    function closeSettings(){document.getElementById('settingsModal').style.display='none';}
-    window.onclick=e=>{if(e.target.id==='settingsModal')closeSettings();}
+    window.onload = tick;
   </script>
 </head>
 <body>
   <div class="header">
-    <a href="/market">← Рынок</a>
+    <a href="/market" class="create-button">← Назад к рынку</a>
     <button class="icon-btn" onclick="openSettings()">⚙️</button>
   </div>
 
-  <div id="settingsModal" class="modal">
+  <!-- Модалка настроек -->
+  <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal') closeSettings()">
     <div class="modal-content">
       <span class="close-btn" onclick="closeSettings()">✖️</span>
       <h2>Настройки</h2>
@@ -42,20 +42,35 @@
     <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
     <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
     <p>Условия: {{ ad.comment or '—' }}</p>
-    <p>Осталось: <span id="timer">15:00</span></p>
+    <p>Осталось времени: <span id="timer">15:00</span></p>
 
     {% if status not in ['released','cancelled'] %}
-      <form action="/trade/{{ ad.id }}/buy" method="post">
-        <input type="number" name="amount" step="0.0001" required placeholder="Сколько {{ ad.crypto }}">
-        <button class="btn">Купить</button>
-      </form>
+    <form action="/trade/{{ ad.id }}/buy" method="post">
+      <input type="number" name="amount" step="0.0001"
+             min="{{ ad.min_limit/ad.rate }}" max="{{ ad.max_limit/ad.rate }}"
+             placeholder="Сколько {{ ad.crypto }}" required>
+      <button class="btn">Купить</button>
+    </form>
     {% endif %}
+
     {% if status=='pending' %}
-      <form action="/trade/{{ ad.id }}/pay" method="post"><button class="btn">Я оплатил</button></form>
-      <form action="/trade/{{ ad.id }}/cancel" method="post"><button class="btn btn-danger">Отменить</button></form>
+    <div class="info-box">
+      <form action="/trade/{{ ad.id }}/pay" method="post">
+        <button class="btn">Я оплатил</button>
+      </form>
+      <form action="/trade/{{ ad.id }}/cancel" method="post">
+        <button class="btn btn-danger">Отменить сделку</button>
+      </form>
+    </div>
     {% elif status=='paid' %}
-      <form action="/trade/{{ ad.id }}/confirm_receipt" method="post"><button class="btn btn-success">Подтвердить получение</button></form>
-      <form action="/trade/{{ ad.id }}/dispute" method="post"><button class="btn btn-warning">Открыть спор</button></form>
+    <div class="info-box">
+      <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
+        <button class="btn btn-success">Подтвердить получение</button>
+      </form>
+      <form action="/trade/{{ ad.id }}/dispute" method="post">
+        <button class="btn btn-warning">Открыть спор</button>
+      </form>
+    </div>
     {% elif status=='released' %}
       <p class="success">✅ Сделка завершена</p>
     {% elif status=='cancelled' %}
@@ -63,12 +78,14 @@
     {% endif %}
 
     <hr>
+
     <h3>Чат</h3>
     <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data">
-      <textarea name="message" placeholder="Сообщение"></textarea>
+      <textarea name="message" placeholder="Ваше сообщение..." required></textarea>
       <input type="file" name="image" accept="image/*">
       <button class="btn">Отправить</button>
     </form>
+
     <div class="messages">
       {% for msg in messages %}
         <div class="message">
@@ -79,8 +96,15 @@
     </div>
 
     {% if blocked_until and blocked_until > now() %}
-      <div class="info-box cancelled">❌ Заблокирован до {{ blocked_until }}</div>
+      <div class="info-box cancelled">
+        ❌ Вы заблокированы до {{ blocked_until }}
+      </div>
     {% endif %}
   </div>
+
+  <script>
+    function openSettings(){ document.getElementById('settingsModal').style.display='block'; }
+    function closeSettings(){ document.getElementById('settingsModal').style.display='none'; }
+  </script>
 </body>
 </html>
