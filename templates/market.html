@@ -1,84 +1,30 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Рынок P2P</title>
-  <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Рынок P2P</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="dark-theme">
-  <!-- Header с шестерёнкой -->
-  <header class="header">
-    <div class="header-left"><h1>Рынок P2P</h1></div>
-    <div class="header-right"><button class="icon-btn" onclick="openUserSettings()">⚙️</button></div>
-  </header>
-
-  <!-- Модалка настроек -->
-  <div id="user-settings" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeUserSettings()">✖️</span>
-      <h2>Настройки</h2>
-      <p><strong>Способ оплаты:</strong> Сбербанк, Тинькофф</p>
-      <p><a href="/deposit">Пополнить кошелёк</a></p>
-      <p><a href="/withdraw">Вывести средства</a></p>
-      <p><strong>Кошелёк:</strong> <a href="#">0x1234...abcd</a></p>
-    </div>
-  </div>
-
-  <div class="container">
-    <a href="/create"><button class="btn">Создать объявление</button></a>
-
-    <!-- Фильтры -->
-    <div class="filters">
-      <select id="f-crypto"><option value="">Крипта</option><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
-      <select id="f-fiat"><option value="">Фиат</option><option>USD</option><option>EUR</option><option>GBP</option><option>RUB</option></select>
-      <select id="f-payment"><option value="">Оплата</option><option>Сбербанк</option><option>Тинькофф</option><option>PayPal</option></select>
-      <button class="btn" onclick="filterAds()">Применить фильтр</button>
+<body>
+    <div class="navbar">
+        <span class="navbar-title">Рынок P2P</span>
+        <span class="navbar-balance">Баланс: {{ balances.get(current_user, 0) }} USDT</span>
+        <a class="create-button" href="/create-ad">+ Создать объявление</a>
     </div>
 
-    <!-- Список объявлений -->
-    <ul id="ads-list" class="ads-list">
-      {% for ad in ads %}
-      <li class="ad-card"
-          data-crypto="{{ ad.crypto }}"
-          data-fiat="{{ ad.fiat }}"
-          data-payment="{{ ad.payment_method }}">
-        <div class="ad-main">
-          <p><strong>{{ ad.action|capitalize }}</strong> {{ ad.amount }} {{ ad.crypto }} → {{ ad.fiat }} по {{ ad.rate }}</p>
-          <p>Оплата: {{ ad.payment_method }}</p>
-          <p><em>Лимиты: {{ ad.min_amount }} – {{ ad.max_amount }} {{ ad.fiat }}</em></p>
-        </div>
-        <div class="ad-footer">
-          <a href="/trade/{{ ad.id }}"><button class="btn">Купить</button></a>
-        </div>
-      </li>
-      {% else %}
-      <li>Объявлений нет</li>
-      {% endfor %}
-    </ul>
-  </div>
-
-  <script>
-    function openUserSettings() {
-      document.getElementById('user-settings').style.display = 'block';
-    }
-    function closeUserSettings() {
-      document.getElementById('user-settings').style.display = 'none';
-    }
-    window.onclick = function(e) {
-      if (e.target.id === 'user-settings') closeUserSettings();
-    }
-
-    function filterAds() {
-      const c = document.getElementById('f-crypto').value;
-      const f = document.getElementById('f-fiat').value;
-      const p = document.getElementById('f-payment').value;
-      document.querySelectorAll('.ad-card').forEach(el => {
-        const ok = (!c || el.dataset.crypto === c) &&
-                   (!f || el.dataset.fiat === f) &&
-                   (!p || el.dataset.payment === p);
-        el.style.display = ok ? '' : 'none';
-      });
-    }
-  </script>
+    <div class="market-container">
+        {% for ad in ads %}
+            <div class="ad-card">
+                <h3>{{ ad.type|capitalize }} {{ ad.crypto }}</h3>
+                <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
+                <p>Мин: {{ ad.min_limit }} / Макс: {{ ad.max_limit }} {{ ad.fiat }}</p>
+                <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
+                <p>Продавец: {{ ad.owner }}</p>
+                <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
+            </div>
+        {% else %}
+            <p>Нет доступных объявлений.</p>
+        {% endfor %}
+    </div>
 </body>
 </html>
