@@ -8,38 +8,72 @@
 <body class="dark-theme">
   <header class="header">
     <div class="header-left"><h1>Новое объявление</h1></div>
-    <div class="header-right"><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
+    <div class="header-right"><button class="icon-btn" onclick="toggleSettings()">⚙️</button></div>
   </header>
-  <div id="settings-modal" class="modal"><div class="modal-content">
-    <span class="close-btn" onclick="closeSettings()">✖️</span>
+
+  <!-- Модалка настроек -->
+  <div id="settingsMenu" class="settings-menu">
+    <span class="close-btn" onclick="toggleSettings()">✖️</span>
     <h2>Настройки</h2>
     <p><a href="/withdraw">Вывод средств</a></p>
     <p><a href="/deposit">Пополнить сеть</a></p>
-    <p>Кошелёк: <a href="#">0x123...</a></p>
-  </div></div>
+    <p>Кошелёк: <a href="#">0x1234...abcd</a></p>
+  </div>
+
   <div class="container">
-    <form action="/create" method="post">
-      <label>Тип:</label>
-      <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
-      <label>Крипта:</label>
-      <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option></select>
+    <form action="/create" method="post" class="form">
+      <label>Тип объявления:</label>
+      <select name="action" required>
+        <option value="buy">Купить</option>
+        <option value="sell">Продать</option>
+      </select>
+
+      <label>Криптовалюта:</label>
+      <select name="crypto" required>
+        <option>USDT</option><option>BTC</option><option>ETH</option><option>TRUMP</option>
+      </select>
+
       <label>Фиат:</label>
-      <select name="fiat"><option>RUB</option><option>USD</option><option>EUR</option></select>
-      <label>Курс:</label><input type="number" name="rate" step="0.0001" required>
-      <label>Мин. сумма:</label><input type="number" name="min_amount" step="0.0001" required>
-      <label>Макс. сумма:</label><input type="number" name="max_amount" step="0.0001" required>
-      <label>Способ оплаты:</label><input type="text" name="payment_method" required>
-      <label>Ф.И.О.:</label><input type="text" name="full_name" required>
-      <label>Номер карты:</label><input type="text" name="card_number" required>
-      <label>Условия:</label><textarea name="comment"></textarea>
-      <button class="btn">Создать</button>
-      <a href="/market"><button type="button" class="btn">Отмена</button></a>
+      <select name="fiat" required>
+        <option>USD – Доллар США</option><option>EUR – Евро</option><option>GBP – Фунт</option><option>RUB – Рубль</option>
+        <!-- ... остальные валюты ... -->
+      </select>
+
+      <label>Курс (цена за 1 единицу крипты):</label>
+      <input type="number" name="rate" step="0.0001" required>
+
+      <label>Доступное количество (крипты):</label>
+      <input type="number" name="amount" step="0.0001" required>
+
+      <label>Минимум (в фиате):</label>
+      <input type="number" name="min_limit" step="0.01" placeholder="Например, 10.00" required>
+
+      <label>Максимум (в фиате):</label>
+      <input type="number" name="max_limit" step="0.01" placeholder="Например, 1000.00" required>
+
+      <label>Способ оплаты:</label>
+      <input type="text" name="payment_method" placeholder="Сбербанк, Тинькофф..." required>
+
+      <label>Ваше Ф.И.О.:</label>
+      <input type="text" name="full_name" placeholder="Иванов Иван Иванович" required>
+
+      <label>Номер карты:</label>
+      <input type="text" name="card_number" placeholder="1234 5678 9012 3456" required>
+
+      <label>Условия (комментарий):</label>
+      <textarea name="comment" rows="3" placeholder="Дополнительные условия"></textarea>
+
+      <button class="btn" type="submit">Создать объявление</button>
+      <a href="/"><button class="btn" type="button">Отмена</button></a>
     </form>
   </div>
+
   <script>
-    function openSettings(){document.getElementById('settings-modal').style.display='block';}
-    function closeSettings(){document.getElementById('settings-modal').style.display='none';}
-    window.onclick=e=>{ if(e.target.id==='settings-modal') closeSettings(); }
+    function toggleSettings() {
+      const m = document.getElementById('settingsMenu');
+      m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    }
+    window.onclick = e => { if (e.target.id === 'settingsMenu') toggleSettings(); };
   </script>
 </body>
 </html>
