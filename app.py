@@ -20,6 +20,7 @@ cancellations = {}
 balances = {}
 
 def get_current_user():
+    # Здесь ваша реальная логика аутентификации
     return "Павел"
 
 def check_block(user: str):
@@ -86,14 +87,12 @@ def trade_view(request: Request, ad_id: str, user: str = Depends(get_current_use
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
         raise HTTPException(404, "Объявление не найдено")
-    seconds_left = 15 * 60
     return templates.TemplateResponse("trade.html", {
         "request": request,
         "ad": ad,
-        "remaining": seconds_left,
-        "messages": chats.get(ad_id, []),
-        "payments": payments.get(ad_id, {}),
-        "status": order_status.get(ad_id),
+        "messages": chats[ad_id],
+        "payments": payments[ad_id],
+        "status": order_status[ad_id],
         "balances": balances,
         "current_user": user,
         "blocked_until": blocked_until.get(user),
@@ -103,9 +102,7 @@ def trade_view(request: Request, ad_id: str, user: str = Depends(get_current_use
 @app.post("/trade/{ad_id}/buy")
 def trade_buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_current_user)):
     check_block(user)
-    ad = next((a for a in ads if a["id"] == ad_id), None)
-    if not ad:
-        raise HTTPException(404, "Объявление не найдено")
+    ad = next(a for a in ads if a["id"] == ad_id)
     cost = amount * ad["rate"]
     if balances[user] < cost:
         raise HTTPException(400, "Недостаточно средств")
@@ -117,9 +114,7 @@ def trade_buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_cur
 @app.post("/trade/{ad_id}/pay")
 def trade_pay(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
-    pay = payments.get(ad_id)
-    if not pay or pay.get("paid"):
-        raise HTTPException(400, "Нельзя оплатить")
+    pay = payments[ad_id]
     pay["paid"] = True
     order_status[ad_id] = "paid"
     return RedirectResponse(f"/trade/{ad_id}", 302)
@@ -127,8 +122,8 @@ def trade_pay(ad_id: str, user: str = Depends(get_current_user)):
 @app.post("/trade/{ad_id}/confirm_receipt")
 def confirm_receipt(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
-    if order_status.get(ad_id) != "paid":
-        raise HTTPException(400, "Нельзя подтвердить")
+    if order_status[ad_id] != "paid":
+        raise HTTPException(400, "Нельзя подтвердить получение")
     order_status[ad_id] = "released"
     seller = payments[ad_id]["user"]
     balances[seller] = balances.get(seller, 0.0) + payments[ad_id]["cost"] * 0.99
@@ -146,8 +141,7 @@ def cancel_trade(ad_id: str, user: str = Depends(get_current_user)):
 @app.post("/trade/{ad_id}/dispute")
 def dispute_trade(ad_id: str, user: str = Depends(get_current_user)):
     check_block(user)
-    if order_status.get(ad_id) == "paid":
-        order_status[ad_id] = "disputed"
+    order_status[ad_id] = "disputed"
     return RedirectResponse(f"/trade/{ad_id}", 302)
 
 @app.post("/trade/{ad_id}/message")
@@ -165,10 +159,10 @@ async def chat_message(
         with open(path, "wb") as f:
             f.write(await image.read())
         entry["image_url"] = path.replace("static", "/static")
-    chats.setdefault(ad_id, []).append(entry)
+    chats[ad_id].append(entry)
     low = message.lower()
     if "оператор" in low:
-        print(f"[УВЕДОМЛЕНИЕ] {user} попросил оператора в {ad_id}")
+        print(f"[УВЕДОМЛЕНИЕ] {user} просит оператора в {ad_id}")
     if any(k in low for k in ["бот","help","чатгпт"]):
         chats[ad_id].append({"user":"Бот","text":f"Привет, {user}! Чем помочь?"})
     return RedirectResponse(f"/trade/{ad_id}", 302)
