@@ -3,21 +3,21 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from uuid import uuid4
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 
 app = FastAPI()
 
-# Статика и шаблоны
+# Подключаем статику и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # In-memory хранилища
-ads = []               # объявления
-chats = {}             # ad_id -> list of messages
-payments = {}          # ad_id -> payment info
-order_status = {}      # ad_id -> status: pending, paid, released, cancelled, disputed
-receipts = {}          # ad_id -> bool
+ads = []
+chats = {}          # ad_id -> list of {user, text, optional image_url}
+payments = {}       # ad_id -> details of a pending/paid order
+order_status = {}   # ad_id -> one of: None, "pending", "paid", "released", "cancelled", "disputed"
+receipts = {}       # ad_id -> True if released
 
 @app.get("/", response_class=HTMLResponse)
 def market(request: Request):
@@ -59,7 +59,6 @@ def create_ad(
         "completed_orders": 55,
         "rating": 99
     })
-    # инициализация storages
     chats[ad_id] = []
     payments[ad_id] = {}
     order_status[ad_id] = None
@@ -71,14 +70,14 @@ def trade_view(request: Request, ad_id: str):
     ad = next((a for a in ads if a["id"] == ad_id), None)
     if not ad:
         raise HTTPException(404, "Объявление не найдено")
-    # Сброс таймера при каждом заходе (или хранить timestamp)
+    # Таймер не сохраняем, просто показываем 15 минут
     remaining = 15 * 60
     return templates.TemplateResponse("trade.html", {
         "request": request,
         "ad": ad,
         "remaining": remaining,
         "messages": chats.get(ad_id, []),
-        "order_status": order_status,
+        "order_status": order_status
     })
 
 @app.post("/trade/{ad_id}/buy")
@@ -96,8 +95,9 @@ def trade_pay(
     exp_date: str = Form(...),
     cvv: str = Form(...)
 ):
-    if order_status.get(ad_id) != "pending":
-        raise HTTPException(400, "Нельзя оплатить в этом статусе")
+    status = order_status.get(ad_id)
+    if status != "pending":
+        raise HTTPException(400, "Нельзя оплатить на этом этапе")
     payments[ad_id].update({
         "paid": True,
         "card_number": card_number,
@@ -111,7 +111,7 @@ def trade_pay(
 @app.post("/trade/{ad_id}/confirm_receipt")
 def confirm_receipt(ad_id: str):
     if order_status.get(ad_id) != "paid":
-        raise HTTPException(400, "Нельзя подтвердить получение в этом статусе")
+        raise HTTPException(400, "Нельзя подтвердить получение")
     order_status[ad_id] = "released"
     receipts[ad_id] = True
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
@@ -139,9 +139,9 @@ async def chat_message(
     entry = {"user": "Вы", "text": message or ""}
     if image:
         os.makedirs("static/uploads", exist_ok=True)
-        path = f"static/uploads/{uuid4().hex}_{image.filename}"
-        with open(path, "wb") as f:
+        filepath = f"static/uploads/{uuid4().hex}_{image.filename}"
+        with open(filepath, "wb") as f:
             f.write(await image.read())
-        entry["image_url"] = path.replace("static", "/static")
+        entry["image_url"] = filepath.replace("static", "/static")
     chats[ad_id].append(entry)
     return RedirectResponse(f"/trade/{ad_id}", status_code=302)
