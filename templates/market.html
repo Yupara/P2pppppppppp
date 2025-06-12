@@ -1,30 +1,32 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Рынок P2P</title>
-    <link rel="stylesheet" href="/static/styles.css">
+  <meta charset="UTF-8">
+  <title>Рынок P2P</title>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="navbar">
-        <span class="navbar-title">Рынок P2P</span>
-        <span class="navbar-balance">Баланс: {{ balances.get(current_user, 0) }} USDT</span>
-        <a class="create-button" href="/create-ad">+ Создать объявление</a>
-    </div>
+  <div class="navbar">
+    <span class="navbar-title">Рынок P2P</span>
+    <span class="navbar-balance">Баланс: {{ balances.get(current_user, 0) | round(2) }} USDT</span>
+    <a class="create-button" href="/create">+ Создать объявление</a>
+  </div>
 
-    <div class="market-container">
-        {% for ad in ads %}
-            <div class="ad-card">
-                <h3>{{ ad.type|capitalize }} {{ ad.crypto }}</h3>
-                <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
-                <p>Мин: {{ ad.min_limit }} / Макс: {{ ad.max_limit }} {{ ad.fiat }}</p>
-                <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
-                <p>Продавец: {{ ad.owner }}</p>
-                <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
-            </div>
-        {% else %}
-            <p>Нет доступных объявлений.</p>
-        {% endfor %}
-    </div>
+  <div class="market-container">
+    {% if ads %}
+      {% for ad in ads %}
+        <div class="ad-card">
+          <h3>{{ ad.action|capitalize }} {{ ad.crypto }}</h3>
+          <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
+          <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
+          <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
+          <p>Продавец: {{ ad.owner }} (Рейтинг: {{ ad.rating }}%, Ордеры: {{ ad.completed_orders }})</p>
+          <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>Пока нет объявлений.</p>
+    {% endif %}
+  </div>
 </body>
 </html>
