@@ -206,3 +206,26 @@ def withdraw(request: Request, amount: float = Form(...), wallet_address: str = 
     balances[user] -= amount
     # здесь вы бы инициировали реальный вывод
     return RedirectResponse("/market", 302)
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request: Request, user: str = Depends(get_current_user)):
+    # объявления пользователя
+    my_ads = [ad for ad in ads if ad["owner"] == user]
+    # сделки пользователя (как покупателя)
+    my_trades = [
+        {"id": ad_id, "status": order_status[ad_id], **payments.get(ad_id, {})}
+        for ad_id in payments if payments[ad_id].get("user") == user
+    ]
+    # статистика
+    completed = sum(1 for status in order_status.values() if status == "released")
+    cancelled = sum(1 for status in order_status.values() if status == "cancelled")
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "current_user": user,
+        "balance": balances.get(user, 0.0),
+        "rating": next((ad["rating"] for ad in my_ads), 0),
+        "completed": completed,
+        "cancelled": cancelled,
+        "my_ads": my_ads,
+        "my_trades": my_trades
+    })
