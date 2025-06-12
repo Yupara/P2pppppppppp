@@ -6,21 +6,17 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="header">
-    <h1>Вход</h1>
-    <a href="/register" class="create-button">→ Регистрация</a>
-  </div>
-  <div class="container">
-    {% if error %}
-      <p class="error">{{ error }}</p>
-    {% endif %}
-    <form action="/login" method="post" class="form">
-      <label>Логин:</label>
-      <input type="text" name="username" required>
-      <label>Пароль:</label>
-      <input type="password" name="password" required>
-      <button class="btn" type="submit">Войти</button>
-    </form>
-  </div>
+  <h1>Вход</h1>
+  {% if error %}
+    <p style="color:red;">{{ error }}</p>
+  {% endif %}
+  <form action="/login" method="post">
+    <label>Логин:</label><br>
+    <input type="text" name="username" required><br>
+    <label>Пароль:</label><br>
+    <input type="password" name="password" required><br><br>
+    <button type="submit">Войти</button>
+  </form>
+  <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
 </body>
 </html>
