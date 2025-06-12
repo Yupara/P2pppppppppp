@@ -1,23 +1,9 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head><meta charset="UTF-8"><title>Регистрация</title>
-<link rel="stylesheet" href="/static/styles.css"></head>
-<body>
-  <div class="container">
-    <h1>Регистрация</h1>
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
-    <form action="/register" method="post" class="form">
-      <label>Логин:</label>
-      <input type="text" name="username" required>
-      <label>Email:</label>
-      <input type="email" name="email" required>
-      <label>Пароль:</label>
-      <input type="password" name="password" required>
-      <label>Повтор пароля:</label>
-      <input type="password" name="password2" required>
-      <button class="btn" type="submit">Зарегистрироваться</button>
-    </form>
-    <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
-  </div>
-</body>
-</html>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Регистрация</title></head><body>
+<h1>Регистрация</h1>
+<form method="post">
+  <input name="username" placeholder="Логин" required><br>
+  <input name="password" type="password" placeholder="Пароль" required><br>
+  <button type="submit">Зарегистрироваться</button>
+</form>
+{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+</body></html>
