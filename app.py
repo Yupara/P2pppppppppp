@@ -53,8 +53,8 @@ def get_current_user(request: Request) -> str:
     return user
 
 # 3) Admin BasicAuth
-ADMIN_USER = "admin"
-ADMIN_PASS = "МойСуперПароль123"
+ADMIN_USER = "para"
+ADMIN_PASS = "para13"
 def get_admin(creds: HTTPBasicCredentials = Depends(security)):
     if not (
         secrets.compare_digest(creds.username, ADMIN_USER)
