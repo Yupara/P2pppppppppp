@@ -1,55 +1,45 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Профиль</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
+<head><meta charset="UTF-8"><title>Профиль</title>
+<link rel="stylesheet" href="/static/styles.css"></head>
 <body>
   <div class="header">
-    <h1>Профиль пользователя</h1>
+    <h1>Профиль</h1>
     <a href="/market" class="create-button">← Рынок</a>
   </div>
-
   <div class="container">
-    <h2>{{ current_user }}</h2>
-    <p><strong>Баланс:</strong> {{ balance | round(2) }} USDT</p>
+    <p><strong>Пользователь:</strong> {{ current_user }}</p>
+    <p><strong>Баланс:</strong> {{ balance|round(2) }} USDT</p>
     <p><strong>Рейтинг:</strong> {{ rating }}%</p>
-    <p><strong>Выполнено сделок всего:</strong> {{ completed }}</p>
-    <p><strong>Отменено сделок:</strong> {{ cancelled }}</p>
+    <p><strong>Сделок завершено:</strong> {{ completed }}</p>
+    <p><strong>Сделок отменено:</strong> {{ cancelled }}</p>
 
     <hr>
-
     <h3>Мои объявления</h3>
     {% if my_ads %}
       <ul>
         {% for ad in my_ads %}
-          <li>
-            {{ ad.action|capitalize }} {{ ad.crypto }}/{{ ad.fiat }} — 
-            лимит {{ ad.min_limit }}–{{ ad.max_limit }}  
-            <a href="/trade/{{ ad.id }}">Перейти</a>
+          <li>{{ ad.action|capitalize }} {{ ad.crypto }}/{{ ad.fiat }} 
+            <a href="/trade/{{ ad.id }}">→</a>
           </li>
         {% endfor %}
       </ul>
     {% else %}
-      <p>У вас пока нет объявлений.</p>
+      <p>Нет объявлений.</p>
     {% endif %}
 
     <hr>
-
     <h3>Мои сделки</h3>
     {% if my_trades %}
       <ul>
         {% for t in my_trades %}
-          <li>
-            Сделка №{{ t.id }} — {{ t.status|capitalize }} — 
-            {{ t.amount }} @ {{ t.cost | round(2) }}  
-            <a href="/trade/{{ t.id }}">Перейти</a>
+          <li>№{{ t.id }} — {{ t.status }} — {{ t.amount }} @ {{ t.cost|round(2) }} 
+            <a href="/trade/{{ t.id }}">→</a>
           </li>
         {% endfor %}
       </ul>
     {% else %}
-      <p>У вас нет совершённых сделок.</p>
+      <p>Нет сделок.</p>
     {% endif %}
   </div>
 </body>
