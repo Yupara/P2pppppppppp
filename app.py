@@ -1,317 +1,198 @@
-# app.py
-
-from fastapi import (
-    FastAPI, Request, Form, UploadFile, File,
-    Depends, HTTPException, status
-)
+from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, Session
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import RedirectResponse as StarletteRedirect
-from starlette.exceptions import HTTPException as StarletteHTTPException
-from passlib.context import CryptContext
-from uuid import uuid4
-from datetime import datetime, timedelta
-import secrets, os
+import uuid
+
+DATABASE_URL = "sqlite:///./p2p.db"
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="YOU_MUST_CHANGE_THIS_SECRET")
+app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ———————————————— Вспомогалки ————————————————
+# ========== MODELS ==========
 
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBasic()
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True)
+    password = Column(String)
+    balance = Column(Float, default=0.0)
 
-def hash_pw(pw: str) -> str:
-    return pwd_ctx.hash(pw)
+class Ad(Base):
+    __tablename__ = "ads"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    type = Column(String)
+    amount = Column(Float)
+    price = Column(Float)
+    user = relationship("User")
 
-def verify_pw(pw: str, hashed: str) -> bool:
-    return pwd_ctx.verify(pw, hashed)
+class Order(Base):
+    __tablename__ = "orders"
+    id = Column(Integer, primary_key=True, index=True)
+    buyer_id = Column(Integer, ForeignKey("users.id"))
+    ad_id = Column(Integer, ForeignKey("ads.id"))
+    amount = Column(Float)
+    status = Column(String, default="waiting")  # waiting, paid, confirmed
+    buyer = relationship("User", foreign_keys=[buyer_id])
+    ad = relationship("Ad")
 
-# In-memory хранилище
-users = {}         # username -> {email, hashed_password}
-ads = []           # список объявлений
-chats = {}         # ad_id -> список сообщений
-payments = {}      # ad_id -> информация о платеже
-order_status = {}  # ad_id -> статус сделки
-blocked_until = {} # username -> datetime
-cancellations = {} # username -> отмены
-balances = {}      # username -> баланс
+class Message(Base):
+    __tablename__ = "messages"
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    text = Column(String)
+    order = relationship("Order")
+    sender = relationship("User")
 
-# ——— Перехват 401: редиректим на /login (кроме /admin) ———
-@app.exception_handler(HTTPException)
-async def http_exc_handler(request: Request, exc: HTTPException):
-    # Если это админ-маршрут — возвращаем 401, чтобы сработал Basic Auth
-    if request.url.path.startswith("/admin"):
-        return HTMLResponse(
-            content=exc.detail,
-            status_code=exc.status_code,
-            headers=exc.headers or {"WWW-Authenticate": "Basic"}
-        )
-    # Иначе для 401 редиректим на /login
-    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
-        return StarletteRedirect(url="/login")
-    return HTMLResponse(str(exc.detail), status_code=exc.status_code)
+Base.metadata.create_all(bind=engine)
 
-# ——— Получение текущего пользователя из сессии ———
-def get_current_user(request: Request) -> str:
-    user = request.session.get("user")
-    if not user or user not in users:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Не авторизован")
+# ========== UTILS ==========
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_current_user(request: Request, db: Session):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = db.query(User).filter(User.id == user_id).first()
     return user
 
-# ——— Basic Auth для админа ———
-ADMIN_USER = "admin"
-ADMIN_PASS = "SuperSecret123"
-def get_admin(creds: HTTPBasicCredentials = Depends(security)):
-    if not (
-        secrets.compare_digest(creds.username, ADMIN_USER) and
-        secrets.compare_digest(creds.password, ADMIN_PASS)
-    ):
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED,
-            "Неверные учётные данные",
-            headers={"WWW-Authenticate": "Basic"}
-        )
-    return creds.username
+# ========== ADMIN SETTINGS ==========
+admin_user_id = 1  # ID админа, которому начисляется комиссия 0.5%
 
-def check_block(user: str):
-    until = blocked_until.get(user)
-    if until and datetime.utcnow() < until:
-        raise HTTPException(403, f"Заблокирован до {until}")
+# ========== ROUTES ==========
 
-# —————————————————— Маршруты ——————————————————
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request, db: Session = Depends(get_db)):
+    ads = db.query(Ad).all()
+    return templates.TemplateResponse("market.html", {"request": request, "ads": ads})
 
-@app.get("/", response_class=RedirectResponse)
-def root(): return RedirectResponse("/market", 302)
-
-# Регистрация
 @app.get("/register", response_class=HTMLResponse)
-def reg_form(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request, "error": None})
+def register_form(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
 
-@app.post("/register", response_class=HTMLResponse)
-def register(
-    request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
-    password2: str = Form(...)
-):
-    if username in users:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Пользователь уже существует"})
-    if password != password2:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Пароли не совпадают"})
-    users[username] = {"email": email, "hashed_password": hash_pw(password)}
-    request.session["user"] = username
-    balances.setdefault(username, 1000.0)
-    return RedirectResponse("/market", 302)
+@app.post("/register")
+def register(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    if db.query(User).filter(User.username == username).first():
+        return templates.TemplateResponse("register.html", {"request": request, "error": "Username taken"})
+    user = User(username=username, password=password)
+    db.add(user)
+    db.commit()
+    return RedirectResponse("/login", status_code=302)
 
-# Логин
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse("login.html", {"request": request})
 
-@app.post("/login", response_class=HTMLResponse)
-def login(
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...)
-):
-    u = users.get(username)
-    if not u or not verify_pw(password, u["hashed_password"]):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Неверный логин или пароль"})
-    request.session["user"] = username
-    balances.setdefault(username, 1000.0)
-    return RedirectResponse("/market", 302)
+@app.post("/login")
+def login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter_by(username=username, password=password).first()
+    if not user:
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+    request.session["user_id"] = user.id
+    return RedirectResponse("/", status_code=302)
 
-# Выход
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("/login", 302)
+    return RedirectResponse("/", status_code=302)
 
-# Рынок
-@app.get("/market", response_class=HTMLResponse)
-def market(request: Request, user: str = Depends(get_current_user)):
-    return templates.TemplateResponse("market.html", {
-        "request": request, "ads": ads,
-        "balances": balances, "current_user": user
-    })
-
-# Создать объявление
-@app.get("/create", response_class=HTMLResponse)
-def create_form(request: Request, user: str = Depends(get_current_user)):
+@app.get("/create_ad", response_class=HTMLResponse)
+def create_ad_form(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
 
-@app.post("/create")
-def create_ad(
-    request: Request,
-    action: str = Form(...),
-    crypto: str = Form(...),
-    fiat: str = Form(...),
-    rate: float = Form(...),
-    amount: float = Form(...),
-    min_limit: float = Form(...),
-    max_limit: float = Form(...),
-    payment_method: str = Form(...),
-    comment: str = Form(""),
-    full_name: str = Form(...),
-    card_number: str = Form(...),
-    user: str = Depends(get_current_user)
-):
-    ad_id = uuid4().hex
-    ads.append({
-        "id": ad_id, "action": action, "crypto": crypto, "fiat": fiat,
-        "rate": rate, "amount": amount, "min_limit": min_limit,
-        "max_limit": max_limit, "payment_method": payment_method,
-        "comment": comment, "owner": full_name, "card_number": card_number,
-        "completed_orders": 55, "rating": 99
-    })
-    chats[ad_id] = []
-    payments[ad_id] = {}
-    order_status[ad_id] = None
-    return RedirectResponse("/market", 302)
+@app.post("/create_ad")
+def create_ad(request: Request, type: str = Form(...), amount: float = Form(...), price: float = Form(...), db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    ad = Ad(user_id=user.id, type=type, amount=amount, price=price)
+    db.add(ad)
+    db.commit()
+    return RedirectResponse("/", status_code=302)
 
-# Сделка
-@app.get("/trade/{ad_id}", response_class=HTMLResponse)
-def trade_page(request: Request, ad_id: str, user: str = Depends(get_current_user)):
-    ad = next((a for a in ads if a["id"] == ad_id), None)
+@app.get("/create_order/{ad_id}")
+def create_order(ad_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    ad = db.query(Ad).filter(Ad.id == ad_id).first()
     if not ad:
-        raise HTTPException(404, "Объявление не найдено")
-    return templates.TemplateResponse("trade.html", {
-        "request": request, "ad": ad, "messages": chats.get(ad_id, []),
-        "status": order_status.get(ad_id), "balances": balances,
-        "current_user": user, "blocked_until": blocked_until.get(user),
-        "remaining": 15*60, "now": datetime.utcnow
-    })
+        raise HTTPException(status_code=404, detail="Ad not found")
+    if ad.user_id == user.id:
+        raise HTTPException(status_code=400, detail="Cannot buy from yourself")
+    order = Order(buyer_id=user.id, ad_id=ad.id, amount=ad.amount)
+    db.add(order)
+    db.commit()
+    return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
-@app.post("/trade/{ad_id}/buy")
-def buy(ad_id: str, amount: float = Form(...), user: str = Depends(get_current_user)):
-    check_block(user)
-    ad = next((a for a in ads if a["id"] == ad_id), None)
-    if not ad:
-        raise HTTPException(404, "Объявление не найдено")
-    cost = amount * ad["rate"]
-    if balances[user] < cost:
-        raise HTTPException(400, "Недостаточно средств")
-    balances[user] -= cost
-    payments[ad_id] = {"user": user, "amount": amount, "cost": cost, "paid": False}
-    order_status[ad_id] = "pending"
-    return RedirectResponse(f"/trade/{ad_id}", 302)
+@app.get("/trade/{order_id}", response_class=HTMLResponse)
+def trade_view(order_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    order = db.query(Order).filter(Order.id == order_id).first()
+    messages = db.query(Message).filter(Message.order_id == order_id).all()
+    return templates.TemplateResponse("trade.html", {"request": request, "order": order, "messages": messages, "user": user})
 
-@app.post("/trade/{ad_id}/pay")
-def pay(ad_id: str, user: str = Depends(get_current_user)):
-    check_block(user)
-    p = payments.get(ad_id)
-    if not p or p["paid"]:
-        raise HTTPException(400, "Нельзя оплатить")
-    p["paid"] = True
-    order_status[ad_id] = "paid"
-    return RedirectResponse(f"/trade/{ad_id}", 302)
+@app.post("/pay/{order_id}")
+def pay_order(order_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    order = db.query(Order).filter(Order.id == order_id).first()
+    order.status = "paid"
+    db.commit()
+    return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
-@app.post("/trade/{ad_id}/confirm")
-def confirm(ad_id: str, user: str = Depends(get_current_user)):
-    check_block(user)
-    if order_status.get(ad_id) != "paid":
-        raise HTTPException(400, "Нельзя подтвердить получение")
-    order_status[ad_id] = "released"
-    seller = payments[ad_id]["user"]
-    balances[seller] = balances.get(seller, 0.0) + payments[ad_id]["cost"] * 0.99
-    return RedirectResponse(f"/trade/{ad_id}", 302)
+@app.post("/confirm/{order_id}")
+def confirm_order(order_id: int, request: Request, db: Session = Depends(get_db)):
+    db_user = get_current_user(request, db)
+    order = db.query(Order).filter(Order.id == order_id).first()
+    ad_owner = db.query(User).filter(User.id == order.ad.user_id).first()
+    buyer = db.query(User).filter(User.id == order.buyer_id).first()
+    admin = db.query(User).filter(User.id == admin_user_id).first()
 
-@app.post("/trade/{ad_id}/cancel")
-def cancel(ad_id: str, user: str = Depends(get_current_user)):
-    check_block(user)
-    cancellations[user] = cancellations.get(user, 0) + 1
-    if cancellations[user] >= 10:
-        blocked_until[user] = datetime.utcnow() + timedelta(hours=24)
-    order_status[ad_id] = "cancelled"
-    return RedirectResponse(f"/trade/{ad_id}", 302)
+    if db_user.id != ad_owner.id:
+        raise HTTPException(status_code=403, detail="You are not the seller")
 
-@app.post("/trade/{ad_id}/dispute")
-def dispute(ad_id: str, user: str = Depends(get_current_user)):
-    check_block(user)
-    order_status[ad_id] = "disputed"
-    return RedirectResponse(f"/trade/{ad_id}", 302)
+    commission = order.amount * 0.005
+    final_amount = order.amount - commission
 
-@app.post("/trade/{ad_id}/message")
-async def message(ad_id: str, message: str = Form(""), image: UploadFile = File(None),
-                  user: str = Depends(get_current_user)):
-    check_block(user)
-    entry = {"user": user, "text": message}
-    if image:
-        os.makedirs("static/uploads", exist_ok=True)
-        path = f"static/uploads/{uuid4().hex}_{image.filename}"
-        with open(path, "wb") as f:
-            f.write(await image.read())
-        entry["image_url"] = path.replace("static", "/static")
-    chats[ad_id].append(entry)
-    low = message.lower()
-    if "оператор" in low:
-        print(f"Уведомление: {user} запросил оператора в сделке {ad_id}")
-    if any(k in low for k in ["бот", "help", "чатгпт"]):
-        chats[ad_id].append({"user":"Бот","text":f"Привет, {user}! Чем помочь?"})
-    return RedirectResponse(f"/trade/{ad_id}", 302)
+    if ad_owner.balance < order.amount:
+        raise HTTPException(status_code=400, detail="Not enough balance")
 
-@app.get("/deposit", response_class=HTMLResponse)
-def dep_form(request: Request, user: str = Depends(get_current_user)):
-    return templates.TemplateResponse("deposit.html", {"request": request, "balance": balances.get(user,0.0)})
+    ad_owner.balance -= order.amount
+    buyer.balance += final_amount
+    admin.balance += commission
+    order.status = "confirmed"
 
-@app.post("/deposit")
-def deposit(amount: float = Form(...), user: str = Depends(get_current_user)):
-    if amount <= 0:
-        raise HTTPException(400, "Неверная сумма")
-    balances[user] = balances.get(user,0.0) + amount
-    return RedirectResponse("/market", 302)
+    db.commit()
+    return RedirectResponse("/orders/mine", status_code=302)
 
-@app.get("/withdraw", response_class=HTMLResponse)
-def w_form(request: Request, user: str = Depends(get_current_user)):
-    return templates.TemplateResponse("withdraw.html", {"request": request, "balance": balances.get(user,0.0)})
+@app.post("/message/{order_id}")
+def send_message(order_id: int, text: str = Form(...), request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    msg = Message(order_id=order_id, sender_id=user.id, text=text)
+    db.add(msg)
+    db.commit()
+    return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
-@app.post("/withdraw")
-def withdraw(amount: float = Form(...), wallet_address: str = Form(...), user: str = Depends(get_current_user)):
-    if amount <= 0 or amount > balances.get(user,0.0):
-        raise HTTPException(400, "Неверная сумма")
-    if not wallet_address:
-        raise HTTPException(400, "Укажите адрес кошелька")
-    balances[user] -= amount
-    return RedirectResponse("/market", 302)
+@app.get("/orders/mine", response_class=HTMLResponse)
+def my_orders(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    orders = db.query(Order).filter((Order.buyer_id == user.id) | (Order.ad.has(user_id=user.id))).all()
+    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders})
 
 @app.get("/profile", response_class=HTMLResponse)
-def profile(request: Request, user: str = Depends(get_current_user)):
-    my_ads = [ad for ad in ads if ad["owner"] == user]
-    my_trades = [{"id": aid, "status": order_status[aid], **payments.get(aid,{})}
-                 for aid in payments if payments[aid].get("user")==user]
-    comp = sum(1 for s in order_status.values() if s=="released")
-    canc = sum(1 for s in order_status.values() if s=="cancelled")
-    return templates.TemplateResponse("profile.html", {"request":request,
-        "current_user":user, "balance":balances.get(user,0.0),
-        "rating":(my_ads[0]["rating"] if my_ads else 0),
-        "completed":comp,"cancelled":canc,
-        "my_ads":my_ads,"my_trades":my_trades})
-
-@app.get("/admin", dependencies=[Depends(get_admin)], response_class=HTMLResponse)
-def admin_panel(request: Request):
-    return templates.TemplateResponse("admin.html", {"request":request,
-        "ads":ads,"chats":chats,"payments":payments,
-        "order_status":order_status,"balances":balances})
-
-@app.post("/admin/ad/{ad_id}/delete", dependencies=[Depends(get_admin)])
-def admin_del(ad_id: str):
-    global ads
-    ads = [ad for ad in ads if ad["id"]!=ad_id]
-    chats.pop(ad_id,None); payments.pop(ad_id,None); order_status.pop(ad_id,None)
-    return RedirectResponse("/admin", 302)
-
-@app.post("/admin/ad/{ad_id}/resolve", dependencies=[Depends(get_admin)])
-def admin_res(ad_id: str):
-    if order_status.get(ad_id)=="disputed":
-        seller = payments[ad_id]["user"]
-        balances[seller] = balances.get(seller,0.0) + payments[ad_id]["cost"] * 0.99
-        order_status[ad_id] = "released"
-    return RedirectResponse("/admin", 302)
+def profile_view(request: Request, db: Session = Depends(get_db)):
+    user = get_current_user(request, db)
+    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
