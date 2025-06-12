@@ -25,9 +25,9 @@
       <ul>
         {% for ad in my_ads %}
           <li>
-            {{ ad.action|capitalize }} {{ ad.crypto }} за {{ ad.fiat }} — 
-            лимит {{ ad.min_limit }}–{{ ad.max_limit }} — 
-            <a href="/trade/{{ ad.id }}">Открыть</a>
+            {{ ad.action|capitalize }} {{ ad.crypto }}/{{ ad.fiat }} — 
+            лимит {{ ad.min_limit }}–{{ ad.max_limit }}  
+            <a href="/trade/{{ ad.id }}">Перейти</a>
           </li>
         {% endfor %}
       </ul>
@@ -43,7 +43,7 @@
         {% for t in my_trades %}
           <li>
             Сделка №{{ t.id }} — {{ t.status|capitalize }} — 
-            {{ t.amount }} @ {{ t.cost|round(2) }}  
+            {{ t.amount }} @ {{ t.cost | round(2) }}  
             <a href="/trade/{{ t.id }}">Перейти</a>
           </li>
         {% endfor %}
