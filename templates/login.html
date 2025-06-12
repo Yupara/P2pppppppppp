@@ -1,8 +1,26 @@
-<!DOCTYPE html><html><head><title>Вход</title><link rel="stylesheet" href="/static/styles.css"></head><body>
-<div class="container"><h1>Вход</h1>
-{% if msg %}<p style="color:red">{{ msg }}</p>{% endif %}
-<form method="post">
-  <input name="username" placeholder="Username" required>
-  <input name="password" type="password" placeholder="Password" required>
-  <button type="submit" class="btn">Войти</button>
-</form></div></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Вход</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Вход</h1>
+    <a href="/register" class="create-button">→ Регистрация</a>
+  </div>
+  <div class="container">
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+    <form action="/login" method="post" class="form">
+      <label>Логин:</label>
+      <input type="text" name="username" required>
+      <label>Пароль:</label>
+      <input type="password" name="password" required>
+      <button class="btn" type="submit">Войти</button>
+    </form>
+  </div>
+</body>
+</html>
