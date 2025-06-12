@@ -6,11 +6,14 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
+  <!-- Шапка с кнопкой создания объявления и настройками -->
   <div class="header">
     <h1>Рынок P2P</h1>
+    <a href="/create" class="create-button">+ Создать объявление</a>
     <button class="icon-btn" onclick="openSettings()">⚙️</button>
   </div>
 
+  <!-- Модальное окно настроек -->
   <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal') closeSettings()">
     <div class="modal-content">
       <span class="close-btn" onclick="closeSettings()">✖️</span>
@@ -23,6 +26,7 @@
     </div>
   </div>
 
+  <!-- Список объявлений -->
   <div class="market-container">
     {% if ads %}
       {% for ad in ads %}
@@ -40,9 +44,14 @@
     {% endif %}
   </div>
 
+  <!-- Скрипты управления модальным окном -->
   <script>
-    function openSettings(){ document.getElementById('settingsModal').style.display='block'; }
-    function closeSettings(){ document.getElementById('settingsModal').style.display='none'; }
+    function openSettings(){
+      document.getElementById('settingsModal').style.display = 'block';
+    }
+    function closeSettings(){
+      document.getElementById('settingsModal').style.display = 'none';
+    }
   </script>
 </body>
 </html>
