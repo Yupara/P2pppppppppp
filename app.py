@@ -274,7 +274,7 @@ def my_orders(
 @app.get("/profile", response_class=HTMLResponse)
 def profile_view(
     request: Request,
-    db: Session = Depends(get_get_db),
+    db: Session = Depends(get_db),        # теперь правильно get_db
     user: User = Depends(get_current_user)
 ):
     return templates.TemplateResponse("profile.html", {
