@@ -1,104 +1,63 @@
-/* Базовые стили */
 body {
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
   font-family: Arial, sans-serif;
-  background-color: #0d1117;
-  color: #c9d1d9;
+  background: #0d1117; color: #c9d1d9;
 }
-
-/* Шапка */
 .header {
-  display: flex;
-  align-items: center;
-  background-color: #161b22;
-  padding: 10px 20px;
+  display: flex; align-items: center;
+  background: #161b22; padding: 10px 20px;
   border-bottom: 1px solid #30363d;
 }
-.header h1 {
-  margin: 0;
-  font-size: 24px;
-  color: #7df57d;
-}
-
-/* Кнопка создания объявления */
+.header h1 { margin: 0; color: #7df57d; }
 .create-button {
-  background-color: #29a329;
-  color: #ffffff;
-  padding: 6px 12px;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-left: 20px;
-  font-weight: bold;
+  background: #29a329; color: white;
+  padding: 6px 12px; border-radius: 4px;
+  text-decoration: none; margin-left: 20px;
 }
-
-/* Иконка настроек */
 .icon-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #c9d1d9;
-  cursor: pointer;
-  margin-left: auto;
+  margin-left: auto; background:none; border:none;
+  font-size:1.5rem; color:#c9d1d9; cursor:pointer;
 }
-
-/* Модальное окно */
 .modal {
-  display: none;
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  z-index: 999;
+  display:none; position:fixed; top:0; left:0;
+  width:100%; height:100%; background:rgba(0,0,0,0.6);
+  z-index:999;
 }
 .modal-content {
-  background-color: #161b22;
-  margin: 10% auto;
-  padding: 20px;
-  border: 1px solid #30363d;
-  border-radius: 6px;
-  width: 300px;
-  color: #c9d1d9;
+  background:#161b22; margin:10% auto; padding:20px;
+  border:1px solid #30363d; border-radius:6px;
+  width:300px; color:#c9d1d9;
 }
-.close-btn {
-  float: right;
-  cursor: pointer;
-  color: #c9d1d9;
-  font-size: 1.2rem;
+.close-btn { float:right; cursor:pointer; font-size:1.2rem; }
+.container, .market-container, .trade-container {
+  padding:20px; max-width:800px; margin:auto;
 }
-
-/* Контейнер объявлений */
-.market-container {
-  padding: 20px;
-  max-width: 800px;
-  margin: auto;
+.ad-card, .info-box {
+  background:#161b22; border:1px solid #30363d;
+  padding:15px; border-radius:6px; margin-bottom:15px;
 }
-.ad-card {
-  background-color: #161b22;
-  border: 1px solid #30363d;
-  padding: 15px;
-  border-radius: 6px;
-  margin-bottom: 15px;
+.ad-card h3 { margin:0 0 10px; color:#58a6ff; }
+.buy-button, .btn {
+  background:#238636; color:white; padding:8px 16px;
+  border:none; border-radius:4px; cursor:pointer;
 }
-.ad-card h3 {
-  margin: 0 0 10px 0;
-  color: #58a6ff;
+.btn-danger { background:#aa0000; }
+.btn-success { background:#29a329; }
+.btn-warning { background:#d47f00; }
+.form label { display:block; margin-top:10px; }
+.form input, .form select, .form textarea {
+  width:100%; padding:8px; margin-top:5px;
+  background:#0d1117; border:1px solid #30363d; border-radius:4px;
+  color:#c9d1d9;
 }
-.ad-card p {
-  margin: 5px 0;
+.messages { margin-top:15px; }
+.message { margin-bottom:10px; }
+.chat-image { max-width:150px; margin-top:5px; border-radius:4px; }
+.success { color:lightgreen; }
+.cancelled { color:orange; }
+table {
+  width:100%; border-collapse:collapse; margin-bottom:20px;
 }
-
-/* Кнопка Купить */
-.buy-button {
-  display: inline-block;
-  background-color: #238636;
-  color: white;
-  padding: 8px 16px;
-  text-decoration: none;
-  border-radius: 4px;
-  margin-top: 10px;
-  cursor: pointer;
-}
-.buy-button:hover {
-  background-color: #1f7f2f;
-}
+th, td { border:1px solid #30363d; padding:8px; text-align:left; }
+th { background:#21262d; }
+.error { color:red; }
