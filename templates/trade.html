@@ -1,91 +1,15 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head><meta charset="UTF-8"><title>Сделка</title>
-<link rel="stylesheet" href="/static/styles.css">
-<script>
-  let seconds={{ remaining }};
-  function tick(){
-    const el=document.getElementById('timer'),
-          m=Math.floor(seconds/60),s=seconds%60;
-    el.innerText=`${m}:${String(s).padStart(2,'0')}`;
-    if(seconds>0){seconds--;setTimeout(tick,1000);}
-  }
-  window.onload=tick;
-</script>
-</head>
-<body>
-  <div class="header">
-    <a href="/market" class="create-button">← Рынок</a>
-    <button class="icon-btn" onclick="openSettings()">⚙️</button>
-  </div>
-  <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal')closeSettings()">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeSettings()">✖️</span>
-      <h2>Настройки</h2>
-      <p><strong>Пользователь:</strong> {{ current_user }}</p>
-      <p><strong>Баланс:</strong> {{ balances[current_user]|round(2) }} USDT</p>
-      <a href="/deposit"><button>Пополнить</button></a>
-      <a href="/withdraw"><button>Вывести</button></a>
-      <a href="/profile"><button>Профиль</button></a>
-      <p><strong>Адрес:</strong><br><a href="#">usdt:ВАШ_АДРЕС</a></p>
-    </div>
-  </div>
-  <div class="trade-container">
-    <h2>{{ ad.action|capitalize }} {{ ad.crypto }}</h2>
-    <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
-    <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
-    <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
-    <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
-    <p>Условия: {{ ad.comment or '—' }}</p>
-    <p>Осталось: <span id="timer">15:00</span></p>
-
-    {% if status not in ['released','cancelled'] %}
-      <form action="/trade/{{ ad.id }}/buy" method="post" class="form">
-        <label>Сколько {{ ad.crypto }} купить:</label>
-        <input type="number" name="amount" min="{{ ad.min_limit/ad.rate }}" max="{{ ad.max_limit/ad.rate }}" step="0.0001" required>
-        <button class="btn" type="submit">Купить</button>
-      </form>
-    {% endif %}
-
-    {% if status=='pending' %}
-      <div class="info-box">
-        <form action="/trade/{{ ad.id }}/pay" method="post"><button class="btn">Я оплатил</button></form>
-        <form action="/trade/{{ ad.id }}/cancel" method="post"><button class="btn btn-danger">Отменить</button></form>
-      </div>
-    {% elif status=='paid' %}
-      <div class="info-box">
-        <form action="/trade/{{ ad.id }}/confirm" method="post"><button class="btn btn-success">Подтвердить</button></form>
-        <form action="/trade/{{ ad.id }}/dispute" method="post"><button class="btn btn-warning">Спор</button></form>
-      </div>
-    {% elif status=='released' %}
-      <p class="success">✅ Завершено</p>
-    {% elif status=='cancelled' %}
-      <p class="cancelled">❌ Отменено</p>
-    {% endif %}
-
-    <hr>
-    <h3>Чат</h3>
-    <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data" class="form">
-      <textarea name="message" required></textarea>
-      <input type="file" name="image" accept="image/*">
-      <button class="btn" type="submit">Отправить</button>
-    </form>
-    <div class="messages">
-      {% for msg in messages %}
-        <div class="message">
-          <strong>{{ msg.user }}:</strong> {{ msg.text }}
-          {% if msg.image_url %}<br><img src="{{ msg.image_url }}" class="chat-image">{% endif %}
-        </div>
-      {% endfor %}
-    </div>
-
-    {% if blocked_until and blocked_until > now() %}
-      <div class="info-box cancelled">❌ Заблокированы до {{ blocked_until }}</div>
-    {% endif %}
-  </div>
-  <script>
-    function openSettings(){document.getElementById('settingsModal').style.display='block';}
-    function closeSettings(){document.getElementById('settingsModal').style.display='none';}
-  </script>
-</body>
-</html>
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Сделка</title></head><body>
+<h1>Сделка {{ order.id }} — {{ order.status }}</h1>
+<p>Сумма: {{ order.amount }}</p>
+<form action="/message/{{ order.id }}" method="post">
+  <input name="text" placeholder="Сообщение..." required>
+  <button type="submit">Отправить</button>
+</form>
+<ul>
+  {% for msg in messages %}
+    <li><strong>{{ msg.sender.username }}:</strong> {{ msg.text }}</li>
+  {% endfor %}
+</ul>
+<form action="/pay/{{ order.id }}" method="post"><button>Я оплатил</button></form>
+<form action="/confirm/{{ order.id }}" method="post"><button>Подтвердить</button></form>
+</body></html>
