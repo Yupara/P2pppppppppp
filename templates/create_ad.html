@@ -8,10 +8,10 @@
 <body>
   <div class="container">
     <h2>Новое объявление</h2>
-    <form action="/create" method="post" class="form">
+    <form action="/create" method="post">
       <label>Тип:</label>
       <select name="action"><option value="buy">Купить</option><option value="sell">Продать</option></select>
-      <label>Крипта:</label>
+      <label>Криптовалюта:</label>
       <select name="crypto"><option>USDT</option><option>BTC</option><option>ETH</option></select>
       <label>Фиат:</label>
       <select name="fiat"><option>USD</option><option>EUR</option><option>RUB</option></select>
@@ -19,7 +19,7 @@
       <label>Доступно:</label><input type="number" name="amount" step="0.0001" required>
       <label>Мин. лимит:</label><input type="number" name="min_limit" step="0.01" required>
       <label>Макс. лимит:</label><input type="number" name="max_limit" step="0.01" required>
-      <label>Оплата:</label><input type="text" name="payment_method" required>
+      <label>Способ оплаты:</label><input type="text" name="payment_method" required>
       <label>Ф.И.О.:</label><input type="text" name="full_name" required>
       <label>Номер карты:</label><input type="text" name="card_number" required>
       <label>Условия:</label><textarea name="comment"></textarea>
