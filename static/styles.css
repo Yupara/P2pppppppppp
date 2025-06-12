@@ -1,86 +1,87 @@
-body {
-  margin: 0;
+/* Общие стили */
+body, html {
+  margin: 0; padding: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #0e1a14;
-  color: #d2ffd2;
+  background: #0d1117; color: #c9d1d9;
 }
 
+/* Навигация */
 .navbar {
-  background-color: #112f23;
-  padding: 12px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: #112f23;
+  display: flex; align-items: center;
+  padding: 10px 20px;
 }
-
 .navbar a {
-  color: #7df57d;
-  text-decoration: none;
-  margin-right: 20px;
-  font-weight: bold;
+  color: #7df57d; text-decoration: none;
+  margin-right: 20px; font-weight: bold;
 }
 
-.container {
-  padding: 20px;
-  max-width: 700px;
-  margin: auto;
-  background: #183b2a;
-  border-radius: 10px;
-  margin-top: 20px;
-}
-
-input, select, button {
-  padding: 10px;
-  margin-top: 10px;
-  width: 100%;
-  border-radius: 6px;
-  border: none;
-  font-size: 16px;
-}
-
-button {
-  background-color: #29a329;
-  color: white;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-button:hover {
-  background-color: #1f801f;
-}
-
-.chat {
-  background-color: #0d2519;
-  padding: 10px;
-  border-radius: 8px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.chat-message {
-  margin-bottom: 10px;
-}
-
-.chat-image {
-  max-width: 100px;
-  margin-top: 5px;
-  border-radius: 5px;
-}
-
+/* Иконка настроек */
 .settings-icon {
+  margin-left: auto;
   cursor: pointer;
-  color: #c2f5c2;
-  font-size: 20px;
+  font-size: 1.4rem;
+  color: #c9d1d9;
 }
 
+/* Меню настроек */
 .settings-menu {
+  display: none;
   position: absolute;
-  top: 55px;
-  right: 20px;
+  top: 50px; right: 20px;
   background: #143524;
   border: 1px solid #3fae67;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 15px;
-  display: none;
-  z-index: 999;
+  z-index: 100;
+}
+.settings-menu p, .settings-menu a, .settings-menu button {
+  color: #c9d1d9;
+  margin: 5px 0;
+}
+.settings-menu a { color: #7df57d; }
+.settings-menu button {
+  background: #29a329; border: none; padding: 5px 10px;
+  border-radius: 4px; margin-right: 5px;
+  cursor: pointer;
+}
+
+/* Контейнер */
+.container {
+  max-width: 700px; margin: 20px auto; padding: 0 20px;
+}
+
+/* Формы и кнопки */
+.form input, .form select, .form textarea {
+  width: 100%; padding: 8px; margin: 10px 0;
+  background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+  color: #c9d1d9;
+}
+.btn {
+  background: #238636; color: white; border: none;
+  padding: 10px 20px; border-radius: 5px; cursor: pointer;
+  margin: 10px 0;
+}
+.btn:hover { background: #1f7f2f; }
+.btn-danger { background: #aa0000; }
+.btn-warning { background: #d47f00; }
+.btn-success { background: #29a329; }
+
+/* Информационные блоки */
+.info-box {
+  background: #161b22; border: 1px solid #30363d;
+  padding: 15px; border-radius: 6px; margin: 20px 0;
+}
+.timer { color: #ffcc00; font-weight: bold; }
+
+/* Чат */
+.chat {
+  background: #0d1117; border: 1px solid #0f0;
+  border-radius: 6px; padding: 10px;
+  max-height: 300px; overflow-y: auto;
+}
+.chat-message { margin-bottom: 10px; }
+.chat-image {
+  max-width: 150px; border-radius: 4px;
+  margin-top: 5px; border: 1px solid #0f0;
 }
