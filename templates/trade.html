@@ -17,8 +17,9 @@
   </script>
 </head>
 <body>
+  <!-- Шапка -->
   <div class="header">
-    <a href="/market" class="create-button">← Назад к рынку</a>
+    <a href="/market" class="create-button">← Рынок</a>
     <button class="icon-btn" onclick="openSettings()">⚙️</button>
   </div>
 
@@ -31,6 +32,7 @@
       <p><strong>Баланс:</strong> {{ balances[current_user] | round(2) }} USDT</p>
       <a href="/deposit"><button>Пополнить кошелек</button></a>
       <a href="/withdraw"><button>Вывести средства</button></a>
+      <a href="/profile"><button>Мой профиль</button></a>
       <p><strong>Адрес кошелька:</strong><br><a href="#">usdt:YOUR_ADDRESS</a></p>
     </div>
   </div>
@@ -44,67 +46,79 @@
     <p>Условия: {{ ad.comment or '—' }}</p>
     <p>Осталось времени: <span id="timer">15:00</span></p>
 
+    <!-- Форма покупки -->
     {% if status not in ['released','cancelled'] %}
-    <form action="/trade/{{ ad.id }}/buy" method="post">
-      <input type="number" name="amount" step="0.0001"
-             min="{{ ad.min_limit/ad.rate }}" max="{{ ad.max_limit/ad.rate }}"
-             placeholder="Сколько {{ ad.crypto }}" required>
-      <button class="btn">Купить</button>
-    </form>
+      <form action="/trade/{{ ad.id }}/buy" method="post" class="form">
+        <label>Сколько {{ ad.crypto }} купить:</label>
+        <input type="number" name="amount" step="0.0001"
+               min="{{ ad.min_limit/ad.rate }}" max="{{ ad.max_limit/ad.rate }}"
+               placeholder="Введите сумму" required>
+        <button class="btn" type="submit">Купить</button>
+      </form>
     {% endif %}
 
-    {% if status=='pending' %}
-    <div class="info-box">
-      <form action="/trade/{{ ad.id }}/pay" method="post">
-        <button class="btn">Я оплатил</button>
-      </form>
-      <form action="/trade/{{ ad.id }}/cancel" method="post">
-        <button class="btn btn-danger">Отменить сделку</button>
-      </form>
-    </div>
-    {% elif status=='paid' %}
-    <div class="info-box">
-      <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
-        <button class="btn btn-success">Подтвердить получение</button>
-      </form>
-      <form action="/trade/{{ ad.id }}/dispute" method="post">
-        <button class="btn btn-warning">Открыть спор</button>
-      </form>
-    </div>
-    {% elif status=='released' %}
+    <!-- Статусы сделки -->
+    {% if status == 'pending' %}
+      <div class="info-box">
+        <form action="/trade/{{ ad.id }}/pay" method="post">
+          <button class="btn">Я оплатил</button>
+        </form>
+        <form action="/trade/{{ ad.id }}/cancel" method="post">
+          <button class="btn btn-danger">Отменить сделку</button>
+        </form>
+      </div>
+    {% elif status == 'paid' %}
+      <div class="info-box">
+        <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
+          <button class="btn btn-success">Подтвердить получение</button>
+        </form>
+        <form action="/trade/{{ ad.id }}/dispute" method="post">
+          <button class="btn btn-warning">Открыть спор</button>
+        </form>
+      </div>
+    {% elif status == 'released' %}
       <p class="success">✅ Сделка завершена</p>
-    {% elif status=='cancelled' %}
+    {% elif status == 'cancelled' %}
       <p class="cancelled">❌ Сделка отменена</p>
     {% endif %}
 
     <hr>
 
+    <!-- Чат -->
     <h3>Чат</h3>
-    <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data">
+    <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data" class="form">
       <textarea name="message" placeholder="Ваше сообщение..." required></textarea>
       <input type="file" name="image" accept="image/*">
-      <button class="btn">Отправить</button>
+      <button class="btn" type="submit">Отправить</button>
     </form>
 
     <div class="messages">
       {% for msg in messages %}
         <div class="message">
           <strong>{{ msg.user }}:</strong> {{ msg.text }}
-          {% if msg.image_url %}<br><img src="{{ msg.image_url }}" class="chat-image">{% endif %}
+          {% if msg.image_url %}
+            <br><img src="{{ msg.image_url }}" class="chat-image">
+          {% endif %}
         </div>
       {% endfor %}
     </div>
 
+    <!-- Блокировка после отмен -->
     {% if blocked_until and blocked_until > now() %}
       <div class="info-box cancelled">
-        ❌ Вы заблокированы до {{ blocked_until }}
+        ❌ Вы заблокированы до {{ blocked_until.strftime('%Y-%m-%d %H:%M') }}
       </div>
     {% endif %}
   </div>
 
+  <!-- Скрипты модалки -->
   <script>
-    function openSettings(){ document.getElementById('settingsModal').style.display='block'; }
-    function closeSettings(){ document.getElementById('settingsModal').style.display='none'; }
+    function openSettings() {
+      document.getElementById('settingsModal').style.display = 'block';
+    }
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
   </script>
 </body>
 </html>
