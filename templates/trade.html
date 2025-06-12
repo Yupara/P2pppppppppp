@@ -5,21 +5,20 @@
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
   <script>
-    // Таймер на 15 минут
     let seconds = {{ remaining }};
     function tick() {
       const el = document.getElementById('timer');
-      const m = Math.floor(seconds / 60), s = seconds % 60;
+      const m = Math.floor(seconds/60), s = seconds%60;
       el.innerText = `${m}:${String(s).padStart(2,'0')}`;
-      if (seconds > 0) { seconds--; setTimeout(tick,1000); }
+      if(seconds>0){ seconds--; setTimeout(tick,1000); }
     }
     window.onload = tick;
   </script>
 </head>
 <body>
   <div class="navbar">
-    <a href="/market">← Назад к рынку</a>
-    <span class="navbar-balance">Баланс: {{ balances.get(current_user, 0) | round(2) }} USDT</span>
+    <a href="/market">← Рынок</a>
+    <span class="navbar-balance">Баланс: {{ balances[current_user] | round(2) }} USDT</span>
   </div>
 
   <div class="trade-container">
@@ -27,35 +26,27 @@
     <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
     <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
     <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
-    <p>Продавец: {{ ad.owner }} (Рейтинг: {{ ad.rating }}%, Ордеры: {{ ad.completed_orders }})</p>
-    <p>Условия: {{ ad.comment or '—' }}</p>
-    <p class="timer">Осталось времени: <span id="timer">15:00</span></p>
+    <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
+    <p>Условия: {{ ad.comment }}</p>
+    <p>Осталось: <span id="timer">15:00</span></p>
 
-    {% if order_status.get(ad.id) != 'released' and order_status.get(ad.id) != 'cancelled' %}
+    {% if status not in ['released','cancelled'] %}
     <form action="/trade/{{ ad.id }}/buy" method="post" class="form">
-      <label>Сколько {{ ad.crypto }} купить:</label>
-      <input type="number" name="amount" step="0.0001"
-             min="{{ ad.min_limit/ad.rate }}" max="{{ ad.max_limit/ad.rate }}" required>
+      <input type="number" name="amount" step="0.0001" required placeholder="Сколько {{ ad.crypto }}">
       <button class="btn">Купить</button>
     </form>
     {% endif %}
 
-    {% if payments.get(ad.id) and order_status.get(ad.id) == 'pending' %}
+    {% if status=='pending' %}
     <div class="info-box">
-      <h3>Оплата картой</h3>
-      <form action="/trade/{{ ad.id }}/pay" method="post" class="form">
-        <input type="text" name="card_number" placeholder="Номер карты" required>
-        <input type="text" name="exp_date" placeholder="MM/YY" required>
-        <input type="text" name="cvv" placeholder="CVV" required>
+      <form action="/trade/{{ ad.id }}/pay" method="post">
         <button class="btn">Я оплатил</button>
       </form>
       <form action="/trade/{{ ad.id }}/cancel" method="post">
-        <button class="btn btn-danger">Отменить сделку</button>
+        <button class="btn btn-danger">Отменить</button>
       </form>
     </div>
-    {% endif %}
-
-    {% if order_status.get(ad.id) == 'paid' %}
+    {% elif status=='paid' %}
     <div class="info-box">
       <form action="/trade/{{ ad.id }}/confirm_receipt" method="post">
         <button class="btn btn-success">Подтвердить получение</button>
@@ -64,22 +55,18 @@
         <button class="btn btn-warning">Открыть спор</button>
       </form>
     </div>
-    {% endif %}
-
-    {% if order_status.get(ad.id) == 'released' %}
-      <p class="success">✅ Сделка успешно завершена.</p>
-    {% elif order_status.get(ad.id) == 'cancelled' %}
-      <p class="cancelled">❌ Сделка отменена.</p>
-    {% elif order_status.get(ad.id) == 'disputed' %}
-      <p class="warning">⚠️ Сделка в споре.</p>
+    {% elif status=='released' %}
+      <p class="success">✅ Завершено</p>
+    {% elif status=='cancelled' %}
+      <p class="cancelled">❌ Отменено</p>
     {% endif %}
 
     <hr>
 
     <h3>Чат</h3>
     <form action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data" class="form">
-      <textarea name="message" placeholder="Ваше сообщение..."></textarea>
-      <input type="file" name="image" accept="image/*">
+      <textarea name="message" placeholder="Сообщение"></textarea>
+      <input type="file" name="image">
       <button class="btn">Отправить</button>
     </form>
 
@@ -88,16 +75,14 @@
         <div class="message">
           <strong>{{ msg.user }}:</strong> {{ msg.text }}
           {% if msg.image_url %}
-            <div><img src="{{ msg.image_url }}" class="chat-image"></div>
+            <img src="{{ msg.image_url }}" class="chat-image">
           {% endif %}
         </div>
       {% endfor %}
     </div>
 
-    {% if blocked_until.get(current_user) and blocked_until[current_user] > now() %}
-      <div class="info-box cancelled">
-        ❌ Вы заблокированы до {{ blocked_until[current_user] }} за частые отмены.
-      </div>
+    {% if blocked_until and blocked_until > now() %}
+      <div class="info-box cancelled">❌ Заблокирован до {{ blocked_until }}</div>
     {% endif %}
   </div>
 </body>
