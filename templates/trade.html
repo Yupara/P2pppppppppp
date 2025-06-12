@@ -4,96 +4,128 @@
   <meta charset="UTF-8">
   <title>Сделка</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <script>
+    // Таймер 15 минут
+    let seconds = {{ remaining }};
+    function tick() {
+      const el = document.getElementById('timer');
+      const m = Math.floor(seconds / 60), s = seconds % 60;
+      el.innerText = `${m}:${String(s).padStart(2, '0')}`;
+      if (seconds > 0) {
+        seconds--;
+        setTimeout(tick, 1000);
+      }
+    }
+    window.onload = tick;
+
+    // Показ/скрытие меню настроек
+    function toggleSettings() {
+      const menu = document.getElementById('settingsMenu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+    window.onclick = e => {
+      if (e.target.id === 'settingsMenu') toggleSettings();
+    };
+  </script>
 </head>
-<body>
+<body class="dark-theme">
+  <!-- Навигация -->
   <div class="navbar">
-    <a href="/">🏠 Рынок</a>
-    <a href="/create">➕ Новое объявление</a>
+    <a href="/market">🏠 Рынок</a>
+    <a href="/create">➕ Объявление</a>
     <div class="settings-icon" onclick="toggleSettings()">⚙️</div>
   </div>
 
-  <div class="settings-menu" id="settingsMenu">
-    <p>👤 Павел</p>
-    <p>Исполнено ордеров: 55</p>
-    <p>Рейтинг: 99%</p>
-    <p>Способ оплаты: Сбербанк</p>
-    <p><button>Пополнить</button> <button>Вывод</button></p>
-    <p>Адрес кошелька: <a href="#">usdt://wallet-link</a></p>
+  <!-- Меню настроек -->
+  <div id="settingsMenu" class="settings-menu">
+    <p>👤 Пользователь: {{ ad.owner }}</p>
+    <p>✅ Выполнено ордеров: {{ ad.completed_orders }}</p>
+    <p>⭐ Рейтинг: {{ ad.rating }}%</p>
+    <p>💳 Оплата по умолчанию: {{ ad.payment_method }}</p>
+    <p><button onclick="location.href='/deposit'">Пополнить</button> <button onclick="location.href='/withdraw'">Вывести</button></p>
+    <p>🔗 Адрес кошелька: <a href="#">0x1234...abcd</a></p>
   </div>
 
   <div class="container">
-    <h2>Покупка {{ ad.title }}</h2>
-    <p>Цена: {{ ad.price }} {{ ad.payment_method }}</p>
-    <p>Доступно: {{ ad.amount }} {{ ad.title }}</p>
-    <p>Ограничения: от {{ ad.min_limit }} до {{ ad.max_limit }}</p>
-    <p>Условия мейкера: {{ ad.condition }}</p>
+    <h2>Сделка с {{ ad.owner }}</h2>
 
-    {% if order_status.get(ad.id) not in ["released", "cancelled"] %}
-    <form method="post" action="/trade/{{ ad.id }}/buy">
-      <label>Введите сумму ({{ ad.title }}):</label>
-      <input type="number" name="amount" required>
-      <button type="submit">Купить</button>
+    <div class="info-box">
+      <p><strong>Тип объявления:</strong> {{ ad.title }}</p>
+      <p><strong>Цена:</strong> {{ ad.price }} за 1 {{ ad.title }}</p>
+      <p><strong>Доступно:</strong> {{ ad.amount }} {{ ad.title }}</p>
+      <p><strong>Лимиты:</strong> от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.payment_method }}</p>
+      <p><strong>Условия:</strong> {{ ad.condition }}</p>
+      <p class="timer">Осталось времени: <span id="timer">15:00</span></p>
+    </div>
+
+    <!-- Форма покупки -->
+    {% if order_status.get(ad.id) not in ['released','cancelled'] %}
+    <form class="form" action="/trade/{{ ad.id }}/buy" method="post">
+      <label>Сколько {{ ad.title }} купить:</label>
+      <input type="number" name="amount" step="0.0001" placeholder="{{ ad.min_limit }}–{{ ad.max_limit }}" required>
+      <button class="btn">Купить</button>
     </form>
     {% endif %}
 
-    {% if order_status.get(ad.id) == "pending" %}
-    <h3>Данные карты</h3>
-    <form method="post" action="/trade/{{ ad.id }}/pay">
-      <input type="text" name="card_number" placeholder="Номер карты" required><br>
-      <input type="text" name="exp_date" placeholder="Срок действия" required><br>
-      <input type="text" name="cvv" placeholder="CVV" required><br>
-      <button type="submit">Оплатить</button>
-    </form>
+    <!-- Форма оплаты -->
+    {% if order_status.get(ad.id)=='pending' %}
+    <div class="info-box">
+      <h3>Оплата картой</h3>
+      <form class="form" action="/trade/{{ ad.id }}/pay" method="post">
+        <input type="text" name="card_number" placeholder="Номер карты" required>
+        <input type="text" name="exp_date" placeholder="MM/YY" required>
+        <input type="text" name="cvv" placeholder="CVV" required>
+        <button class="btn">Я оплатил</button>
+      </form>
+    </div>
     {% endif %}
 
-    {% if order_status.get(ad.id) == "paid" %}
-    <form method="post" action="/trade/{{ ad.id }}/confirm_receipt">
-      <button type="submit">Подтвердить получение</button>
-    </form>
-    {% endif %}
+    <!-- Подтверждение получения / Спор / Отмена -->
+    <div class="info-box">
+      <p><strong>Статус сделки:</strong> {{ order_status.get(ad.id,'pending')|capitalize }}</p>
 
-    {% if order_status.get(ad.id) in ["pending", "paid"] %}
-    <form method="post" action="/trade/{{ ad.id }}/cancel">
-      <button type="submit">Отменить сделку</button>
-    </form>
-    <form method="post" action="/trade/{{ ad.id }}/dispute">
-      <button type="submit">Открыть спор</button>
-    </form>
-    {% endif %}
+      {% if order_status.get(ad.id)=='paid' %}
+      <form action="/trade/{{ ad.id }}/confirm_receipt" method="post" style="display:inline-block">
+        <button class="btn btn-success">Я получил {{ ad.title }}</button>
+      </form>
+      <form action="/trade/{{ ad.id }}/dispute" method="post" style="display:inline-block">
+        <button class="btn btn-warning">Открыть спор</button>
+      </form>
+      {% endif %}
 
-    {% if order_status.get(ad.id) == "released" %}
-    <p>✅ Сделка завершена. Средства переведены.</p>
-    {% elif order_status.get(ad.id) == "cancelled" %}
-    <p>❌ Сделка отменена.</p>
-    {% elif order_status.get(ad.id) == "disputed" %}
-    <p>⚠️ Спор открыт. Ожидается решение.</p>
-    {% endif %}
+      {% if order_status.get(ad.id)=='pending' %}
+      <form action="/trade/{{ ad.id }}/cancel" method="post">
+        <button class="btn btn-danger">Отменить сделку</button>
+      </form>
+      {% endif %}
 
-    <hr>
+      {% if order_status.get(ad.id)=='released' %}
+      <p>✅ Сделка успешно завершена.</p>
+      {% elif order_status.get(ad.id)=='cancelled' %}
+      <p>❌ Сделка отменена.</p>
+      {% elif order_status.get(ad.id)=='disputed' %}
+      <p>⚠️ Сделка в споре. Ожидается решение.</p>
+      {% endif %}
+    </div>
+
+    <!-- Чат -->
     <h3>Чат сделки</h3>
-    <form method="post" action="/trade/{{ ad.id }}/message" enctype="multipart/form-data">
-      <input type="text" name="message" placeholder="Ваше сообщение">
-      <input type="file" name="image">
-      <button type="submit">Отправить</button>
+    <form class="form" action="/trade/{{ ad.id }}/message" method="post" enctype="multipart/form-data">
+      <input type="text" name="message" placeholder="Сообщение..." required>
+      <input type="file" name="image" accept="image/*">
+      <button class="btn">Отправить</button>
     </form>
 
     <div class="chat">
       {% for msg in messages %}
-        <div class="chat-message">
-          <strong>{{ msg.user }}</strong>: {{ msg.text }}
-          {% if msg.image_url %}
-            <div><img src="{{ msg.image_url }}" class="chat-image"></div>
-          {% endif %}
-        </div>
+      <div class="chat-message">
+        <strong>{{ msg.user }}:</strong> {{ msg.text }}
+        {% if msg.image_url %}
+        <div><img src="{{ msg.image_url }}" class="chat-image"></div>
+        {% endif %}
+      </div>
       {% endfor %}
     </div>
   </div>
-
-  <script>
-    function toggleSettings() {
-      const menu = document.getElementById("settingsMenu");
-      menu.style.display = menu.style.display === "block" ? "none" : "block";
-    }
-  </script>
 </body>
 </html>
