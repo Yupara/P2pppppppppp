@@ -6,14 +6,14 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <!-- Шапка с кнопкой создания объявления и настройками -->
+  <!-- Шапка с кнопками -->
   <div class="header">
     <h1>Рынок P2P</h1>
     <a href="/create" class="create-button">+ Создать объявление</a>
     <button class="icon-btn" onclick="openSettings()">⚙️</button>
   </div>
 
-  <!-- Модальное окно настроек -->
+  <!-- Модалка настроек -->
   <div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal') closeSettings()">
     <div class="modal-content">
       <span class="close-btn" onclick="closeSettings()">✖️</span>
@@ -22,6 +22,7 @@
       <p><strong>Баланс:</strong> {{ balances[current_user] | round(2) }} USDT</p>
       <a href="/deposit"><button>Пополнить кошелек</button></a>
       <a href="/withdraw"><button>Вывести средства</button></a>
+      <a href="/profile"><button>Мой профиль</button></a>
       <p><strong>Адрес кошелька:</strong><br><a href="#">usdt:YOUR_ADDRESS</a></p>
     </div>
   </div>
@@ -44,12 +45,12 @@
     {% endif %}
   </div>
 
-  <!-- Скрипты управления модальным окном -->
+  <!-- Скрипты модалки -->
   <script>
-    function openSettings(){
+    function openSettings() {
       document.getElementById('settingsModal').style.display = 'block';
     }
-    function closeSettings(){
+    function closeSettings() {
       document.getElementById('settingsModal').style.display = 'none';
     }
   </script>
