@@ -25,11 +25,7 @@ engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False}
 )
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    autocommit=False
-)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
 # —— Models ——
@@ -94,19 +90,17 @@ def get_current_user(
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Не авторизован"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Не авторизован"
         )
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Пользователь не найден"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден"
         )
     return user
 
 # —— Admin commission settings ——
-admin_user_id = 1  # После первой регистрации этот пользователь станет админом
+admin_user_id = 1  # После первой регистрации пользователь с id=1 станет админом
 
 # —— Routes —— 
 
@@ -162,8 +156,7 @@ def login(
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter_by(
-        username=username,
-        password=password
+        username=username, password=password
     ).first()
     if not user:
         return templates.TemplateResponse("login.html", {
