@@ -8,10 +8,9 @@
 <body>
   <div class="navbar">
     <span class="navbar-title">Рынок P2P</span>
-    <span class="navbar-balance">Баланс: {{ balances.get(current_user, 0) | round(2) }} USDT</span>
+    <span class="navbar-balance">Баланс: {{ balances[current_user] | round(2) }} USDT</span>
     <a class="create-button" href="/create">+ Создать объявление</a>
   </div>
-
   <div class="market-container">
     {% if ads %}
       {% for ad in ads %}
@@ -20,12 +19,12 @@
           <p>Цена: {{ ad.rate }} {{ ad.fiat }}</p>
           <p>Доступно: {{ ad.amount }} {{ ad.crypto }}</p>
           <p>Лимиты: от {{ ad.min_limit }} до {{ ad.max_limit }} {{ ad.fiat }}</p>
-          <p>Продавец: {{ ad.owner }} (Рейтинг: {{ ad.rating }}%, Ордеры: {{ ad.completed_orders }})</p>
+          <p>Продавец: {{ ad.owner }} (Рейтинг {{ ad.rating }}%, Ордеры {{ ad.completed_orders }})</p>
           <a class="buy-button" href="/trade/{{ ad.id }}">Купить</a>
         </div>
       {% endfor %}
     {% else %}
-      <p>Пока нет объявлений.</p>
+      <p>Объявлений пока нет.</p>
     {% endif %}
   </div>
 </body>
