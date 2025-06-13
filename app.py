@@ -1,5 +1,3 @@
-# app.py
-
 from fastapi import (
     FastAPI, Request, Form, Depends,
     HTTPException, status
@@ -15,7 +13,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
-
 from datetime import datetime
 
 # — Database setup —
@@ -48,7 +45,7 @@ class Ad(Base):
     price            = Column(Float, nullable=False)
     min_limit        = Column(Float, nullable=False)
     max_limit        = Column(Float, nullable=False)
-    payment_methods  = Column(Text,   nullable=False)   # CSV, e.g. "sber,tinkoff"
+    payment_methods  = Column(Text,   nullable=False)   # CSV "sber,tinkoff"
     user_rating      = Column(Float, default=100.0)
     user             = relationship("User")
 
@@ -88,7 +85,10 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> User:
     uid = request.session.get("user_id")
     if not uid:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Не авторизован")
@@ -97,7 +97,10 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь не найден")
     return user
 
-def get_optional_user(request: Request, db: Session = Depends(get_db)) -> User:
+def get_optional_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> User:
     try:
         return get_current_user(request, db)
     except HTTPException:
@@ -125,7 +128,10 @@ def market(
     })
 
 @app.get("/register", response_class=HTMLResponse)
-def register_form(request: Request, user: User = Depends(get_optional_user)):
+def register_form(
+    request: Request,
+    user: User = Depends(get_optional_user)
+):
     return templates.TemplateResponse("register.html", {
         "request": request,
         "error": None,
@@ -141,17 +147,18 @@ def register(
 ):
     if db.query(User).filter(User.username == username).first():
         return templates.TemplateResponse("register.html", {
-            "request": request,
-            "error": "Имя занято"
+            "request": request, "error": "Имя занято"
         })
     user = User(username=username, password=password)
-    db.add(user)
-    db.commit()
+    db.add(user); db.commit()
     request.session["user_id"] = user.id
     return RedirectResponse("/market", status_code=302)
 
 @app.get("/login", response_class=HTMLResponse)
-def login_form(request: Request, user: User = Depends(get_optional_user)):
+def login_form(
+    request: Request,
+    user: User = Depends(get_optional_user)
+):
     return templates.TemplateResponse("login.html", {
         "request": request,
         "error": None,
@@ -165,11 +172,12 @@ def login(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter_by(username=username, password=password).first()
+    user = db.query(User).filter_by(
+        username=username, password=password
+    ).first()
     if not user:
         return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": "Неверные данные"
+            "request": request, "error": "Неверные данные"
         })
     request.session["user_id"] = user.id
     return RedirectResponse("/market", status_code=302)
@@ -215,8 +223,7 @@ def create_ad(
         payment_methods=payment_methods,
         user_rating=100.0
     )
-    db.add(ad)
-    db.commit()
+    db.add(ad); db.commit()
     return RedirectResponse("/market", status_code=302)
 
 @app.get("/create_order/{ad_id}")
@@ -236,8 +243,7 @@ def create_order(
         status="waiting",
         created_at=datetime.utcnow().isoformat()
     )
-    db.add(order)
-    db.commit()
+    db.add(order); db.commit()
     return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
 @app.get("/trade/{order_id}", response_class=HTMLResponse)
@@ -247,7 +253,7 @@ def trade_page(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    order = db.query(Order).get(order_id)
+    order    = db.query(Order).get(order_id)
     messages = db.query(Message).filter(Message.order_id == order_id).all()
     return templates.TemplateResponse("trade.html", {
         "request": request,
@@ -265,8 +271,7 @@ def send_message(
     user: User = Depends(get_current_user)
 ):
     msg = Message(order_id=order_id, sender_id=user.id, text=text)
-    db.add(msg)
-    db.commit()
+    db.add(msg); db.commit()
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
 @app.post("/pay/{order_id}")
@@ -279,8 +284,7 @@ def pay_order(
     order = db.query(Order).get(order_id)
     if order.buyer_id != user.id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Нельзя оплатить")
-    order.status = "paid"
-    db.commit()
+    order.status = "paid"; db.commit()
     return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
 @app.post("/confirm/{order_id}")
@@ -290,10 +294,10 @@ def confirm_order(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    order = db.query(Order).get(order_id)
+    order  = db.query(Order).get(order_id)
     if order.ad.user_id != user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Нельзя подтвердить")
-    buyer = db.query(User).get(order.buyer_id)
+    buyer  = db.query(User).get(order.buyer_id)
     seller = user
     admin  = db.query(User).get(admin_user_id)
 
@@ -303,12 +307,11 @@ def confirm_order(
     if seller.balance < order.amount:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Недостаточно средств")
 
-    seller.balance           -= order.amount
-    buyer.balance            += seller_amount
-    admin.commission_earned  += commission
+    seller.balance          -= order.amount
+    buyer.balance           += seller_amount
+    admin.commission_earned += commission
 
-    order.status = "confirmed"
-    db.commit()
+    order.status = "confirmed"; db.commit()
     return RedirectResponse("/orders/mine", status_code=302)
 
 @app.get("/orders/mine", response_class=HTMLResponse)
