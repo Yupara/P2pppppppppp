@@ -1,18 +1,42 @@
+<!-- templates/orders.html -->
+
 <!DOCTYPE html>
-<html lang="ru">
-<head><meta charset="UTF-8"><title>Мои сделки</title></head>
+<html>
+<head>
+  <title>Мои заказы</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
 <body>
-  <h1>Мои сделки</h1>
-  <ul>
-    {% for o in orders %}
-      <li>
-        <a href="/trade/{{ o.id }}">Сделка №{{ o.id }}</a>
-         — {{ o.status|capitalize }} —
-        {{ o.amount }} {{ o.ad.crypto }} за {{ (o.amount*o.ad.price)|round(2) }} {{ o.ad.fiat }}
-      </li>
-    {% else %}
-      <li>У вас нет сделок.</li>
+  <h2 style="text-align:center">Мои сделки</h2>
+
+  <h3>Я покупатель</h3>
+  <table>
+    <tr><th>ID</th><th>Крипто</th><th>Фиат</th><th>Сумма</th><th>Статус</th></tr>
+    {% for order in buy_orders %}
+      <tr>
+        <td><a href="/trade/{{ order.id }}">{{ order.id }}</a></td>
+        <td>{{ order.ad.crypto }}</td>
+        <td>{{ order.ad.fiat }}</td>
+        <td>{{ order.amount }}</td>
+        <td>{{ order.status }}</td>
+      </tr>
     {% endfor %}
-  </ul>
+  </table>
+
+  <h3>Я продавец</h3>
+  <table>
+    <tr><th>ID</th><th>Крипто</th><th>Фиат</th><th>Сумма</th><th>Статус</th></tr>
+    {% for order in sell_orders %}
+      <tr>
+        <td><a href="/trade/{{ order.id }}">{{ order.id }}</a></td>
+        <td>{{ order.ad.crypto }}</td>
+        <td>{{ order.ad.fiat }}</td>
+        <td>{{ order.amount }}</td>
+        <td>{{ order.status }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <p><a href="/market">← Вернуться к рынку</a></p>
 </body>
 </html>
