@@ -50,3 +50,8 @@
 </form>
 
 <p>Текущий статус: <strong>{{ order.status }}</strong></p>
+
+<form method="post" action="/orders/{{ order.id }}/dispute">
+  <textarea name="reason" placeholder="Опишите проблему..." required></textarea>
+  <button type="submit" class="dispute-button">Открыть спор</button>
+</form>
