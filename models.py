@@ -97,3 +97,39 @@ class Dispute(Base):
 
     order = relationship("Order")
     user = relationship("User")
+
+# models.py
+
+from sqlalchemy import (
+    Column, Integer, String, Float,
+    ForeignKey, Text, Boolean
+)
+from sqlalchemy.orm import relationship
+from db import Base
+
+class User(Base):
+    __tablename__ = "users"
+    id                = Column(Integer, primary_key=True, index=True)
+    username          = Column(String, unique=True, nullable=False)
+    password          = Column(String, nullable=False)
+    balance           = Column(Float, default=0.0)
+    commission_earned = Column(Float, default=0.0)
+
+    # ========== Платежки ==========
+    card_number       = Column(String, nullable=True)
+    card_holder       = Column(String, nullable=True)
+    wallet_address    = Column(String, nullable=True)
+    wallet_network    = Column(String, nullable=True)
+
+    # ========== Блокировка ==========
+    cancel_count      = Column(Integer, default=0)
+    is_blocked        = Column(Boolean, default=False)
+
+    # ========== Верификация ==========
+    phone            = Column(String, nullable=True)
+    phone_code       = Column(String, nullable=True)
+    is_phone_verified   = Column(Boolean, default=False)
+    passport_filename   = Column(String, nullable=True)
+    is_passport_verified= Column(Boolean, default=False)
+
+    # Остальные модели…
