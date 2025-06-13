@@ -1,8 +1,12 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Сделка</title></head><body>
-  <h1>Сделка {{ order.id }} — {{ order.status }}</h1>
-  <p>Сумма: {{ order.amount }}</p>
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8"><title>Сделка №{{ order.id }}</title></head>
+<body>
+  <h1>Сделка №{{ order.id }} — {{ order.status }}</h1>
+  <p>Сумма: {{ order.amount }} {{ order.ad.crypto }}</p>
+  <p>Курс: {{ order.ad.price }} {{ order.ad.fiat }}</p>
   <form action="/message/{{ order.id }}" method="post">
-    <input name="text" placeholder="Сообщение..." required>
+    <input name="text" placeholder="Сообщение" required>
     <button type="submit">Отправить</button>
   </form>
   <ul>
@@ -12,4 +16,6 @@
   </ul>
   <form action="/pay/{{ order.id }}" method="post"><button>Я оплатил</button></form>
   <form action="/confirm/{{ order.id }}" method="post"><button>Подтвердить</button></form>
-</body></html>
+  <form action="/dispute/{{ order.id }}" method="post"><button>Открыть спор</button></form>
+</body>
+</html>
