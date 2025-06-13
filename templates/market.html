@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Рынок P2P</title>
+  <title>Сделка P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
   <style>
     body {
@@ -22,168 +22,170 @@
       margin: 0;
       color: #90EE90;
     }
-    .settings {
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #90EE90;
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 20px;
     }
-    .filters {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      padding: 15px;
+    .ad-details, .order-section, .chat-section {
       background: #003f35;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
     }
-    .filters select,
-    .filters button {
+    .ad-details p, .order-section p {
+      margin: 8px 0;
+    }
+    .order-form label {
+      display: block;
+      margin: 10px 0 4px;
+    }
+    .order-form input {
+      width: 100%;
       padding: 8px;
       border: 1px solid #90EE90;
       border-radius: 4px;
       background: #002b26;
       color: #fff;
-      font-size: 1rem;
     }
-    .filters button:hover {
+    .order-form button {
+      margin-top: 12px;
+      padding: 10px 16px;
       background: #90EE90;
-      color: #002b26;
+      color: #003300;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
       cursor: pointer;
     }
-    #ads-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
-      padding: 20px;
-    }
-    .ad-card {
-      background: #004d42;
-      padding: 15px;
-      border-radius: 8px;
-      width: 280px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .ad-card h2 {
-      margin: 0 0 10px;
-      color: #FFD700;
-      font-size: 1.2rem;
-    }
-    .ad-card p {
-      margin: 5px 0;
-      font-size: 0.9rem;
-    }
-    .ad-card a {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 8px 12px;
-      background: #90EE90;
-      color: #003f35;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 1rem;
-    }
-    .ad-card a:hover {
+    .order-form button:hover {
       background: #70c070;
+    }
+    .order-section button {
+      margin-right: 10px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-warning { background: #FFA500; color: #003300; }
+    .btn-success { background: #28a745; color: #fff; }
+    .btn-danger  { background: #dc3545; color: #fff; }
+    .chat-box {
+      background: #002b26;
+      border: 1px solid #90EE90;
+      border-radius: 4px;
+      height: 200px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .chat-box p {
+      margin: 6px 0;
+    }
+    .chat-section form {
+      display: flex;
+    }
+    .chat-section input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #90EE90;
+      border-radius: 4px 0 0 4px;
+      background: #002b26;
+      color: #fff;
+    }
+    .chat-section button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      background: #90EE90;
+      color: #003300;
+      cursor: pointer;
+    }
+    .timer {
+      font-size: 1rem;
+      color: #FFD700;
+      margin-top: 10px;
+      text-align: right;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Рынок P2P</h1>
+    <h1>Сделка P2P</h1>
     <div class="settings" onclick="location.href='/profile'">⚙️</div>
   </header>
+  <div class="container">
+    <!-- Информация о объявлении -->
+    <div class="ad-details">
+      <h2>Объявление</h2>
+      <p><strong>Тип:</strong> {{ order.ad.type == 'buy' and 'Покупка' or 'Продажа' }}</p>
+      <p><strong>Криптовалюта:</strong> {{ order.ad.crypto }}</p>
+      <p><strong>Фиат:</strong> {{ order.ad.fiat }}</p>
+      <p><strong>Курс:</strong> {{ order.ad.price }} {{ order.ad.fiat }}</p>
+      <p><strong>Мин/Макс:</strong> {{ order.ad.min_limit }} – {{ order.ad.max_limit }} {{ order.ad.fiat }}</p>
+      <p><strong>Способы оплаты:</strong> {{ order.ad.payment_methods|join(', ') }}</p>
+      <p><strong>Продавец:</strong> {{ order.ad.user.username }} ({{ order.ad.user_rating }}%)</p>
+      <div class="timer" id="timer">Время оплаты: 30:00</div>
+    </div>
 
-  <div class="filters">
-    <select id="filterCrypto">
-      <option value="">Любая крипта</option>
-      <option value="usdt">USDT</option>
-      <option value="btc">BTC</option>
-      <option value="eth">ETH</option>
-      <option value="trump">TRUMP</option>
-    </select>
-    <select id="filterFiat">
-      <option value="">Любой фиат</option>
-      <option value="USD">USD – Доллар США</option>
-      <option value="EUR">EUR – Евро</option>
-      <option value="GBP">GBP – Британский фунт</option>
-      <option value="RUB">RUB – Российский рубль</option>
-      <option value="UAH">UAH – Украинская гривна</option>
-      <option value="KZT">KZT – Казахстанский тенге</option>
-      <option value="TRY">TRY – Турецкая лира</option>
-      <option value="AED">AED – Дирхам ОАЭ</option>
-      <option value="NGN">NGN – Нигерийская найра</option>
-      <option value="INR">INR – Индийская рупия</option>
-      <option value="VND">VND – Вьетнамский донг</option>
-      <option value="BRL">BRL – Бразильский реал</option>
-      <option value="ARS">ARS – Аргентинское песо</option>
-      <option value="COP">COP – Колумбийское песо</option>
-      <option value="PEN">PEN – Перуанский соль</option>
-      <option value="MXN">MXN – Мексиканский песо</option>
-      <option value="CLP">CLP – Чилийское песо</option>
-      <option value="ZAR">ZAR – Южноафриканский рэнд</option>
-      <option value="EGP">EGP – Египетский фунт</option>
-      <option value="GHS">GHS – Ганский седи</option>
-      <option value="KES">KES – Кенийский шиллинг</option>
-      <option value="MAD">MAD – Марокканский дирхам</option>
-      <option value="PKR">PKR – Пакистанская рупия</option>
-      <option value="BDT">BDT – Бангладешская така</option>
-      <option value="LKR">LKR – Шри-Ланкийская рупия</option>
-      <option value="IDR">IDR – Индонезийская рупия</option>
-      <option value="THB">THB – Тайский бат</option>
-      <option value="MYR">MYR – Малайзийский ринггит</option>
-      <option value="PHP">PHP – Филиппинское песо</option>
-      <option value="KRW">KRW – Южнокорейская вона</option>
-      <option value="TJS">TJS – Таджикский сомони</option>
-    </select>
-    <select id="filterPay">
-      <option value="">Все способы оплаты</option>
-      <option value="sber">Сбербанк</option>
-      <option value="tinkoff">Тинькофф</option>
-      <option value="sbp">SBP</option>
-      <option value="card">Банковская карта</option>
-      <option value="qiwi">QIWI</option>
-      <option value="paypal">PayPal</option>
-    </select>
-    <button onclick="applyFilter()">Применить фильтр</button>
-  </div>
+    <!-- Форма создания сделки -->
+    {% if not order.status %}
+    <form class="order-form" action="/create_order/{{ order.ad.id }}" method="get">
+      <button type="submit">Начать сделку</button>
+    </form>
+    {% endif %}
 
-  <div id="ads-list">
-    {% if ads %}
-      {% for ad in ads %}
-        <div class="ad-card"
-             data-crypto="{{ ad.crypto }}"
-             data-fiat="{{ ad.fiat }}"
-             data-paymethods="{{ ad.payment_methods|join(',') }}">
-          <h2>{{ ad.crypto }}/{{ ad.fiat }}</h2>
-          <p><strong>Тип:</strong> {{ ad.type == 'buy' and 'Купить' or 'Продать' }}</p>
-          <p><strong>Сумма:</strong> {{ ad.amount }}</p>
-          <p><strong>Цена:</strong> {{ ad.price }} {{ ad.fiat }}</p>
-          <p><strong>Лимиты:</strong> {{ ad.min_limit }} – {{ ad.max_limit }} {{ ad.fiat }}</p>
-          <p><strong>Методы:</strong> {{ ad.payment_methods|join(', ') }}</p>
-          <p><strong>Продавец:</strong> {{ ad.user.username }} ({{ ad.user_rating }}%)</p>
-          <a href="/create_order/{{ ad.id }}">Купить</a>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p style="text-align:center;">Пока нет объявлений.</p>
+    <!-- Раздел управления сделкой -->
+    {% if order %}
+    <div class="order-section">
+      <h2>Ваша сделка</h2>
+      <p><strong>Статус:</strong> {{ order.status }}</p>
+      <p><strong>Начало:</strong> {{ order.created_at }}</p>
+      <form method="post" action="/pay/{{ order.id }}" style="display:inline">
+        <button type="submit" class="btn-warning">Я оплатил</button>
+      </form>
+      <form method="post" action="/confirm/{{ order.id }}" style="display:inline">
+        <button type="submit" class="btn-success">Подтвердить получение</button>
+      </form>
+      <form method="post" action="/dispute/{{ order.id }}" style="display:inline">
+        <button type="submit" class="btn-danger">Открыть спор</button>
+      </form>
+    </div>
+
+    <!-- Чат -->
+    <div class="chat-section">
+      <h2>Чат</h2>
+      <div class="chat-box" id="chatBox">
+        {% for msg in messages %}
+          <p><strong>{{ msg.sender.username }}:</strong> {{ msg.text }}</p>
+        {% endfor %}
+      </div>
+      <form action="/message/{{ order.id }}" method="post">
+        <input name="text" placeholder="Написать сообщение..." required>
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
     {% endif %}
   </div>
 
   <script>
-    function applyFilter() {
-      const fCrypto = document.getElementById('filterCrypto').value;
-      const fFiat   = document.getElementById('filterFiat').value;
-      const fPay    = document.getElementById('filterPay').value;
-
-      document.querySelectorAll('.ad-card').forEach(card => {
-        const matchCrypto = !fCrypto || card.dataset.crypto === fCrypto;
-        const matchFiat   = !fFiat   || card.dataset.fiat === fFiat;
-        const pays        = card.dataset.paymethods.split(',');
-        const matchPay    = !fPay    || pays.includes(fPay);
-
-        card.style.display = (matchCrypto && matchFiat && matchPay) ? 'block' : 'none';
-      });
+    // Таймер 30 минут
+    let totalSeconds = 30 * 60;
+    const timerElem = document.getElementById('timer');
+    function updateTimer() {
+      const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      const s = String(totalSeconds % 60).padStart(2, '0');
+      timerElem.textContent = `Время оплаты: ${m}:${s}`;
+      if (totalSeconds > 0) {
+        totalSeconds--;
+        setTimeout(updateTimer, 1000);
+      } else {
+        timerElem.textContent = 'Сделка отменена';
+      }
     }
+    updateTimer();
   </script>
 </body>
 </html>
