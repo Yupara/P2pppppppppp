@@ -3,7 +3,7 @@ from sqlalchemy import (
     ForeignKey, Text
 )
 from sqlalchemy.orm import relationship
-from db import Base  # <-- берём Base из db.py
+from db import Base  # <-- Base из db.py
 
 class User(Base):
     __tablename__ = "users"
@@ -12,6 +12,11 @@ class User(Base):
     password          = Column(String, nullable=False)
     balance           = Column(Float, default=0.0)
     commission_earned = Column(Float, default=0.0)
+    # Добавленные поля для настроек
+    card_number       = Column(String, nullable=True)
+    card_holder       = Column(String, nullable=True)
+    wallet_address    = Column(String, nullable=True)
+    wallet_network    = Column(String, nullable=True)
 
 class Ad(Base):
     __tablename__ = "ads"
@@ -44,7 +49,7 @@ class Message(Base):
     id        = Column(Integer, primary_key=True, index=True)
     order_id  = Column(Integer, ForeignKey("orders.id"))
     sender_id = Column(Integer, ForeignKey("users.id"))
-    text      = Column(Text, nullable=False)
+    text      = Column(Text,   nullable=False)
     timestamp = Column(String, nullable=False)
     sender    = relationship("User")
     order     = relationship("Order")
