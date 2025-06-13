@@ -63,3 +63,15 @@ class Message(Base):
     timestamp = Column(String, nullable=False)
     sender    = relationship("User")
     order     = relationship("Order")
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"))
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    order = relationship("Order", back_populates="messages")
+    sender = relationship("User")
