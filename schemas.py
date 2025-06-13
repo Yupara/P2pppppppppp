@@ -61,3 +61,8 @@ class MessageOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    referrer_id: Optional[int] = None  # <- добавлено
