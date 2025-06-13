@@ -34,3 +34,6 @@ app.include_router(verify_router,   tags=["verify"])
 app.include_router(admin_router,    tags=["admin"])
 
 tasks.start_scheduler()
+
+import tasks
+tasks.start_scheduler()
