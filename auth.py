@@ -14,6 +14,7 @@ from db import get_db  # <-- только из db.py
 templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
+
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
@@ -26,12 +27,14 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
     return user
 
+
 @router.get("/register", response_class=HTMLResponse)
 def register_form(request: Request):
     return templates.TemplateResponse("register.html", {
         "request": request,
         "error": None
     })
+
 
 @router.post("/register")
 def register(
@@ -52,12 +55,14 @@ def register(
     request.session["user_id"] = user.id
     return RedirectResponse(url="/market", status_code=302)
 
+
 @router.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
     return templates.TemplateResponse("login.html", {
         "request": request,
         "error": None
     })
+
 
 @router.post("/login")
 def login(
@@ -81,6 +86,7 @@ def login(
         })
     request.session["user_id"] = user.id
     return RedirectResponse(url="/market", status_code=302)
+
 
 @router.get("/logout")
 def logout(request: Request):
