@@ -11,3 +11,9 @@
   {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
 </body>
 </html>
+<form method="post" action="/register">
+    <input type="hidden" name="ref" value="{{ request.query_params.get('ref') }}">
+    <input type="text" name="username" placeholder="Имя пользователя" required>
+    <input type="password" name="password" placeholder="Пароль" required>
+    <button type="submit">Зарегистрироваться</button>
+</form>
