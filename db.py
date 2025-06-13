@@ -4,11 +4,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# URL к вашей SQLite или другой БД
+# URL вашей БД
 DATABASE_URL = "sqlite:///./p2p.db"
 
 engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}
 )
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -17,6 +18,7 @@ SessionLocal = sessionmaker(
 )
 Base = declarative_base()
 
+# Зависимость для FastAPI
 def get_db():
     db = SessionLocal()
     try:
