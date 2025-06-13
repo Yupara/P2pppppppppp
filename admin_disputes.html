@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Админ — Споры</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h2>Споры</h2>
+    {% if disputes %}
+        <ul>
+        {% for order in disputes %}
+            <li>
+                Сделка #{{ order.id }} — Покупатель: {{ order.buyer_id }}, Продавец: {{ order.seller_id }}
+                <form method="post" action="/admin/disputes/{{ order.id }}/resolve" style="display:inline">
+                    <button type="submit">Завершить вручную</button>
+                </form>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Нет активных споров</p>
+    {% endif %}
+</body>
+</html>
