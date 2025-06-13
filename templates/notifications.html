@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Уведомления</h2>
+<ul>
+  {% for note in notifications %}
+    <li{% if not note.is_read %} style="font-weight:bold;"{% endif %}>
+      {{ note.message }} — {{ note.created_at.strftime("%Y-%m-%d %H:%M") }}
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}
