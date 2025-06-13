@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Мои сделки</title>
+  <title>Профиль</title>
   <link rel="stylesheet" href="/static/styles.css">
   <style>
     body {
@@ -23,78 +23,52 @@
       color: #90EE90;
     }
     .container {
-      max-width: 800px;
+      max-width: 600px;
       margin: 20px auto;
       padding: 0 20px;
     }
-    .order-list {
-      list-style: none;
-      padding: 0;
-    }
-    .order-item {
-      background: #004d42;
-      margin-bottom: 15px;
-      padding: 15px;
+    .profile-info, .profile-actions {
+      background: #003f35;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      padding: 15px;
+      margin-bottom: 20px;
     }
-    .order-item h2 {
-      margin: 0 0 10px;
-      color: #FFD700;
-      font-size: 1.2rem;
+    .profile-info p {
+      margin: 8px 0;
+      font-size: 1rem;
     }
-    .order-item p {
-      margin: 6px 0;
-      font-size: 0.9rem;
-    }
-    .order-item a {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 8px 12px;
+    .profile-actions a {
+      display: block;
+      margin: 10px 0;
+      padding: 10px 15px;
       background: #90EE90;
       color: #003300;
-      border-radius: 4px;
       text-decoration: none;
+      border-radius: 4px;
       font-weight: bold;
+      text-align: center;
     }
-    .order-item a:hover {
+    .profile-actions a:hover {
       background: #70c070;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Мои сделки</h1>
-    <div class="settings" onclick="location.href='/profile'">⚙️</div>
+    <h1>Профиль</h1>
+    <div class="settings" onclick="location.href='/market'">🏠</div>
   </header>
   <div class="container">
-    <ul class="order-list">
-      {% if orders %}
-        {% for o in orders %}
-          <li class="order-item">
-            <h2>Сделка №{{ o.id }} — {{ o.status|capitalize }}</h2>
-            <p><strong>Тип:</strong>
-              {{ o.ad.type == 'buy' and 'Покупка' or 'Продажа' }}
-            </p>
-            <p><strong>Криптовалюта:</strong>
-              {{ o.amount }} {{ o.ad.type == 'buy' and o.ad.crypto or o.ad.crypto }}
-            </p>
-            <p><strong>Цена за единицу:</strong>
-              {{ o.ad.price }} {{ o.ad.fiat }}
-            </p>
-            <p><strong>Сумма сделки:</strong>
-              {{ (o.amount * o.ad.price)|round(2) }} {{ o.ad.fiat }}
-            </p>
-            <p><strong>Стороны:</strong>
-              Покупатель — {{ o.buyer.username }}, Продавец — {{ o.ad.user.username }}
-            </p>
-            <a href="/trade/{{ o.id }}">Перейти к сделке</a>
-          </li>
-        {% endfor %}
-      {% else %}
-        <li><p>У вас пока нет сделок.</p></li>
-      {% endif %}
-    </ul>
+    <div class="profile-info">
+      <p><strong>Пользователь:</strong> {{ user.username }}</p>
+      <p><strong>Баланс:</strong> {{ user.balance | round(2) }} USDT</p>
+      <p><strong>Заработано комиссий:</strong> {{ user.commission_earned | default(0) | round(2) }} USDT</p>
+    </div>
+    <div class="profile-actions">
+      <a href="/create_ad">Создать объявление</a>
+      <a href="/orders/mine">Мои сделки</a>
+      <a href="/logout">Выйти</a>
+    </div>
   </div>
 </body>
 </html>
