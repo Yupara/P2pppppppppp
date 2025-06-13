@@ -30,3 +30,23 @@
   <a href="/orders/mine">🔙 Назад к сделкам</a>
 </body>
 </html>
+<hr>
+<h3>Действия</h3>
+
+{% if order.status == 'active' and order.buyer_id == user.id %}
+  <form method="post" action="/orders/{{ order.id }}/paid">
+    <button type="submit">Я оплатил</button>
+  </form>
+{% endif %}
+
+{% if order.status == 'paid' and order.seller_id == user.id %}
+  <form method="post" action="/orders/{{ order.id }}/confirm">
+    <button type="submit">Подтвердить получение</button>
+  </form>
+{% endif %}
+
+<form method="post" action="/orders/{{ order.id }}/dispute">
+  <button type="submit">Открыть спор</button>
+</form>
+
+<p>Текущий статус: <strong>{{ order.status }}</strong></p>
