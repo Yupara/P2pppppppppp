@@ -24,7 +24,7 @@ class User(Base):
     # Поля для блокировки
     cancel_count      = Column(Integer, default=0)
     is_blocked        = Column(Boolean, default=False)
-
+referrer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
 class Ad(Base):
     __tablename__ = "ads"
