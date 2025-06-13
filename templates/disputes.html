@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Мои споры</h2>
+<ul>
+  {% for dispute in disputes %}
+    <li>
+      Сделка #{{ dispute.order_id }} — {{ dispute.reason }} ({{ dispute.status }}) — {{ dispute.created_at.strftime('%Y-%m-%d %H:%M') }}
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}
