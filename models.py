@@ -84,3 +84,16 @@ class Notification(Base):
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class Dispute(Base):
+    __tablename__ = "disputes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    reason = Column(Text, nullable=False)
+    status = Column(String, default="open")  # open, resolved, rejected
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    order = relationship("Order")
+    user = relationship("User")
