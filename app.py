@@ -1,5 +1,3 @@
-# app.py
-
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -15,22 +13,18 @@ from support import router as support_router
 from verify import router as verify_router
 from admin import router as admin_router
 
-import tasks  # фоновые задачи
+import tasks
 
-# создаём таблицы
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# статические файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# редирект корня
 @app.get("/", include_in_schema=False)
 def root():
-    return RedirectResponse(url="/market")
+    return RedirectResponse("/market")
 
-# подключаем роутеры
 app.include_router(auth_router,     tags=["auth"])
 app.include_router(payment_router,  tags=["payment"])
 app.include_router(settings_router, tags=["settings"])
@@ -39,5 +33,4 @@ app.include_router(support_router,  tags=["support"])
 app.include_router(verify_router,   tags=["verify"])
 app.include_router(admin_router,    tags=["admin"])
 
-# старт фоновых задач
 tasks.start_scheduler()
