@@ -9,12 +9,11 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 import models
-from db import get_db
+from db import get_db  # <-- только из db.py
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
-# Зависимость: возвращает текущего авторизованного пользователя или 401
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
@@ -22,7 +21,7 @@ def get_current_user(
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Не авторизован")
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).get(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
     return user
@@ -41,18 +40,15 @@ def register(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    # Проверяем, что логин свободен
     if db.query(models.User).filter(models.User.username == username).first():
         return templates.TemplateResponse("register.html", {
             "request": request,
             "error": "Имя пользователя занято"
         })
-    # Создаём нового пользователя
     user = models.User(username=username, password=password)
     db.add(user)
     db.commit()
     db.refresh(user)
-    # Сразу логиним
     request.session["user_id"] = user.id
     return RedirectResponse(url="/market", status_code=302)
 
@@ -70,7 +66,9 @@ def login(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    user = db.query(models.User).filter_by(username=username, password=password).first()
+    user = db.query(models.User)\
+             .filter_by(username=username, password=password)\
+             .first()
     if not user:
         return templates.TemplateResponse("login.html", {
             "request": request,
@@ -81,7 +79,6 @@ def login(
             "request": request,
             "error": "Ваш аккаунт заблокирован"
         })
-    # Сохраняем в сессию
     request.session["user_id"] = user.id
     return RedirectResponse(url="/market", status_code=302)
 
