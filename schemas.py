@@ -66,3 +66,12 @@ class UserCreate(BaseModel):
     username: str
     password: str
     referrer_id: Optional[int] = None  # <- добавлено
+
+class NotificationOut(BaseModel):
+    id: int
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
