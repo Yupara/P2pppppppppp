@@ -1,22 +1,27 @@
 <!DOCTYPE html>
-<html lang="ru"><head>
-<meta charset="UTF-8"><title>Рынок</title>
-<link rel="stylesheet" href="/static/styles.css">
-</head><body>
-<h1>Рынок P2P</h1>
-<a href="/register">Регистрация</a> | <a href="/login">Войти</a>
-<hr>
-{% if ads %}
-  {% for ad in ads %}
-    <div class="ad-card">
-      <p><strong>Тип:</strong> {{ ad.type }}</p>
-      <p><strong>Сумма:</strong> {{ ad.amount }}</p>
-      <p><strong>Цена:</strong> {{ ad.price }}</p>
-      <p><strong>Продавец:</strong> {{ ad.user.username }}</p>
-      <a href="/create_order/{{ ad.id }}">Купить/Продать</a>
-    </div>
-  {% endfor %}
-{% else %}
-  <p>Пока нет объявлений.</p>
-{% endif %}
-</body></html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Рынок</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <h1>Рынок P2P</h1>
+  <a href="/register">Регистрация</a> |
+  <a href="/login">Войти</a>
+  <hr>
+  {% if ads %}
+    {% for ad in ads %}
+      <div class="ad-card">
+        <p><strong>Тип:</strong> {{ ad.type }}</p>
+        <p><strong>Сумма:</strong> {{ ad.amount }}</p>
+        <p><strong>Цена:</strong> {{ ad.price }}</p>
+        <p><strong>Продавец:</strong> {{ ad.user.username }}</p>
+        <a href="/create_order/{{ ad.id }}">Купить/Продать</a>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>Пока нет объявлений.</p>
+  {% endif %}
+</body>
+</html>
