@@ -1,10 +1,9 @@
-# models.py
-
 from sqlalchemy import (
-    Column, Integer, String, Float, ForeignKey, Text
+    Column, Integer, String, Float,
+    ForeignKey, Text
 )
 from sqlalchemy.orm import relationship
-from db import Base  # <-- сюда
+from db import Base  # <-- берём Base из db.py
 
 class User(Base):
     __tablename__ = "users"
@@ -45,7 +44,7 @@ class Message(Base):
     id        = Column(Integer, primary_key=True, index=True)
     order_id  = Column(Integer, ForeignKey("orders.id"))
     sender_id = Column(Integer, ForeignKey("users.id"))
-    text      = Column(Text,   nullable=False)
+    text      = Column(Text, nullable=False)
     timestamp = Column(String, nullable=False)
     sender    = relationship("User")
     order     = relationship("Order")
