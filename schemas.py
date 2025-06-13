@@ -75,3 +75,14 @@ class NotificationOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class DisputeOut(BaseModel):
+    id: int
+    order_id: int
+    user_id: int
+    reason: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
