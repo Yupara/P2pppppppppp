@@ -1,19 +1,31 @@
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
+from fastapi import (
+    FastAPI, Request, Form, Depends,
+    HTTPException, status
+)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
+
+from sqlalchemy import (
+    create_engine, Column, Integer,
+    String, Float, ForeignKey
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
-# — Database setup —
+# —— Database setup ——
 DATABASE_URL = "sqlite:///./p2p.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}
+)
+SessionLocal = sessionmaker(
+    bind=engine, autoflush=False, autocommit=False
+)
 Base = declarative_base()
 
-# — Models —
+# —— Models ——
 class User(Base):
     __tablename__ = "users"
     id       = Column(Integer, primary_key=True, index=True)
@@ -25,7 +37,7 @@ class Ad(Base):
     __tablename__ = "ads"
     id      = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    type    = Column(String, nullable=False)  # "buy" или "sell"
+    type    = Column(String, nullable=False)   # "buy" или "sell"
     amount  = Column(Float, nullable=False)
     price   = Column(Float, nullable=False)
     user    = relationship("User")
@@ -51,13 +63,13 @@ class Message(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# — FastAPI setup —
+# —— FastAPI setup ——
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="replace_with_random_secret")
+app.add_middleware(SessionMiddleware, secret_key="your_secret_key")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# — Dependencies —
+# —— Dependencies ——
 def get_db():
     db = SessionLocal()
     try:
@@ -74,12 +86,12 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь не найден")
     return user
 
-admin_user_id = 1  # первый зареганый — админ
+admin_user_id = 1  # первый зарегистрированный — админ
 
-# — Routes —
-
+# —— Routes ——
 @app.get("/", response_class=RedirectResponse)
-def root(): return RedirectResponse("/market", status_code=302)
+def root(): 
+    return RedirectResponse("/market", status_code=302)
 
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request, db: Session = Depends(get_db)):
@@ -91,7 +103,12 @@ def register_form(request: Request):
     return templates.TemplateResponse("register.html", {"request": request, "error": None})
 
 @app.post("/register")
-def register(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def register(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
     if db.query(User).filter(User.username == username).first():
         return templates.TemplateResponse("register.html", {"request": request, "error": "Имя занято"})
     user = User(username=username, password=password)
@@ -104,7 +121,12 @@ def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "error": None})
 
 @app.post("/login")
-def login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
     user = db.query(User).filter_by(username=username, password=password).first()
     if not user:
         return templates.TemplateResponse("login.html", {"request": request, "error": "Неверные данные"})
@@ -121,7 +143,13 @@ def create_ad_form(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
 
 @app.post("/create_ad")
-def create_ad(request: Request, type: str = Form(...), amount: float = Form(...), price: float = Form(...), db: Session = Depends(get_db)):
+def create_ad(
+    request: Request,
+    type: str = Form(...),
+    amount: float = Form(...),
+    price: float = Form(...),
+    db: Session = Depends(get_db)
+):
     user = get_current_user(request, db)
     ad = Ad(user_id=user.id, type=type, amount=amount, price=price)
     db.add(ad); db.commit()
@@ -132,7 +160,7 @@ def create_order(ad_id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     ad = db.query(Ad).get(ad_id)
     if not ad or ad.user_id == user.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Невозможно создать")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Нельзя создать сделку")
     order = Order(buyer_id=user.id, ad_id=ad.id, amount=ad.amount)
     db.add(order); db.commit()
     return RedirectResponse(f"/trade/{order.id}", status_code=302)
@@ -142,7 +170,9 @@ def trade_page(order_id: int, request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
     order = db.query(Order).get(order_id)
     messages = db.query(Message).filter(Message.order_id == order_id).all()
-    return templates.TemplateResponse("trade.html", {"request": request, "order": order, "messages": messages, "user": user})
+    return templates.TemplateResponse("trade.html", {
+        "request": request, "order": order, "messages": messages, "user": user
+    })
 
 @app.post("/message/{order_id}")
 def send_message(request: Request, order_id: int, text: str = Form(...), db: Session = Depends(get_db)):
@@ -182,10 +212,16 @@ def confirm_order(request: Request, order_id: int, db: Session = Depends(get_db)
 @app.get("/orders/mine", response_class=HTMLResponse)
 def my_orders(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
-    orders = db.query(Order).filter((Order.buyer_id == user.id) | (Order.ad.has(user_id=user.id))).all()
-    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders})
+    orders = db.query(Order).filter(
+        (Order.buyer_id == user.id) | (Order.ad.has(user_id=user.id))
+    ).all()
+    return templates.TemplateResponse("orders.html", {
+        "request": request, "orders": orders
+    })
 
 @app.get("/profile", response_class=HTMLResponse)
 def profile(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request, db)
-    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
+    return templates.TemplateResponse("profile.html", {
+        "request": request, "user": user
+    })
