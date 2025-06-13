@@ -9,21 +9,22 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 import crud, models
-from db import get_db               # <-- правильный импорт
-from auth import get_current_user
+from db import get_db                      # <-- из db.py
+from auth import get_current_user          # <-- из auth.py
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
+
 @router.get("/market", response_class=HTMLResponse)
 def market(
     request: Request,
-    db: Session = Depends(get_db),               # <-- здесь get_db
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     warning = None
     if user.is_blocked:
-        warning = "Ваш аккаунт заблокирован из-за 10 отмен. Новые сделки недоступны."
+        warning = "Ваш аккаунт заблокирован из-за 10 отмен."
     ads = db.query(models.Ad).all()
     return templates.TemplateResponse("market.html", {
         "request": request,
@@ -32,11 +33,12 @@ def market(
         "warning": warning
     })
 
+
 @router.get("/create_order/{ad_id}")
 def create_order(
     ad_id: int,
     request: Request,
-    db: Session = Depends(get_db),              # <-- исправлено
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     if user.is_blocked:
@@ -47,11 +49,12 @@ def create_order(
     order = crud.create_order(db, ad, user)
     return RedirectResponse(f"/trade/{order.id}", status_code=302)
 
+
 @router.get("/trade/{order_id}", response_class=HTMLResponse)
 def trade_page(
     order_id: int,
     request: Request,
-    db: Session = Depends(get_db),              # <-- и здесь
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     order = db.query(models.Order).get(order_id)
@@ -65,11 +68,12 @@ def trade_page(
         "user": user
     })
 
+
 @router.post("/pay/{order_id}")
 def pay(
     order_id: int,
     request: Request,
-    db: Session = Depends(get_db),              # <-- и здесь
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     order = db.query(models.Order).get(order_id)
@@ -79,11 +83,12 @@ def pay(
         raise HTTPException(400, str(e))
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
+
 @router.post("/confirm/{order_id}")
 def confirm(
     order_id: int,
     request: Request,
-    db: Session = Depends(get_db),              # <-- и здесь
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     order = db.query(models.Order).get(order_id)
@@ -94,11 +99,12 @@ def confirm(
         raise HTTPException(400, str(e))
     return RedirectResponse("/orders/mine", status_code=302)
 
+
 @router.post("/dispute/{order_id}")
 def dispute(
     order_id: int,
     request: Request,
-    db: Session = Depends(get_db),              # <-- и здесь
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     order = db.query(models.Order).get(order_id)
@@ -108,12 +114,13 @@ def dispute(
         raise HTTPException(400, str(e))
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
+
 @router.post("/message/{order_id}")
 def message(
     order_id: int,
     text: str = Form(...),
-    request: Request = None,
-    db: Session = Depends(get_db),              # <-- и здесь
+    request: Request,
+    db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
     crud.add_message(db, order_id, user.id, text)
