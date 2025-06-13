@@ -8,16 +8,60 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-import crud
 import models
 from db import get_db
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
+# Зависимость: возвращает текущего авторизованного пользователя или 401
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> models.User:
+    user_id = request.session.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Не авторизован")
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+    return user
+
+@router.get("/register", response_class=HTMLResponse)
+def register_form(request: Request):
+    return templates.TemplateResponse("register.html", {
+        "request": request,
+        "error": None
+    })
+
+@router.post("/register")
+def register(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Проверяем, что логин свободен
+    if db.query(models.User).filter(models.User.username == username).first():
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Имя пользователя занято"
+        })
+    # Создаём нового пользователя
+    user = models.User(username=username, password=password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    # Сразу логиним
+    request.session["user_id"] = user.id
+    return RedirectResponse(url="/market", status_code=302)
+
 @router.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "error": None
+    })
 
 @router.post("/login")
 def login(
@@ -26,17 +70,22 @@ def login(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    user = db.query(models.User)\
-             .filter_by(username=username, password=password)\
-             .first()
+    user = db.query(models.User).filter_by(username=username, password=password).first()
     if not user:
         return templates.TemplateResponse("login.html", {
-            "request": request, "error": "Неверные данные"
+            "request": request,
+            "error": "Неверные логин или пароль"
         })
     if user.is_blocked:
         return templates.TemplateResponse("login.html", {
             "request": request,
-            "error": "Ваш аккаунт заблокирован из-за 10 отмен"
+            "error": "Ваш аккаунт заблокирован"
         })
+    # Сохраняем в сессию
     request.session["user_id"] = user.id
-    return RedirectResponse("/market", status_code=302)
+    return RedirectResponse(url="/market", status_code=302)
+
+@router.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=302)
