@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Сделка P2P</title>
+  <title>Мои сделки</title>
   <link rel="stylesheet" href="/static/styles.css">
   <style>
     body {
@@ -27,165 +27,74 @@
       margin: 20px auto;
       padding: 0 20px;
     }
-    .ad-details, .order-section, .chat-section {
-      background: #003f35;
-      border-radius: 8px;
+    .order-list {
+      list-style: none;
+      padding: 0;
+    }
+    .order-item {
+      background: #004d42;
+      margin-bottom: 15px;
       padding: 15px;
-      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-    .ad-details p, .order-section p {
-      margin: 8px 0;
-    }
-    .order-form label {
-      display: block;
-      margin: 10px 0 4px;
-    }
-    .order-form input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #90EE90;
-      border-radius: 4px;
-      background: #002b26;
-      color: #fff;
-    }
-    .order-form button {
-      margin-top: 12px;
-      padding: 10px 16px;
-      background: #90EE90;
-      color: #003300;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .order-form button:hover {
-      background: #70c070;
-    }
-    .order-section button {
-      margin-right: 10px;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .btn-warning { background: #FFA500; color: #003300; }
-    .btn-success { background: #28a745; color: #fff; }
-    .btn-danger  { background: #dc3545; color: #fff; }
-    .chat-box {
-      background: #002b26;
-      border: 1px solid #90EE90;
-      border-radius: 4px;
-      height: 200px;
-      overflow-y: auto;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    .chat-box p {
-      margin: 6px 0;
-    }
-    .chat-section form {
-      display: flex;
-    }
-    .chat-section input {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #90EE90;
-      border-radius: 4px 0 0 4px;
-      background: #002b26;
-      color: #fff;
-    }
-    .chat-section button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 0 4px 4px 0;
-      background: #90EE90;
-      color: #003300;
-      cursor: pointer;
-    }
-    .timer {
-      font-size: 1rem;
+    .order-item h2 {
+      margin: 0 0 10px;
       color: #FFD700;
+      font-size: 1.2rem;
+    }
+    .order-item p {
+      margin: 6px 0;
+      font-size: 0.9rem;
+    }
+    .order-item a {
+      display: inline-block;
       margin-top: 10px;
-      text-align: right;
+      padding: 8px 12px;
+      background: #90EE90;
+      color: #003300;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .order-item a:hover {
+      background: #70c070;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Сделка P2P</h1>
+    <h1>Мои сделки</h1>
     <div class="settings" onclick="location.href='/profile'">⚙️</div>
   </header>
   <div class="container">
-    <!-- Информация о объявлении -->
-    <div class="ad-details">
-      <h2>Объявление</h2>
-      <p><strong>Тип:</strong> {{ order.ad.type == 'buy' and 'Покупка' or 'Продажа' }}</p>
-      <p><strong>Криптовалюта:</strong> {{ order.ad.crypto }}</p>
-      <p><strong>Фиат:</strong> {{ order.ad.fiat }}</p>
-      <p><strong>Курс:</strong> {{ order.ad.price }} {{ order.ad.fiat }}</p>
-      <p><strong>Мин/Макс:</strong> {{ order.ad.min_limit }} – {{ order.ad.max_limit }} {{ order.ad.fiat }}</p>
-      <p><strong>Способы оплаты:</strong> {{ order.ad.payment_methods|join(', ') }}</p>
-      <p><strong>Продавец:</strong> {{ order.ad.user.username }} ({{ order.ad.user_rating }}%)</p>
-      <div class="timer" id="timer">Время оплаты: 30:00</div>
-    </div>
-
-    <!-- Форма создания сделки -->
-    {% if not order.status %}
-    <form class="order-form" action="/create_order/{{ order.ad.id }}" method="get">
-      <button type="submit">Начать сделку</button>
-    </form>
-    {% endif %}
-
-    <!-- Раздел управления сделкой -->
-    {% if order %}
-    <div class="order-section">
-      <h2>Ваша сделка</h2>
-      <p><strong>Статус:</strong> {{ order.status }}</p>
-      <p><strong>Начало:</strong> {{ order.created_at }}</p>
-      <form method="post" action="/pay/{{ order.id }}" style="display:inline">
-        <button type="submit" class="btn-warning">Я оплатил</button>
-      </form>
-      <form method="post" action="/confirm/{{ order.id }}" style="display:inline">
-        <button type="submit" class="btn-success">Подтвердить получение</button>
-      </form>
-      <form method="post" action="/dispute/{{ order.id }}" style="display:inline">
-        <button type="submit" class="btn-danger">Открыть спор</button>
-      </form>
-    </div>
-
-    <!-- Чат -->
-    <div class="chat-section">
-      <h2>Чат</h2>
-      <div class="chat-box" id="chatBox">
-        {% for msg in messages %}
-          <p><strong>{{ msg.sender.username }}:</strong> {{ msg.text }}</p>
+    <ul class="order-list">
+      {% if orders %}
+        {% for o in orders %}
+          <li class="order-item">
+            <h2>Сделка №{{ o.id }} — {{ o.status|capitalize }}</h2>
+            <p><strong>Тип:</strong>
+              {{ o.ad.type == 'buy' and 'Покупка' or 'Продажа' }}
+            </p>
+            <p><strong>Криптовалюта:</strong>
+              {{ o.amount }} {{ o.ad.type == 'buy' and o.ad.crypto or o.ad.crypto }}
+            </p>
+            <p><strong>Цена за единицу:</strong>
+              {{ o.ad.price }} {{ o.ad.fiat }}
+            </p>
+            <p><strong>Сумма сделки:</strong>
+              {{ (o.amount * o.ad.price)|round(2) }} {{ o.ad.fiat }}
+            </p>
+            <p><strong>Стороны:</strong>
+              Покупатель — {{ o.buyer.username }}, Продавец — {{ o.ad.user.username }}
+            </p>
+            <a href="/trade/{{ o.id }}">Перейти к сделке</a>
+          </li>
         {% endfor %}
-      </div>
-      <form action="/message/{{ order.id }}" method="post">
-        <input name="text" placeholder="Написать сообщение..." required>
-        <button type="submit">Отправить</button>
-      </form>
-    </div>
-    {% endif %}
+      {% else %}
+        <li><p>У вас пока нет сделок.</p></li>
+      {% endif %}
+    </ul>
   </div>
-
-  <script>
-    // Таймер 30 минут
-    let totalSeconds = 30 * 60;
-    const timerElem = document.getElementById('timer');
-    function updateTimer() {
-      const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-      const s = String(totalSeconds % 60).padStart(2, '0');
-      timerElem.textContent = `Время оплаты: ${m}:${s}`;
-      if (totalSeconds > 0) {
-        totalSeconds--;
-        setTimeout(updateTimer, 1000);
-      } else {
-        timerElem.textContent = 'Сделка отменена';
-      }
-    }
-    updateTimer();
-  </script>
 </body>
 </html>
