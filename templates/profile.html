@@ -1,7 +1,12 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Профиль</title></head><body>
-<h1>Профиль {{ user.username }}</h1>
-<p>Баланс: {{ user.balance }}</p>
-<p><a href="/create_ad">Создать объявление</a></p>
-<p><a href="/orders/mine">Мои сделки</a></p>
-<p><a href="/logout">Выйти</a></p>
-</body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8"><title>Профиль</title></head>
+<body>
+  <h1>Профиль {{ user.username }}</h1>
+  <p>Баланс: {{ user.balance|round(2) }} {{ user.username and 'USDT' }}</p>
+  <p>Комиссии: {{ user.commission_earned|round(2) }} USDT</p>
+  <p><a href="/create_ad">Создать объявление</a></p>
+  <p><a href="/orders/mine">Мои сделки</a></p>
+  <p><a href="/logout">Выйти</a></p>
+</body>
+</html>
