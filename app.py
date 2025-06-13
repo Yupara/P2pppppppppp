@@ -15,33 +15,29 @@ from support import router as support_router
 from verify import router as verify_router
 from admin import router as admin_router
 
-import tasks  # фоновые задачи (APS cheduler)
+import tasks  # фоновые задачи
 
-# создаём все таблицы (если ещё нет)
+# создаём таблицы
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# если нужны сессии — раскомментируйте:
-# from starlette.middleware.sessions import SessionMiddleware
-# app.add_middleware(SessionMiddleware, secret_key="ВАШ_СЕКРЕТ")
-
-# статика под /static
+# статические файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# корень → /market
+# редирект корня
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse(url="/market")
 
-# подключаем все роутеры
-app.include_router(auth_router,     prefix="", tags=["auth"])
-app.include_router(payment_router,  prefix="", tags=["payment"])
-app.include_router(settings_router, prefix="", tags=["settings"])
-app.include_router(orders_router,   prefix="", tags=["orders"])
-app.include_router(support_router,  prefix="", tags=["support"])
-app.include_router(verify_router,   prefix="", tags=["verify"])
-app.include_router(admin_router,    prefix="", tags=["admin"])
+# подключаем роутеры
+app.include_router(auth_router,     tags=["auth"])
+app.include_router(payment_router,  tags=["payment"])
+app.include_router(settings_router, tags=["settings"])
+app.include_router(orders_router,   tags=["orders"])
+app.include_router(support_router,  tags=["support"])
+app.include_router(verify_router,   tags=["verify"])
+app.include_router(admin_router,    tags=["admin"])
 
-# запускаем фоновые задачи (ежедневный отчёт, крупные сделки)
+# старт фоновых задач
 tasks.start_scheduler()
