@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админ — Верификация паспортов</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <h1>Ожидают верификации</h1>
+  <ul>
+    {% for u in users %}
+      <li>
+        {{ u.username }} —
+        <a href="/static/uploads/{{ u.passport_filename }}" target="_blank">Скачать скан</a>
+        <form method="post" action="/admin/passports/{{ u.id }}/approve" style="display:inline">
+          <button type="submit">Подтвердить</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
