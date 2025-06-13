@@ -5,90 +5,100 @@
   <title>Рынок P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
   <style>
-    /* Небольшие правки для фильтров */
-    .filters { display:flex; gap:10px; justify-content:center; margin:20px 0; }
-    .filters select, .filters button { padding:8px; border-radius:4px; border:1px solid #90EE90; background:#003f35; color:#fff; }
-    .filters button:hover { background:#90EE90; color:#003300; cursor:pointer; }
+    body { background: #002b26; color: #fff; margin: 0; font-family: Arial, sans-serif; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #003f35; }
+    header h1 { margin: 0; color: #90EE90; }
+    .settings { font-size: 1.5rem; cursor: pointer; color: #90EE90; }
+    .filters { display: flex; gap: 10px; justify-content:center; padding: 15px; background: #003f35; }
+    .filters select, .filters button { padding: 8px; border: 1px solid #90EE90; border-radius: 4px; background: #002b26; color: #fff; }
+    .filters button:hover { background: #90EE90; color: #002b26; }
+    #ads-list { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding: 20px; }
+    .ad-card { background: #004d42; padding: 15px; border-radius: 8px; width: 280px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .ad-card h2 { margin: 0 0 10px; color: #FFD700; font-size: 1.2rem; }
+    .ad-card p { margin: 5px 0; }
+    .ad-card a { display: inline-block; margin-top: 10px; padding: 8px 12px; background: #90EE90; color: #003f35; border-radius: 4px; text-decoration: none; font-weight: bold; }
+    .ad-card a:hover { background: #70c070; }
   </style>
 </head>
 <body>
-  <h1>Рынок P2P</h1>
+  <header>
+    <h1>Рынок P2P</h1>
+    <div class="settings" onclick="location.href='/profile'">⚙️</div>
+  </header>
+
   <div class="filters">
-    <!-- Криптовалюты -->
     <select id="filterCrypto">
       <option value="">Любая крипта</option>
-      <option value="usdt">USDT</option>
-      <option value="btc">BTC</option>
-      <option value="eth">ETH</option>
-      <option value="trump">TRUMP</option>
+      <option value="buy_usdt">USDT</option>
+      <option value="buy_btc">BTC</option>
+      <option value="buy_eth">ETH</option>
+      <option value="buy_trump">TRUMP</option>
     </select>
-
-    <!-- Фиат -->
     <select id="filterFiat">
       <option value="">Любой фиат</option>
-      <option value="USD">USD – Доллар США</option>
-      <option value="EUR">EUR – Евро</option>
-      <option value="GBP">GBP – Фунт</option>
-      <option value="RUB">RUB – Рубль</option>
-      <option value="UAH">UAH – Гривна</option>
-      <option value="KZT">KZT – Тенге</option>
-      <option value="TRY">TRY – Лира</option>
-      <option value="AED">AED – Дирхам</option>
-      <option value="NGN">NGN – Найра</option>
-      <option value="INR">INR – Рупия</option>
-      <option value="VND">VND – Донг</option>
-      <option value="BRL">BRL – Реал</option>
-      <option value="ARS">ARS – Песо</option>
-      <option value="COP">COP – Песо</option>
-      <option value="PEN">PEN – Соль</option>
-      <option value="MXN">MXN – Песо</option>
-      <option value="CLP">CLP – Песо</option>
-      <option value="ZAR">ZAR – Рэнд</option>
-      <option value="EGP">EGP – Фунт</option>
-      <option value="GHS">GHS – Седи</option>
-      <option value="KES">KES – Шиллинг</option>
-      <option value="MAD">MAD – Дирхам</option>
-      <option value="PKR">PKR – Рупия</option>
-      <option value="BDT">BDT – Така</option>
-      <option value="LKR">LKR – Рупия</option>
-      <option value="IDR">IDR – Рупия</option>
-      <option value="THB">THB – Бат</option>
-      <option value="MYR">MYR – Ринггит</option>
-      <option value="PHP">PHP – Песо</option>
-      <option value="KRW">KRW – Вона</option>
-      <option value="TJS">TJS – Сомони</option>
+      <option value="RUB">RUB</option>
+      <option value="USD">USD</option>
+      <option value="EUR">EUR</option>
+      <option value="GBP">GBP</option>
+      <option value="UAH">UAH</option>
+      <option value="KZT">KZT</option>
+      <option value="TRY">TRY</option>
+      <option value="AED">AED</option>
+      <option value="NGN">NGN</option>
+      <option value="INR">INR</option>
+      <option value="VND">VND</option>
+      <option value="BRL">BRL</option>
+      <option value="ARS">ARS</option>
+      <option value="COP">COP</option>
+      <option value="PEN">PEN</option>
+      <option value="MXN">MXN</option>
+      <option value="CLP">CLP</option>
+      <option value="ZAR">ZAR</option>
+      <option value="EGP">EGP</option>
+      <option value="GHS">GHS</option>
+      <option value="KES">KES</option>
+      <option value="MAD">MAD</option>
+      <option value="PKR">PKR</option>
+      <option value="BDT">BDT</option>
+      <option value="LKR">LKR</option>
+      <option value="IDR">IDR</option>
+      <option value="THB">THB</option>
+      <option value="MYR">MYR</option>
+      <option value="PHP">PHP</option>
+      <option value="KRW">KRW</option>
+      <option value="TJS">TJS</option>
     </select>
-
-    <!-- Способы оплаты -->
     <select id="filterPay">
       <option value="">Все способы оплаты</option>
       <option value="sber">Сбербанк</option>
       <option value="tinkoff">Тинькофф</option>
       <option value="sbp">SBP</option>
-      <option value="card">Банковская карта</option>
+      <option value="card">Карта</option>
       <option value="qiwi">QIWI</option>
       <option value="paypal">PayPal</option>
     </select>
-
     <button onclick="applyFilter()">Применить фильтр</button>
   </div>
 
   <div id="ads-list">
     {% if ads %}
       {% for ad in ads %}
-        <div class="ad-card" 
-             data-crypto="{{ ad.type }}" 
-             data-fiat="{{ ad.price_currency or '' }}" 
-             data-paymethods="{{ ad.payment_methods or '' }}">
-          <p><strong>Тип:</strong> {{ ad.type }}</p>
+        <div class="ad-card"
+             data-crypto="{{ ad.crypto }}"
+             data-fiat="{{ ad.fiat }}"
+             data-paymethods="{{ ad.payment_methods|join(',') }}">
+          <h2>{{ ad.crypto }}/{{ ad.fiat }}</h2>
+          <p><strong>Тип:</strong> {{ ad.type == 'buy' and 'Купить' or 'Продать' }}</p>
           <p><strong>Сумма:</strong> {{ ad.amount }}</p>
-          <p><strong>Цена:</strong> {{ ad.price }} {{ ad.price_currency or '' }}</p>
-          <p><strong>Продавец:</strong> {{ ad.user.username }}</p>
-          <a href="/create_order/{{ ad.id }}">Купить/Продать</a>
+          <p><strong>Цена:</strong> {{ ad.price }} {{ ad.fiat }}</p>
+          <p><strong>Лимиты:</strong> {{ ad.min_limit }} – {{ ad.max_limit }} {{ ad.fiat }}</p>
+          <p><strong>Методы:</strong> {{ ad.payment_methods|join(', ') }}</p>
+          <p><strong>Продавец:</strong> {{ ad.user.username }} ({{ ad.user_rating }}%)</p>
+          <a href="/create_order/{{ ad.id }}">Купить</a>
         </div>
       {% endfor %}
     {% else %}
-      <p>Пока нет объявлений.</p>
+      <p style="text-align:center;">Пока нет объявлений.</p>
     {% endif %}
   </div>
 
@@ -99,9 +109,10 @@
       const fPay    = document.getElementById('filterPay').value;
 
       document.querySelectorAll('.ad-card').forEach(card => {
-        const matchCrypto = !fCrypto || card.getAttribute('data-crypto') === fCrypto;
-        const matchFiat   = !fFiat   || card.getAttribute('data-fiat') === fFiat;
-        const matchPay    = !fPay    || card.getAttribute('data-paymethods').split(',').includes(fPay);
+        const matchCrypto = !fCrypto || card.dataset.crypto === fCrypto;
+        const matchFiat   = !fFiat   || card.dataset.fiat === fFiat;
+        const pays = card.dataset.paymethods.split(',');
+        const matchPay    = !fPay    || pays.includes(fPay);
 
         card.style.display = (matchCrypto && matchFiat && matchPay) ? 'block' : 'none';
       });
