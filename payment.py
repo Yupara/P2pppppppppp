@@ -1,20 +1,22 @@
 # payment.py
 
 from fastapi import (
-    APIRouter, Request, Depends,
-    Form, HTTPException
+    APIRouter,
+    Request,
+    Depends,
+    Form,
+    HTTPException
 )
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 import crud, models
-from db import get_db                      # <-- из db.py
-from auth import get_current_user          # <-- из auth.py
+from db import get_db
+from auth import get_current_user
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter()
-
 
 @router.get("/market", response_class=HTMLResponse)
 def market(
@@ -33,7 +35,6 @@ def market(
         "warning": warning
     })
 
-
 @router.get("/create_order/{ad_id}")
 def create_order(
     ad_id: int,
@@ -48,7 +49,6 @@ def create_order(
         raise HTTPException(400, "Нельзя купить у себя или объявления нет")
     order = crud.create_order(db, ad, user)
     return RedirectResponse(f"/trade/{order.id}", status_code=302)
-
 
 @router.get("/trade/{order_id}", response_class=HTMLResponse)
 def trade_page(
@@ -68,7 +68,6 @@ def trade_page(
         "user": user
     })
 
-
 @router.post("/pay/{order_id}")
 def pay(
     order_id: int,
@@ -82,7 +81,6 @@ def pay(
     except ValueError as e:
         raise HTTPException(400, str(e))
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
-
 
 @router.post("/confirm/{order_id}")
 def confirm(
@@ -99,7 +97,6 @@ def confirm(
         raise HTTPException(400, str(e))
     return RedirectResponse("/orders/mine", status_code=302)
 
-
 @router.post("/dispute/{order_id}")
 def dispute(
     order_id: int,
@@ -114,14 +111,13 @@ def dispute(
         raise HTTPException(400, str(e))
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
 
-
 @router.post("/message/{order_id}")
 def message(
     order_id: int,
-    text: str = Form(...),
     request: Request,
     db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
+    user: models.User = Depends(get_current_user),
+    text: str = Form(...)
 ):
     crud.add_message(db, order_id, user.id, text)
     return RedirectResponse(f"/trade/{order_id}", status_code=302)
