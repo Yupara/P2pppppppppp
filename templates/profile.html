@@ -1,12 +1,26 @@
+<!-- templates/profile.html -->
+
 <!DOCTYPE html>
-<html lang="ru">
-<head><meta charset="UTF-8"><title>Профиль</title></head>
+<html>
+<head>
+  <title>Профиль</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
 <body>
-  <h1>Профиль {{ user.username }}</h1>
-  <p>Баланс: {{ user.balance|round(2) }} {{ user.username and 'USDT' }}</p>
-  <p>Комиссии: {{ user.commission_earned|round(2) }} USDT</p>
-  <p><a href="/create_ad">Создать объявление</a></p>
-  <p><a href="/orders/mine">Мои сделки</a></p>
-  <p><a href="/logout">Выйти</a></p>
+  <h2>Профиль пользователя</h2>
+
+  <div class="card">
+    <p><strong>ID:</strong> {{ user.id }}</p>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email or "не указан" }}</p>
+    <p><strong>Дата регистрации:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  </div>
+
+  <div style="margin-top:20px;">
+    <a href="/orders/mine">📄 Мои сделки</a> |
+    <a href="/ads/my">📢 Мои объявления</a> |
+    <a href="/market">🏠 Рынок</a> |
+    <a href="/logout" style="color:red">🚪 Выйти</a>
+  </div>
 </body>
 </html>
