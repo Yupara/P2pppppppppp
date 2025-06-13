@@ -1,9 +1,11 @@
+# models.py
+
 from sqlalchemy import (
     Column, Integer, String, Float,
-    ForeignKey, Text
+    ForeignKey, Text, Boolean
 )
 from sqlalchemy.orm import relationship
-from db import Base  # <-- Base из db.py
+from db import Base  # Base из db.py
 
 class User(Base):
     __tablename__ = "users"
@@ -12,11 +14,17 @@ class User(Base):
     password          = Column(String, nullable=False)
     balance           = Column(Float, default=0.0)
     commission_earned = Column(Float, default=0.0)
-    # Добавленные поля для настроек
+
+    # Поля для настроек платежей
     card_number       = Column(String, nullable=True)
     card_holder       = Column(String, nullable=True)
     wallet_address    = Column(String, nullable=True)
     wallet_network    = Column(String, nullable=True)
+
+    # Поля для блокировки
+    cancel_count      = Column(Integer, default=0)
+    is_blocked        = Column(Boolean, default=False)
+
 
 class Ad(Base):
     __tablename__ = "ads"
@@ -33,6 +41,7 @@ class Ad(Base):
     user_rating      = Column(Float, default=100.0)
     user             = relationship("User")
 
+
 class Order(Base):
     __tablename__ = "orders"
     id         = Column(Integer, primary_key=True, index=True)
@@ -44,12 +53,13 @@ class Order(Base):
     buyer      = relationship("User", foreign_keys=[buyer_id])
     ad         = relationship("Ad")
 
+
 class Message(Base):
     __tablename__ = "messages"
     id        = Column(Integer, primary_key=True, index=True)
     order_id  = Column(Integer, ForeignKey("orders.id"))
     sender_id = Column(Integer, ForeignKey("users.id"))
-    text      = Column(Text,   nullable=False)
+    text      = Column(Text, nullable=False)
     timestamp = Column(String, nullable=False)
     sender    = relationship("User")
     order     = relationship("Order")
