@@ -6,47 +6,53 @@ from datetime import datetime, timedelta
 
 import models
 from db import SessionLocal
-from notifications import send_email  # ваша функция отправки email
+from notifications import send_email  # Ваша функция отправки писем
 
-# Порог крупной сделки
+# Порог крупной сделки (в USDT)
 LARGE_ORDER_THRESHOLD = 10_000.0
 
 def daily_commission_report():
     db: Session = SessionLocal()
     try:
-        today = datetime.utcnow().date()
-        # Считаем комиссию за вчера
-        start = datetime.combine(today - timedelta(days=1), datetime.min.time())
-        end   = datetime.combine(today,          datetime.min.time())
-        total = db.query(models.User).filter(models.User.id == 1).first().commission_earned
-        # TODO: вместо commission_earned хранить по датам
-        text = f"Ваша комиссия за {start.date()} составила {total:.2f} USDT."
-        send_email(to="you@example.com", subject="Ежедневный отчёт комиссии", html=text)
+        # За вчерашний день
+        yesterday = datetime.utcnow().date() - timedelta(days=1)
+        # Предполагается, что у админа (id=1) хранится commission_earned суммарно
+        admin = db.query(models.User).get(1)
+        total = admin.commission_earned
+        subject = f"Отчет комиссии за {yesterday.isoformat()}"
+        body = f"Ваша комиссия за {yesterday.isoformat()} составила {total:.2f} USDT."
+        send_email(to="you@example.com", subject=subject, html=body)
     finally:
         db.close()
 
 def large_order_alerts():
     db: Session = SessionLocal()
     try:
-        # Ищем сделки за последние 5 минут больше порога
         cutoff = datetime.utcnow() - timedelta(minutes=5)
-        orders = db.query(models.Order).filter(
-            models.Order.created_at >= cutoff.isoformat(),
-            models.Order.amount >= LARGE_ORDER_THRESHOLD
-        ).all()
-        for o in orders:
+        recent_orders = (
+            db.query(models.Order)
+              .filter(models.Order.created_at >= cutoff)
+              .filter(models.Order.amount >= LARGE_ORDER_THRESHOLD)
+              .all()
+        )
+        for order in recent_orders:
+            subj = f"Крупная сделка #{order.id}"
             body = (
-                f"Найдена крупная сделка #{o.id}: "
-                f"{o.amount} {o.ad.crypto} по курсу {o.ad.price} {o.ad.fiat}."
+                f"Сделка #{order.id}: {order.amount} {order.ad.crypto} "
+                f"по курсу {order.ad.price} {order.ad.fiat}."
             )
-            send_email(to="you@example.com", subject="Крупная сделка P2P", html=body)
+            send_email(to="you@example.com", subject=subj, html=body)
     finally:
         db.close()
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    # Запуск каждый день в 00:10 UTC
+    # Каждый день в 00:10 UTC
     scheduler.add_job(daily_commission_report, 'cron', hour=0, minute=10)
-    # Запуск каждые 5 минут
+    # Каждые 5 минут
     scheduler.add_job(large_order_alerts, 'interval', minutes=5)
     scheduler.start()
+
+if __name__ == "__main__":
+    start_scheduler()
+    # Чтобы задачи работали вместе с приложением, импортируйте и вызовите start_scheduler() в app.py
