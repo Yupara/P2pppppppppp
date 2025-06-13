@@ -52,7 +52,7 @@ class Order(Base):
     created_at = Column(String, nullable=False)
     buyer      = relationship("User", foreign_keys=[buyer_id])
     ad         = relationship("Ad")
-
+status = Column(String, default="active")  # active, paid, completed, disputed
 
 class Message(Base):
     __tablename__ = "messages"
