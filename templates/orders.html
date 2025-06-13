@@ -1,8 +1,18 @@
-<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Мои сделки</title></head><body>
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8"><title>Мои сделки</title></head>
+<body>
   <h1>Мои сделки</h1>
   <ul>
     {% for o in orders %}
-      <li>Сделка {{ o.id }} — {{ o.status }} — <a href="/trade/{{ o.id }}">Перейти</a></li>
+      <li>
+        <a href="/trade/{{ o.id }}">Сделка №{{ o.id }}</a>
+         — {{ o.status|capitalize }} —
+        {{ o.amount }} {{ o.ad.crypto }} за {{ (o.amount*o.ad.price)|round(2) }} {{ o.ad.fiat }}
+      </li>
+    {% else %}
+      <li>У вас нет сделок.</li>
     {% endfor %}
   </ul>
-</body></html>
+</body>
+</html>
