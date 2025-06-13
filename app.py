@@ -1,19 +1,34 @@
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
+# app.py
 
-from db import engine, Base  # <-- Base и engine из db.py
-import models                # <-- здесь регистрируются все модели
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+
+from db import engine, Base
+import models
 
 from auth import router as auth_router
 from payment import router as payment_router
 
-# создаём таблицы
+# Создаём таблицы
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="REPLACE_WITH_SECRET")
+
+app.add_middleware(
+    # если у вас нужны сессии
+    # from starlette.middleware.sessions import SessionMiddleware
+    # app.add_middleware(SessionMiddleware, secret_key="YOUR_SECRET")
+)
+
+# Статика
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(auth_router, prefix="", tags=["auth"])
-app.include_router(payment_router, prefix="", tags=["payment"])
+# Корневой маршрут — Перенаправляет на /market
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/market")
+
+# Подключаем роутеры
+app.include_router(auth_router)
+app.include_router(payment_router)
