@@ -2,13 +2,15 @@
 {% block title %}Рынок{% endblock %}
 {% block content %}
 <h1>Рынок P2P</h1>
+
 <div class="cards">
   {% for ad in ads %}
     <div class="card">
       <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
       <p>Цена: {{ ad.price }}</p>
       <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
-      <a class="btn" href="#">Купить</a>
+      <p>Методы оплаты: {{ ad.payment_methods }}</p>
+      <a class="btn" href="/trade/create/{{ ad.id }}">Купить</a>
     </div>
   {% endfor %}
 </div>
