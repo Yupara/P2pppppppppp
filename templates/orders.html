@@ -1,35 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Мои сделки{% endblock %}
 {% block content %}
-  <h1>Мои сделки</h1>
-
-  <h2>Покупки</h2>
-  {% if buys %}
-    <ul>
-      {% for t in buys %}
-        <li>
-          #{{ t.id }} {{ t.ad.crypto }}/{{ t.ad.fiat }} —
-          {{ t.amount }} — {{ t.status }}
-          <a href="/trade/{{ t.id }}">Перейти</a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>Покупок нет.</p>
-  {% endif %}
-
-  <h2>Продажи</h2>
-  {% if sells %}
-    <ul>
-      {% for t in sells %}
-        <li>
-          #{{ t.id }} {{ t.ad.crypto }}/{{ t.ad.fiat }} —
-          {{ t.amount }} — {{ t.status }}
-          <a href="/trade/{{ t.id }}">Перейти</a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>Продаж нет.</p>
-  {% endif %}
+<h1>Мои сделки</h1>
+{% if orders %}
+  <ul>
+    {% for o in orders %}
+      <li>
+        Сделка #{{o.id}} — {{o.ad.crypto}}/{{o.ad.fiat}} — {{o.amount}} — статус: {{o.status}}
+        <a href="/trade/{{o.id}}">Перейти</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>У вас нет сделок.</p>
+{% endif %}
 {% endblock %}
