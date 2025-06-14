@@ -292,3 +292,23 @@ def send_message(
     db.add(msg)
     db.commit()
     return RedirectResponse(f"/trade/{trade_id}", status_code=302)
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_panel(request: Request, db: Session = Depends(get_db)):
+    user_uuid = get_user_uuid(request)
+    if user_uuid != ADMIN_UUID:
+        raise HTTPException(status_code=403, detail="Доступ запрещён")
+
+    # Статистика
+    total_ads    = db.query(Ad).count()
+    total_trades = db.query(Trade).count()
+    pending      = db.query(Trade).filter(Trade.status=="pending").count()
+    disputes     = db.query(Trade).filter(Trade.status=="disputed").count()
+
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "total_ads": total_ads,
+        "total_trades": total_trades,
+        "pending": pending,
+        "disputes": disputes
+    })
