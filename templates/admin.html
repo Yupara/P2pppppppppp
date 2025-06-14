@@ -1,60 +1,14 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head><meta charset="UTF-8"><title>Админ</title>
-<link rel="stylesheet" href="/static/styles.css"></head>
-<body>
-  <div class="header">
-    <h1>Админ-панель</h1>
-    <a href="/market" class="create-button">← Рынок</a>
-  </div>
-  <div class="container">
-    <h2>Объявления</h2>
-    {% if ads %}
-      <table>
-        <tr><th>ID</th><th>Владелец</th><th>Кр/фиат</th><th>Цена</th><th>Лимиты</th><th>Действие</th></tr>
-        {% for ad in ads %}
-        <tr>
-          <td>{{ ad.id }}</td>
-          <td>{{ ad.owner }}</td>
-          <td>{{ ad.crypto }}/{{ ad.fiat }}</td>
-          <td>{{ ad.rate }}</td>
-          <td>{{ ad.min_limit }}–{{ ad.max_limit }}</td>
-          <td>
-            <form action="/admin/ad/{{ ad.id }}/delete" method="post" style="display:inline">
-              <button class="btn btn-danger">Удалить</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </table>
-    {% else %}
-      <p>Нет объявлений.</p>
-    {% endif %}
+{% extends "base.html" %}
 
-    <hr>
-    <h2>Сделки/споры</h2>
-    {% if order_status %}
-      <table>
-        <tr><th>Ad ID</th><th>Статус</th><th>Покупатель</th><th>Сумма</th><th>Действие</th></tr>
-        {% for aid, st in order_status.items() %}
-        <tr>
-          <td>{{ aid }}</td>
-          <td>{{ st or '—' }}</td>
-          <td>{{ payments.get(aid,{}).get('user','—') }}</td>
-          <td>{{ payments.get(aid,{}).get('amount','—') }}</td>
-          <td>
-            {% if st=='disputed' %}
-            <form action="/admin/ad/{{ aid }}/resolve" method="post" style="display:inline">
-              <button class="btn btn-success">Решить спор</button>
-            </form>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </table>
-    {% else %}
-      <p>Нет сделок.</p>
-    {% endif %}
-  </div>
-</body>
-</html>
+{% block title %}Админ-панель{% endblock %}
+
+{% block content %}
+<h1>Админ-панель</h1>
+
+<ul>
+  <li>Всего объявлений: {{ total_ads }}</li>
+  <li>Всего сделок: {{ total_trades }}</li>
+  <li>Ожидают оплаты: {{ pending }}</li>
+  <li>В спорах: {{ disputes }}</li>
+</ul>
+{% endblock %}
