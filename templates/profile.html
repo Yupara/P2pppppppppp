@@ -1,39 +1,31 @@
 {% extends "base.html" %}
-
 {% block title %}Профиль{% endblock %}
-
 {% block content %}
-<h1>Мой кабинет</h1>
+  <h1>Мой кабинет</h1>
+  <p><strong>Баланс:</strong> {{user.balance}} USDT</p>
+  <a class="btn" href="/deposit">Пополнить</a>
+  <a class="btn" href="/withdraw">Вывести</a>
 
-<h2>Мои покупки</h2>
-{% if buys %}
-  <ul>
-    {% for t in buys %}
-      <li>
-        Сделка #{{ t.id }}: {{ t.ad.crypto }}/{{ t.ad.fiat }} —
-        {{ t.amount }} @ {{ t.ad.price }} — статус: {{ t.status }}
-        <a href="/trade/{{ t.id }}">Перейти</a>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>Нет покупок.</p>
-{% endif %}
+  <h2>История операций</h2>
+  {% if ops %}
+    <table>
+      <tr><th>Дата</th><th>Тип</th><th>Сумма</th><th>Адрес</th><th>Статус</th></tr>
+      {% for o in ops %}
+        <tr>
+          <td>{{o.created_at.strftime("%Y-%m-%d %H:%M")}}</td>
+          <td>{{o.type}}</td>
+          <td>{{o.amount}}</td>
+          <td>{{o.address or "-"}}</td>
+          <td>{{o.status}}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Нет операций.</p>
+  {% endif %}
 
-<h2>Мои продажи</h2>
-{% if sells %}
-  <ul>
-    {% for t in sells %}
-      <li>
-        Сделка #{{ t.id }}: {{ t.ad.crypto }}/{{ t.ad.fiat }} —
-        {{ t.amount }} @ {{ t.ad.price }} — статус: {{ t.status }}
-        <a href="/trade/{{ t.id }}">Перейти</a>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>Нет продаж.</p>
-{% endif %}
-
-<p><a href="/logout">Выйти из кабинета</a></p>
+  <h2>Мои покупки</h2>
+  <ul>{% for t in buys %}<li>#{{t.id}} {{t.ad.crypto}}/{{t.ad.fiat}} {{t.amount}} — {{t.status}}</li>{% endfor %}</ul>
+  <h2>Мои продажи</h2>
+  <ul>{% for t in sells %}<li>#{{t.id}} {{t.ad.crypto}}/{{t.ad.fiat}} {{t.amount}} — {{t.status}}</li>{% endfor %}</ul>
 {% endblock %}
