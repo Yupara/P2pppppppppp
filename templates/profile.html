@@ -1,27 +1,39 @@
-<!-- templates/profile.html -->
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Профиль</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <h2>Профиль пользователя</h2>
+{% block title %}Профиль{% endblock %}
 
-  <div class="card">
-    <p><strong>ID:</strong> {{ user.id }}</p>
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <p><strong>Email:</strong> {{ user.email or "не указан" }}</p>
-    <p><strong>Дата регистрации:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-  </div>
+{% block content %}
+<h1>Мой кабинет</h1>
 
-  <div style="margin-top:20px;">
-    <a href="/orders/mine">📄 Мои сделки</a> |
-    <a href="/ads/my">📢 Мои объявления</a> |
-    <a href="/market">🏠 Рынок</a> |
-    <a href="/logout" style="color:red">🚪 Выйти</a>
-  </div>
-</body>
-</html>
-<p>Ваша реферальная ссылка: <code>{{ request.url_for('home') }}?ref={{ user.id }}</code></p>
+<h2>Мои покупки</h2>
+{% if buys %}
+  <ul>
+    {% for t in buys %}
+      <li>
+        Сделка #{{ t.id }}: {{ t.ad.crypto }}/{{ t.ad.fiat }} —
+        {{ t.amount }} @ {{ t.ad.price }} — статус: {{ t.status }}
+        <a href="/trade/{{ t.id }}">Перейти</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>Нет покупок.</p>
+{% endif %}
+
+<h2>Мои продажи</h2>
+{% if sells %}
+  <ul>
+    {% for t in sells %}
+      <li>
+        Сделка #{{ t.id }}: {{ t.ad.crypto }}/{{ t.ad.fiat }} —
+        {{ t.amount }} @ {{ t.ad.price }} — статус: {{ t.status }}
+        <a href="/trade/{{ t.id }}">Перейти</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>Нет продаж.</p>
+{% endif %}
+
+<p><a href="/logout">Выйти из кабинета</a></p>
+{% endblock %}
