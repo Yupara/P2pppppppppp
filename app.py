@@ -361,3 +361,5 @@ def admin_panel(request:Request, db:Session=Depends(get_db)):
     return templates.TemplateResponse("admin.html",{
         "request":request, **stats, "disputes":disputes
     })
+from orders import router as orders_router
+app.include_router(orders_router)
