@@ -1,42 +1,21 @@
-<!-- templates/orders.html -->
-
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Мои заказы</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <h2 style="text-align:center">Мои сделки</h2>
-
-  <h3>Я покупатель</h3>
-  <table>
-    <tr><th>ID</th><th>Крипто</th><th>Фиат</th><th>Сумма</th><th>Статус</th></tr>
-    {% for order in buy_orders %}
-      <tr>
-        <td><a href="/trade/{{ order.id }}">{{ order.id }}</a></td>
-        <td>{{ order.ad.crypto }}</td>
-        <td>{{ order.ad.fiat }}</td>
-        <td>{{ order.amount }}</td>
-        <td>{{ order.status }}</td>
-      </tr>
-    {% endfor %}
-  </table>
-
-  <h3>Я продавец</h3>
-  <table>
-    <tr><th>ID</th><th>Крипто</th><th>Фиат</th><th>Сумма</th><th>Статус</th></tr>
-    {% for order in sell_orders %}
-      <tr>
-        <td><a href="/trade/{{ order.id }}">{{ order.id }}</a></td>
-        <td>{{ order.ad.crypto }}</td>
-        <td>{{ order.ad.fiat }}</td>
-        <td>{{ order.amount }}</td>
-        <td>{{ order.status }}</td>
-      </tr>
-    {% endfor %}
-  </table>
-
-  <p><a href="/market">← Вернуться к рынку</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Мои сделки{% endblock %}
+{% block content %}
+  <h1>Мои сделки</h1>
+  {% if buys or sells %}
+    <ul>
+      {% for t in buys %}
+        <li>Покупка #{{ t.id }}: {{ t.ad.crypto }}/{{ t.ad.fiat }} — {{ t.amount }} — {{ t.status }}
+            <a href="/trade/{{ t.id }}">Открыть</a>
+        </li>
+      {% endfor %}
+      {% for t in sells %}
+        <li>Продажа  #{{ t.id }}: {{ t.ad.crypto }}/{{ t.ad.fiat }} — {{ t.amount }} — {{ t.status }}
+            <a href="/trade/{{ t.id }}">Открыть</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Нет сделок.</p>
+  {% endif %}
+{% endblock %}
