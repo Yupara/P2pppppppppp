@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <title>P2P Обменник</title>
+  <meta charset="UTF-8">
+  <title>{% block title %}P2P Exchange{% endblock %}</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body>
+<body class="dark-theme">
   <header>
-    <a href="/">Главная</a> | 
-    <a href="/market">Маркет</a> | 
-    <a href="/create">Создать</a>
+    <div class="logo" onclick="location.href='/market'">P2P</div>
+    <nav>
+      <a href="/create_ad">Создать объявление</a>
+    </nav>
   </header>
   <main>
     {% block content %}{% endblock %}
   </main>
 </body>
 </html>
-<link rel="stylesheet" href="/static/styles.css">
