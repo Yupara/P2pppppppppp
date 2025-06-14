@@ -9,6 +9,8 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     password = Column(String)
     ads = relationship("Ad", back_populates="user")
+# В User
+trades = relationship("Trade", back_populates="buyer")
 
 class Ad(Base):
     __tablename__ = "ads"
@@ -26,6 +28,8 @@ class Ad(Base):
     
     user = relationship("User", back_populates="ads")
 
+# В Ad
+trades = relationship("Trade", back_populates="ad")
 class Trade(Base):
     __tablename__ = "trades"
 
