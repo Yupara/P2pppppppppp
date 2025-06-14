@@ -1,38 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Сделка №{{trade.id}}{% endblock %}
+{% block title %}Сделка №{{ trade.id }}{% endblock %}
+
 {% block content %}
-<h1>Сделка №{{trade.id}}</h1>
-<div class="trade-info">
-  <p>Крипта/Фиат: {{trade.ad.crypto}}/{{trade.ad.fiat}}</p>
-  <p>Сумма: {{trade.amount}}</p>
-  <p>Цена: {{trade.ad.price}}</p>
-  <p>Статус: {{trade.status}}</p>
-  <p>Окончание: <span id="timer"></span></p>
-</div>
-<div class="actions">
-  {% if is_buyer and trade.status=="pending" %}
-    <form action="/trade/{{trade.id}}/paid" method="post"><button>Я оплатил</button></form>
-  {% endif %}
-  {% if is_seller and trade.status=="paid" %}
-    <form action="/trade/{{trade.id}}/confirm" method="post"><button>Подтвердить</button></form>
-  {% endif %}
-  {% if trade.status in ["pending","paid"] %}
-    <form action="/trade/{{trade.id}}/dispute" method="post"><button>Открыть спор</button></form>
-  {% endif %}
-</div>
-<h2>Чат</h2>
-<div class="chat">{% for m in messages %}<p><strong>{{m.sender_uuid}}:</strong> {{m.content}}</p>{% endfor %}</div>
-<form action="/trade/{{trade.id}}/message" method="post" class="chat-form">
-  <input name="content" placeholder="Сообщение..." required><button>Отправить</button>
-</form>
-<script>
-  const expires = new Date("{{trade.expires_at.isoformat()}}");
-  const el = document.getElementById("timer");
-  setInterval(()=>{
-    let diff = expires - new Date();
-    if(diff<=0){ el.textContent="Время вышло"; return; }
-    let m=Math.floor(diff/60000), s=Math.floor((diff%60000)/1000);
-    el.textContent=m+":"+(s<10?"0"+s:s);
-  },1000);
-</script>
+  <h1>Сделка №{{ trade.id }}</h1>
+
+  <form action="/orders/create/{{ trade.ad.id }}" method="post" class="order-form">
+    <label>Криптовалюта:</label>
+    <select name="crypto" disabled>
+      <option>{{ trade.ad.crypto }}</option>
+    </select>
+
+    <label>Фиат:</label>
+    <select name="fiat" disabled>
+      <option>{{ trade.ad.fiat }}</option>
+    </select>
+
+    <label>Сумма ({{ trade.ad.crypto }}):</label>
+    <input
+      type="number" name="amount"
+      step="0.01"
+      required
+      min="{{ trade.ad.min_limit }}"
+      max="{{ trade.ad.max_limit }}"
+      placeholder="От {{ trade.ad.min_limit }} до {{ trade.ad.max_limit }}"
+    />
+
+    <label>Метод оплаты:</label>
+    <select name="payment" required>
+      {% for m in trade.ad.payment_methods.split(",") %}
+        <option value="{{ m.strip() }}">{{ m.strip() }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit">Создать сделку</button>
+  </form>
 {% endblock %}
