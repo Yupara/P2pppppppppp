@@ -15,13 +15,13 @@
 
     <select name="fiat">
       <option value="">Все фиаты</option>
-      {% for f in fiats %}
-        <option value="{{ f }}" {% if f == current_fiat %}selected{% endif %}>{{ f }}</option>
+      {% for code, name in fiats %}
+        <option value="{{ code }}" {% if code == current_fiat %}selected{% endif %}>{{ name }}</option>
       {% endfor %}
     </select>
 
     <select name="payment">
-      <option value="">Все способы оплаты</option>
+      <option value="">Все способы</option>
       {% for p in payments %}
         <option value="{{ p }}" {% if p == current_payment %}selected{% endif %}>{{ p }}</option>
       {% endfor %}
@@ -35,8 +35,8 @@
       <div class="card">
         <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
         <p>Цена: {{ ad.price }}</p>
-        <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
-        <p>Методы оплаты: {{ ad.payment_methods }}</p>
+        <p>Лимит: {{ ad.min_limit }}–{{ ad.max_limit }}</p>
+        <p>Оплата: {{ ad.payment_methods }}</p>
         <a class="btn" href="/trade/create/{{ ad.id }}">Купить</a>
       </div>
     {% endfor %}
