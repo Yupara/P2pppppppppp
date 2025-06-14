@@ -232,3 +232,47 @@ def send_message(
     )
     db.add(msg); db.commit()
     return RedirectResponse(f"/trade/{trade_id}", status_code=302)
+
+# в app.py
+
+from typing import Optional
+
+@app.get("/market")
+def market(
+    request: Request,
+    crypto: Optional[str] = None,
+    fiat: Optional[str] = None,
+    payment: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    cancel_expired(db)
+    user_uuid = get_user_uuid(request)
+    query = db.query(Ad)
+
+    if crypto:
+        query = query.filter(Ad.crypto == crypto)
+    if fiat:
+        query = query.filter(Ad.fiat == fiat)
+    if payment:
+        # проверяем, что заданный метод есть в CSV-списке payment_methods
+        query = query.filter(Ad.payment_methods.ilike(f"%{payment}%"))
+
+    ads = query.all()
+    # Для выпадающих списков передаём возможные варианты:
+    cryptos = [row[0] for row in db.query(Ad.crypto).distinct()]
+    fiats   = [row[0] for row in db.query(Ad.fiat).distinct()]
+    payments = set()
+    for pm in db.query(Ad.payment_methods).distinct():
+        for p in pm[0].split(","):
+            payments.add(p.strip())
+    return templates.TemplateResponse("market.html", {
+        "request": request,
+        "ads": ads,
+        "user_uuid": user_uuid,
+        "cryptos": cryptos,
+        "fiats": fiats,
+        "payments": sorted(payments),
+        "current_crypto": crypto or "",
+        "current_fiat": fiat or "",
+        "current_payment": payment or ""
+    })
