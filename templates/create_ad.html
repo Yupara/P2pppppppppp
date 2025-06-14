@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block title %}Новое объявление{% endblock %}
 
 {% block content %}
@@ -19,22 +20,22 @@
 
     <label>Фиат:</label>
     <select name="fiat" required>
-      {% for code, name in fiats %}
-        <option value="{{ code }}">{{ name }} ({{ code }})</option>
+      {% for f in fiats %}
+        <option value="{{ f }}">{{ f }}</option>
       {% endfor %}
     </select>
 
-    <label>Сумма ({{ cryptos[0] }}):</label>
-    <input name="amount" type="number" step="0.01" required>
+    <label>Сумма:</label>
+    <input name="amount" type="number" step="0.01" placeholder="Сумма" required>
 
-    <label>Цена (за {{ cryptos[0] }}, в {{ fiats[0][0] }}):</label>
-    <input name="price" type="number" step="0.01" required>
+    <label>Цена:</label>
+    <input name="price" type="number" step="0.01" placeholder="Цена" required>
 
     <label>Мин лимит:</label>
-    <input name="min_limit" type="number" step="0.01" required>
+    <input name="min_limit" type="number" step="0.01" placeholder="Мин лимит" required>
 
     <label>Макс лимит:</label>
-    <input name="max_limit" type="number" step="0.01" required>
+    <input name="max_limit" type="number" step="0.01" placeholder="Макс лимит" required>
 
     <label>Методы оплаты:</label>
     <select name="payment_methods" required>
