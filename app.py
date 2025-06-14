@@ -276,3 +276,24 @@ def market(
         "current_fiat": fiat or "",
         "current_payment": payment or ""
     })
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request: Request, db: Session = Depends(get_db)):
+    # получаем UUID текущего пользователя
+    user_uuid = get_user_uuid(request)
+
+    # все сделки, где он участник (и как покупатель, и как продавец)
+    buys  = db.query(Trade).filter(Trade.buyer_uuid == user_uuid).all()
+    sells = (
+        db.query(Trade)
+          .join(Ad, Ad.id == Trade.ad_id)
+          .filter(Ad.uuid == user_uuid)
+          .all()
+    )
+
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "buys": buys,
+        "sells": sells,
+        "user_uuid": user_uuid
+    })
