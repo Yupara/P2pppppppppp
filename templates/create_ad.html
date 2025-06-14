@@ -1,24 +1,34 @@
 {% extends "base.html" %}
+
 {% block title %}Новое объявление{% endblock %}
+
 {% block content %}
 <h1>Создать объявление</h1>
 <form action="/create_ad" method="post" class="form">
   <label>Тип (buy/sell):</label>
   <input name="type" placeholder="buy или sell" required>
+
   <label>Криптовалюта:</label>
   <input name="crypto" placeholder="USDT, BTC..." required>
+
   <label>Фиат:</label>
   <input name="fiat" placeholder="USD, RUB..." required>
+
   <label>Сумма:</label>
   <input name="amount" type="number" step="0.01" required>
+
   <label>Цена:</label>
   <input name="price" type="number" step="0.01" required>
+
   <label>Мин лимит:</label>
   <input name="min_limit" type="number" step="0.01" required>
+
   <label>Макс лимит:</label>
   <input name="max_limit" type="number" step="0.01" required>
+
   <label>Методы оплаты (через запятую):</label>
   <input name="payment_methods" placeholder="SBP,Тинькофф..." required>
+
   <button type="submit">Опубликовать</button>
 </form>
 {% endblock %}
