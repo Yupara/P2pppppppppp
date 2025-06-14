@@ -1,12 +1,10 @@
 {% extends "base.html" %}
-
-{% block title %}Админ-панель{% endblock %}
-
+{% block title %}Админ{% endblock %}
 {% block content %}
   <h1>Админ-панель</h1>
   <ul>
-    <li>Всего объявлений: {{ total_ads }}</li>
-    <li>Всего сделок: {{ total_trades }}</li>
+    <li>Объявлений: {{ total_ads }}</li>
+    <li>Сделок: {{ total_trades }}</li>
     <li>Ожидают оплаты: {{ pending }}</li>
     <li>В спорах: {{ disputes }}</li>
   </ul>
