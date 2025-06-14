@@ -1,28 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <h1>Рынок P2P</h1>
-
-  <!-- Выводим объявления -->
-  <div class="ads">
-    {% for ad in ads %}
-      <div class="ad-card">
-        <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
-        <p>Цена: {{ ad.price }}</p>
-        <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
-        <a href="/create_order/{{ ad.id }}">Купить / Продать</a>
-      </div>
-    {% endfor %}
-  </div>
-
-  <!-- Опционально: если есть сессия, показать профиль -->
-  {% if request.session.get('user_id') %}
-    <p><a href="/profile">Мой профиль</a></p>
-  {% else %}
-    <p><a href="/login">Войти</a> | <a href="/register">Регистрация</a></p>
-  {% endif %}
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Рынок{% endblock %}
+{% block content %}
+<h1>Рынок P2P</h1>
+<div class="cards">
+  {% for ad in ads %}
+    <div class="card">
+      <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
+      <p>Цена: {{ ad.price }}</p>
+      <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
+      <a class="btn" href="#">Купить</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
