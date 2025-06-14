@@ -5,6 +5,9 @@
 {% block content %}
 <h1>Рынок P2P</h1>
 
+<!-- Здесь твой UUID для копирования -->
+<p><strong>Ваш UUID:</strong> {{ user_uuid }}</p>
+
 <form method="get" class="filters">
   <select name="crypto">
     <option value="">Все крипты</option>
@@ -36,12 +39,10 @@
       <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
       <p>Цена: {{ ad.price }}</p>
       <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
-      <p>Методы оплаты: {{ ad.payment_methods }}</p>
+      <p>Оплата: {{ ad.payment_methods }}</p>
       <a class="btn" href="/trade/create/{{ ad.id }}">Купить</a>
     </div>
   {% endfor %}
-  {% if ads|length == 0 %}
-    <p>Объявлений не найдено.</p>
-  {% endif %}
+  {% if ads|length==0 %}<p>Нет объявлений.</p>{% endif %}
 </div>
 {% endblock %}
