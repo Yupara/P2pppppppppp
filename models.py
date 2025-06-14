@@ -25,3 +25,16 @@ class Ad(Base):
     user_rating = Column(Float)
     
     user = relationship("User", back_populates="ads")
+
+class Trade(Base):
+    __tablename__ = "trades"
+
+    id = Column(Integer, primary_key=True, index=True)
+    buyer_id = Column(Integer, ForeignKey("users.id"))
+    ad_id = Column(Integer, ForeignKey("ads.id"))
+    amount = Column(Float)
+    status = Column(String, default="pending")  # pending, paid, completed, disputed
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    buyer = relationship("User", back_populates="trades")
+    ad = relationship("Ad", back_populates="trades")
