@@ -87,3 +87,22 @@ button {
   overflow-y: auto;
 }
 .chat p { margin: 5px 0; }
+
+.chat {
+  background: #003f35;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+.chat p {
+  margin: 5px 0;
+}
+.chat-form input, .chat-form button {
+  width: 100%;
+  margin: 5px 0;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+}
