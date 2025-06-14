@@ -1,9 +1,1 @@
-fastapi
-uvicorn[standard]
-jinja2
-python-multipart
-passlib[bcrypt]
-itsdangerous
-sqlalchemy
-openai
-APScheduler
+fastapi uvicorn sqlalchemy jinja2 python-multipart python-dotenv stripe
