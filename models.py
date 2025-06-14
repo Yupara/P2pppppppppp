@@ -28,7 +28,7 @@ class User(Base):
     referrals            = relationship("User", remote_side=[id])
 
 class Ad(Base):
-    __tablename__ = "ads"
+    __tablename__ = "ads"    # ← без лишней скобки!
     id              = Column(Integer, primary_key=True, index=True)
     user_id         = Column(Integer, ForeignKey("users.id"))
     type            = Column(String, nullable=False)
