@@ -1,57 +1,13 @@
-<!-- templates/trade.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Сделка №{{ trade.id }}</h2>
+<p>Объявление: {{ trade.ad.crypto }} → {{ trade.ad.fiat }}</p>
+<p>Сумма: {{ trade.amount }}</p>
+<p>Статус: {{ trade.status }}</p>
 
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Сделка</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <h2>Сделка №{{ order.id }}</h2>
-  <p>Продавец: {{ order.seller.username }} | Покупатель: {{ order.buyer.username }}</p>
-  <p>Сумма: {{ order.amount }} | Валюта: {{ order.currency }}</p>
-
-  <hr>
-  <h3>Чат</h3>
-  <div class="chat-box">
-    {% for message in messages %}
-      <div class="message {% if message.sender_id == user.id %}my-message{% endif %}">
-        <strong>{{ message.sender.username }}:</strong> {{ message.content }}
-        <div class="timestamp">{{ message.timestamp.strftime('%H:%M') }}</div>
-      </div>
-    {% endfor %}
-  </div>
-
-  <form action="/orders/{{ order.id }}/message" method="post">
-    <input type="text" name="text" placeholder="Ваше сообщение..." required>
-    <button type="submit">Отправить</button>
-  </form>
-
-  <a href="/orders/mine">🔙 Назад к сделкам</a>
-</body>
-</html>
-<hr>
-<h3>Действия</h3>
-
-{% if order.status == 'active' and order.buyer_id == user.id %}
-  <form method="post" action="/orders/{{ order.id }}/paid">
-    <button type="submit">Я оплатил</button>
-  </form>
+{% if user.id == trade.buyer_id %}
+    <form method="post" action="#">
+        <button>Я оплатил</button>
+    </form>
 {% endif %}
-
-{% if order.status == 'paid' and order.seller_id == user.id %}
-  <form method="post" action="/orders/{{ order.id }}/confirm">
-    <button type="submit">Подтвердить получение</button>
-  </form>
-{% endif %}
-
-<form method="post" action="/orders/{{ order.id }}/dispute">
-  <button type="submit">Открыть спор</button>
-</form>
-
-<p>Текущий статус: <strong>{{ order.status }}</strong></p>
-
-<form method="post" action="/orders/{{ order.id }}/dispute">
-  <textarea name="reason" placeholder="Опишите проблему..." required></textarea>
-  <button type="submit" class="dispute-button">Открыть спор</button>
-</form>
+{% endblock %}
