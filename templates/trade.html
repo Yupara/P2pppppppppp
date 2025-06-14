@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Сделка{% endblock %}
+
+{% block title %}Сделка №{{ trade.id }}{% endblock %}
+
 {% block content %}
 <h1>Сделка №{{ trade.id }}</h1>
 
@@ -29,17 +31,16 @@
     <p><strong>{{ m.sender }}:</strong> {{ m.text }}</p>
   {% endfor %}
 </div>
+
 <form action="/trade/{{ trade.id }}/message" method="post" class="chat-form">
   <input name="text" placeholder="Ваше сообщение..." required>
   <button type="submit">Отправить</button>
 </form>
 
 <script>
-  // Таймер обратного отсчёта
   const expiresAt = new Date("{{ trade.expires_at.isoformat() }}");
   const timerEl = document.getElementById("timer");
   function updateTimer() {
-    const now = new Date("{{ now }}");
     const diff = expiresAt - new Date();
     if (diff <= 0) {
       timerEl.textContent = "Время вышло";
