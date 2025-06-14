@@ -1,46 +1,28 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Рынок P2P</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <!-- inline стили см. выше -->
 </head>
 <body>
-  <header>
-    <h1>Рынок P2P</h1>
-    <div class="user-menu">
-      {% if user %}
-        <span>{{ user.username }}</span>
-        <a href="/profile">Профиль</a>
-        <a href="/logout">Выйти</a>
-      {% else %}
-        <a href="/register">Регистрация</a>
-        <a href="/login">Войти</a>
-      {% endif %}
-    </div>
-  </header>
-  <div class="filters">
-    <!-- селекторы как в предыдущем примере -->
-  </div>
-  <div id="ads-list">
+  <h1>Рынок P2P</h1>
+
+  <!-- Выводим объявления -->
+  <div class="ads">
     {% for ad in ads %}
       <div class="ad-card">
-        <h2>{{ ad.crypto }}/{{ ad.fiat }}</h2>
-        <p><strong>Тип:</strong> {{ ad.type == 'buy' and 'Купить' or 'Продать' }}</p>
-        <p><strong>Сумма:</strong> {{ ad.amount }}</p>
-        <p><strong>Цена:</strong> {{ ad.price }} {{ ad.fiat }}</p>
-        <p><strong>Лимиты:</strong> {{ ad.min_limit }}–{{ ad.max_limit }}</p>
-        <p><strong>Методы:</strong> {{ ad.payment_methods.replace(',', ', ') }}</p>
-        <p><strong>Продавец:</strong> {{ ad.user.username }} ({{ ad.user_rating }}%)</p>
-        <a href="/create_order/{{ ad.id }}">Купить</a>
+        <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
+        <p>Цена: {{ ad.price }}</p>
+        <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
+        <a href="/create_order/{{ ad.id }}">Купить / Продать</a>
       </div>
-    {% else %}
-      <p style="text-align:center;">Пока нет объявлений.</p>
     {% endfor %}
   </div>
-  <script>
-    /* applyFilter() как ранее */
-  </script>
+
+  <!-- Опционально: если есть сессия, показать профиль -->
+  {% if request.session.get('user_id') %}
+    <p><a href="/profile">Мой профиль</a></p>
+  {% else %}
+    <p><a href="/login">Войти</a> | <a href="/register">Регистрация</a></p>
+  {% endif %}
 </body>
 </html>
