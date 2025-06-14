@@ -20,63 +20,8 @@ header nav a {
   color: #90ee90;
   font-weight: bold;
 }
-main {
-  padding: 20px;
-}
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-.card {
-  background: #003f35;
-  padding: 15px;
-  border-radius: 8px;
-  width: calc(33% - 20px);
-}
-.card p {
-  margin: 5px 0;
-}
-.btn {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 8px 12px;
-  background: #90ee90;
-  color: #003300;
-  border-radius: 4px;
-  text-decoration: none;
-}
-.form input, .form button, .chat-form input, .chat-form button {
-  width: 100%;
-  margin: 8px 0;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-}
-button {
-  background: #90ee90;
-  color: #003300;
-  font-weight: bold;
-  cursor: pointer;
-}
-.trade-info p {
-  margin: 8px 0;
-}
-.actions form {
-  display: inline-block;
-  margin-right: 10px;
-}
-.chat {
-  background: #003f35;
-  padding: 10px;
-  border-radius: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-.chat p {
-  margin: 5px 0;
-}
-/* Фильтры */
+main { padding: 20px; }
+
 .filters {
   display: flex;
   gap: 10px;
@@ -89,11 +34,56 @@ button {
   background: #003f35;
   color: #fff;
 }
-.filters button {
-  cursor: pointer;
-  font-weight: bold;
-}
 .filters button:hover {
   background: #90ee90;
   color: #003300;
 }
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.card {
+  background: #003f35;
+  padding: 15px;
+  border-radius: 8px;
+  width: calc(33% - 20px);
+}
+.card p { margin: 5px 0; }
+.btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #90ee90;
+  color: #003300;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.form input, .form button,
+.chat-form input, .chat-form button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+}
+button {
+  background: #90ee90;
+  color: #003300;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.trade-info p { margin: 8px 0; }
+.actions form { display: inline-block; margin-right: 10px; }
+
+.chat {
+  background: #003f35;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.chat p { margin: 5px 0; }
