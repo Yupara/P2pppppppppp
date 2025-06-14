@@ -86,3 +86,18 @@ class DisputeOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class TradeBase(BaseModel):
+    ad_id: int
+    amount: float
+
+class TradeCreate(TradeBase):
+    pass
+
+class TradeOut(TradeBase):
+    id: int
+    status: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
