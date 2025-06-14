@@ -1,23 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Рынок{% endblock %}
-{% block content %}
-<h1>Рынок P2P</h1>
 
-<div class="cards">
-  {% for ad in ads %}
-    <div class="card">
-      <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
-      <p>Цена: {{ ad.price }}</p>
-      <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
-      <p>Методы оплаты: {{ ad.payment_methods }}</p>
-      <a class="btn" href="/trade/create/{{ ad.id }}">Купить</a>
-    </div>
-  {% endfor %}
-</div>
-{% endblock %}
+{% block title %}Рынок P2P{% endblock %}
 
-{% extends "base.html" %}
-{% block title %}Рынок{% endblock %}
 {% block content %}
 <h1>Рынок P2P</h1>
 
@@ -56,7 +40,7 @@
       <a class="btn" href="/trade/create/{{ ad.id }}">Купить</a>
     </div>
   {% endfor %}
-  {% if not ads %}
+  {% if ads|length == 0 %}
     <p>Объявлений не найдено.</p>
   {% endif %}
 </div>
