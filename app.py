@@ -169,8 +169,24 @@ def market(request: Request, db: Session = Depends(get_db)):
 
 # CREATE AD
 @app.get("/create_ad", response_class=HTMLResponse)
-def create_ad_form(request: Request):
-    return templates.TemplateResponse("create_ad.html", {"request": request})
+def create_ad_form(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    # Собираем фильтры так же, как в /market
+    cryptos  = [r[0] for r in db.query(Ad.crypto).distinct()]
+    fiats    = [r[0] for r in db.query(Ad.fiat).distinct()]
+    payments = set()
+    for pm, in db.query(Ad.payment_methods).distinct():
+        for p in pm.split(","):
+            payments.add(p.strip())
+
+    return templates.TemplateResponse("create_ad.html", {
+        "request": request,
+        "cryptos": cryptos,
+        "fiats": fiats,
+        "payments": sorted(payments),
+    })
 
 @app.post("/create_ad")
 def create_ad(
