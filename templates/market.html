@@ -1,33 +1,47 @@
 {% extends "base.html" %}
-{% block title %}Рынок{% endblock %}
+{% block title %}Рынок P2P{% endblock %}
+
 {% block content %}
-<h1>Рынок P2P</h1>
-<p><strong>Ваш UUID:</strong> {{ user_uuid }}</p>
-<form method="get" class="filters">
-  <select name="crypto">
-    <option value="">Все крипты</option>
-    {% for c in cryptos %}<option value="{{c}}" {% if c==current_crypto %}selected{% endif %}>{{c}}</option>{% endfor %}
-  </select>
-  <select name="fiat">
-    <option value="">Все фиаты</option>
-    {% for f in fiats %}<option value="{{f}}" {% if f==current_fiat %}selected{% endif %}>{{f}}</option>{% endfor %}
-  </select>
-  <select name="payment">
-    <option value="">Все способы</option>
-    {% for p in payments %}<option value="{{p}}" {% if p==current_payment %}selected{% endif %}>{{p}}</option>{% endfor %}
-  </select>
-  <button type="submit">Применить</button>
-</form>
-<div class="cards">
-  {% for ad in ads %}
-    <div class="card">
-      <p><strong>{{ad.crypto}}/{{ad.fiat}}</strong></p>
-      <p>Цена: {{ad.price}}</p>
-      <p>Лимит: {{ad.min_limit}}–{{ad.max_limit}}</p>
-      <p>Методы оплаты: {{ad.payment_methods}}</p>
-      <a class="btn" href="/trade/create/{{ad.id}}">Купить</a>
-    </div>
-  {% endfor %}
-  {% if ads|length==0 %}<p>Нет объявлений.</p>{% endif %}
-</div>
+  <h1>Рынок P2P</h1>
+  <p><strong>Ваш UUID:</strong> {{ user_uuid }}</p>
+
+  <form method="get" class="filters">
+    <select name="crypto">
+      <option value="">Все крипты</option>
+      {% for c in cryptos %}
+        <option value="{{ c }}" {% if c == current_crypto %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="fiat">
+      <option value="">Все фиаты</option>
+      {% for f in fiats %}
+        <option value="{{ f }}" {% if f == current_fiat %}selected{% endif %}>{{ f }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="payment">
+      <option value="">Все способы оплаты</option>
+      {% for p in payments %}
+        <option value="{{ p }}" {% if p == current_payment %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit">Применить</button>
+  </form>
+
+  <div class="cards">
+    {% for ad in ads %}
+      <div class="card">
+        <p><strong>{{ ad.crypto }}/{{ ad.fiat }}</strong></p>
+        <p>Цена: {{ ad.price }}</p>
+        <p>Лимит: {{ ad.min_limit }} – {{ ad.max_limit }}</p>
+        <p>Методы оплаты: {{ ad.payment_methods }}</p>
+        <a class="btn" href="/trade/create/{{ ad.id }}">Купить</a>
+      </div>
+    {% endfor %}
+    {% if ads|length == 0 %}
+      <p>Объявлений не найдено.</p>
+    {% endif %}
+  </div>
 {% endblock %}
