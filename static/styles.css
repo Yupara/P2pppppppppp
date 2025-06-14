@@ -76,3 +76,24 @@ button {
 .chat p {
   margin: 5px 0;
 }
+/* Фильтры */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.filters select, .filters button {
+  padding: 8px;
+  border: 1px solid #90ee90;
+  border-radius: 4px;
+  background: #003f35;
+  color: #fff;
+}
+.filters button {
+  cursor: pointer;
+  font-weight: bold;
+}
+.filters button:hover {
+  background: #90ee90;
+  color: #003300;
+}
