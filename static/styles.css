@@ -1,14 +1,17 @@
+/* Базовые стили */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #002b26;
-  color: #fff;
+  color: #ffffff;
 }
+
+/* Шапка */
 header {
-  background: #003f35;
-  padding: 10px 20px;
   display: flex;
   align-items: center;
+  padding: 10px 20px;
+  background: #003f35;
 }
 header .logo {
   cursor: pointer;
@@ -18,27 +21,36 @@ header .logo {
 header nav a {
   margin-left: 15px;
   color: #90ee90;
+  text-decoration: none;
   font-weight: bold;
 }
-main { padding: 20px; }
 
+/* Основной контейнер */
+main {
+  padding: 20px;
+}
+
+/* Фильтры */
 .filters {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
 }
-.filters select, .filters button {
+.filters select,
+.filters button {
   padding: 8px;
   border: 1px solid #90ee90;
   border-radius: 4px;
   background: #003f35;
-  color: #fff;
+  color: #ffffff;
 }
 .filters button:hover {
   background: #90ee90;
   color: #003300;
+  cursor: pointer;
 }
 
+/* Карточки объявлений */
 .cards {
   display: flex;
   flex-wrap: wrap;
@@ -49,9 +61,12 @@ main { padding: 20px; }
   padding: 15px;
   border-radius: 8px;
   width: calc(33% - 20px);
+  box-sizing: border-box;
 }
-.card p { margin: 5px 0; }
-.btn {
+.card p {
+  margin: 5px 0;
+}
+.card .btn {
   display: inline-block;
   margin-top: 10px;
   padding: 8px 12px;
@@ -61,13 +76,17 @@ main { padding: 20px; }
   text-decoration: none;
 }
 
-.form input, .form button,
-.chat-form input, .chat-form button {
+/* Формы */
+.form input,
+.form button,
+.chat-form input,
+.chat-form button {
   width: 100%;
   margin: 8px 0;
   padding: 10px;
   border: none;
   border-radius: 4px;
+  box-sizing: border-box;
 }
 button {
   background: #90ee90;
@@ -76,18 +95,18 @@ button {
   cursor: pointer;
 }
 
-.trade-info p { margin: 8px 0; }
-.actions form { display: inline-block; margin-right: 10px; }
-
-.chat {
-  background: #003f35;
-  padding: 10px;
-  border-radius: 4px;
-  max-height: 200px;
-  overflow-y: auto;
+/* Информация о сделке */
+.trade-info p {
+  margin: 8px 0;
 }
-.chat p { margin: 5px 0; }
 
+/* Действия */
+.actions form {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+/* Чат */
 .chat {
   background: #003f35;
   padding: 10px;
@@ -98,11 +117,4 @@ button {
 }
 .chat p {
   margin: 5px 0;
-}
-.chat-form input, .chat-form button {
-  width: 100%;
-  margin: 5px 0;
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
 }
