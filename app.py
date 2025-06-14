@@ -1,11 +1,12 @@
 import os
 from datetime import datetime, timedelta
 from uuid import uuid4
+from dotenv import load_dotenv
 
 from fastapi import (
     FastAPI, Request, Form, Depends, HTTPException
 )
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -17,13 +18,22 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 
-# ------------------- КОНФИГ -------------------
-ADMIN_UUID = "293dd908-eac9-4082-b5e6-112d649a60bc"  # скопируй сюда свой UUID после первого захода на /market
+import stripe
 
+# ——— ЗАГРУЗКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ———
+load_dotenv()
+stripe.api_key       = os.getenv("STRIPE_API_KEY")
+WEBHOOK_SECRET       = os.getenv("STRIPE_WEBHOOK_SECRET")
+DOMAIN               = os.getenv("YOUR_DOMAIN", "http://localhost:8000")
+
+# ——— КОНСТАНТЫ ———
+ADMIN_UUID = "293dd908-eac9-4082-b5e6-112d649a60bc"  # скопируй из /market
+
+# ——— БАЗА ДАННЫХ ———
 DATABASE_URL = "sqlite:///./p2p.db"
-engine      = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine       = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base        = declarative_base()
+Base         = declarative_base()
 
 def get_db():
     db = SessionLocal()
@@ -32,12 +42,12 @@ def get_db():
     finally:
         db.close()
 
-# ------------------- МОДЕЛИ -------------------
+# ——— МОДЕЛИ ———
 class User(Base):
     __tablename__ = "users"
-    id       = Column(Integer, primary_key=True, index=True)
-    uuid     = Column(String, unique=True, default=lambda: str(uuid4()))
-    balance  = Column(Float, default=0.0)
+    id      = Column(Integer, primary_key=True, index=True)
+    uuid    = Column(String, unique=True, default=lambda: str(uuid4()))
+    balance = Column(Float, default=0.0)
 
 class Ad(Base):
     __tablename__ = "ads"
@@ -59,7 +69,7 @@ class Trade(Base):
     id         = Column(Integer, primary_key=True, index=True)
     ad_id      = Column(Integer, ForeignKey("ads.id"))
     buyer_uuid = Column(String, nullable=False)
-    status     = Column(String, default="pending")  # pending, paid, confirmed, canceled, disputed
+    status     = Column(String, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime)
     ad         = relationship("Ad", back_populates="trades")
@@ -80,23 +90,33 @@ class Operation(Base):
     user_uuid  = Column(String, index=True)
     type       = Column(String, nullable=False)   # deposit / withdraw
     amount     = Column(Float, nullable=False)
-    address    = Column(String, nullable=True)    # для депозита или вывода
-    status     = Column(String, default="pending")# pending/completed/canceled
+    address    = Column(String, nullable=True)
+    status     = Column(String, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class PaymentTransaction(Base):
+    __tablename__ = "payment_transactions"
+    id             = Column(Integer, primary_key=True, index=True)
+    user_uuid      = Column(String, index=True)
+    stripe_session = Column(String, unique=True, nullable=False)
+    amount         = Column(Float, nullable=False)
+    currency       = Column(String, default="usd")
+    status         = Column(String, default="created")
+    created_at     = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
 
-# ------------------- FastAPI -------------------
+# ——— FASTAPI SETUP ———
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY","secret123"))
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# ------------------- УТИЛИТЫ -------------------
+# ——— УТИЛИТЫ ———
 def get_user_uuid(request: Request):
     if not request.session.get("user_uuid"):
         request.session["user_uuid"] = str(uuid4())
-    # ensure User row exists
+    # ensure User exists
     db = SessionLocal()
     u = db.query(User).filter(User.uuid == request.session["user_uuid"]).first()
     if not u:
@@ -111,40 +131,34 @@ def cancel_expired(db: Session):
         t.status = "canceled"
     db.commit()
 
-# ------------------- МАРШРУТЫ -------------------
+# ——— МАРШРУТЫ ———
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse("/market")
 
-# — MARKET
 @app.get("/market", response_class=HTMLResponse)
 def market(request: Request, db: Session = Depends(get_db)):
     cancel_expired(db)
-    user_uuid = get_user_uuid(request)
-
+    uu = get_user_uuid(request)
     crypto  = request.query_params.get("crypto","")
     fiat    = request.query_params.get("fiat","")
     payment = request.query_params.get("payment","")
-
     q = db.query(Ad)
     if crypto:  q = q.filter(Ad.crypto==crypto)
     if fiat:    q = q.filter(Ad.fiat==fiat)
     if payment: q = q.filter(Ad.payment_methods.ilike(f"%{payment}%"))
     ads = q.all()
-
     cryptos  = [r[0] for r in db.query(Ad.crypto).distinct()]
     fiats    = [r[0] for r in db.query(Ad.fiat).distinct()]
     payments = set()
     for pm, in db.query(Ad.payment_methods).distinct():
         for p in pm.split(","): payments.add(p.strip())
-
     return templates.TemplateResponse("market.html", {
-        "request": request, "ads": ads, "user_uuid": user_uuid,
+        "request": request, "ads": ads, "user_uuid": uu,
         "cryptos": cryptos, "fiats": fiats, "payments": sorted(payments),
         "current_crypto": crypto, "current_fiat": fiat, "current_payment": payment
     })
 
-# — CREATE AD
 @app.get("/create_ad", response_class=HTMLResponse)
 def create_ad_form(request: Request):
     return templates.TemplateResponse("create_ad.html", {"request": request})
@@ -162,29 +176,21 @@ def create_ad(
     payment_methods: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    ad = Ad(
-        type=type, crypto=crypto, fiat=fiat,
-        amount=amount, price=price,
-        min_limit=min_limit, max_limit=max_limit,
-        payment_methods=payment_methods,
-        created_at=datetime.utcnow()
-    )
+    ad = Ad(type=type, crypto=crypto, fiat=fiat, amount=amount, price=price,
+            min_limit=min_limit, max_limit=max_limit,
+            payment_methods=payment_methods, created_at=datetime.utcnow())
     db.add(ad); db.commit()
     return RedirectResponse("/market", status_code=302)
 
-# — TRADE
 @app.get("/trade/create/{ad_id}")
 def create_trade(ad_id: int, request: Request, db: Session = Depends(get_db)):
     cancel_expired(db)
     ad = db.query(Ad).get(ad_id)
     if not ad: raise HTTPException(404,"Ad not found")
-    user_uuid = get_user_uuid(request)
-    t = Trade(
-        ad_id=ad.id, buyer_uuid=user_uuid,
-        status="pending",
-        created_at=datetime.utcnow(),
-        expires_at=datetime.utcnow()+timedelta(minutes=30)
-    )
+    uu = get_user_uuid(request)
+    t = Trade(ad_id=ad.id, buyer_uuid=uu, status="pending",
+              created_at=datetime.utcnow(),
+              expires_at=datetime.utcnow()+timedelta(minutes=30))
     db.add(t); db.commit(); db.refresh(t)
     return RedirectResponse(f"/trade/{t.id}",302)
 
@@ -205,50 +211,33 @@ def view_trade(trade_id: int, request: Request, db: Session = Depends(get_db)):
 
 @app.post("/trade/{trade_id}/paid")
 def mark_paid(trade_id:int, request:Request, db:Session=Depends(get_db)):
-    t = db.query(Trade).get(trade_id)
-    uu = get_user_uuid(request)
+    t = db.query(Trade).get(trade_id); uu = get_user_uuid(request)
     if not t or t.buyer_uuid!=uu or t.status!="pending": raise HTTPException(403)
     t.status="paid"; db.commit()
     return RedirectResponse(f"/trade/{trade_id}",302)
 
 @app.post("/trade/{trade_id}/confirm")
 def mark_confirm(trade_id:int, request:Request, db:Session=Depends(get_db)):
-    t = db.query(Trade).get(trade_id)
-    uu = get_user_uuid(request)
+    t = db.query(Trade).get(trade_id); uu = get_user_uuid(request)
     if not t or t.ad.uuid!=uu or t.status!="paid": raise HTTPException(403)
     t.status="confirmed"; db.commit()
     return RedirectResponse(f"/trade/{trade_id}",302)
 
 @app.post("/trade/{trade_id}/dispute")
-def mark_dispute(trade_id:int, request:Request, db:Session=Depends(get_db)):
-    t = db.query(Trade).get(trade_id)
-    uu = get_user_uuid(request)
+def mark_dispute(trade_id:int, request:Request, db:Session=Depends(get_get_db)):
+    t = db.query(Trade).get(trade_id); uu = get_user_uuid(request)
     if not t or uu not in (t.buyer_uuid,t.ad.uuid): raise HTTPException(403)
     t.status="disputed"; db.commit()
     return RedirectResponse(f"/trade/{trade_id}",302)
 
 @app.post("/trade/{trade_id}/message")
 def send_message(trade_id:int, request:Request, content:str=Form(...), db:Session=Depends(get_db)):
-    t = db.query(Trade).get(trade_id)
-    uu = get_user_uuid(request)
+    t = db.query(Trade).get(trade_id); uu = get_user_uuid(request)
     if not t or uu not in (t.buyer_uuid,t.ad.uuid): raise HTTPException(403)
     m = Message(trade_id=trade_id, sender_uuid=uu, content=content, timestamp=datetime.utcnow())
     db.add(m); db.commit()
     return RedirectResponse(f"/trade/{trade_id}",302)
 
-# — PROFILE
-@app.get("/profile", response_class=HTMLResponse)
-def profile(request:Request, db:Session=Depends(get_db)):
-    uu = get_user_uuid(request)
-    buys  = db.query(Trade).filter(Trade.buyer_uuid==uu).all()
-    sells = db.query(Trade).join(Ad).filter(Ad.uuid==uu).all()
-    user  = db.query(User).filter(User.uuid==uu).first()
-    ops   = db.query(Operation).filter(Operation.user_uuid==uu).order_by(Operation.created_at.desc()).all()
-    return templates.TemplateResponse("profile.html", {
-        "request":request, "buys":buys, "sells":sells, "user":user, "ops":ops
-    })
-
-# — DEPOSIT / WITHDRAW
 @app.get("/deposit", response_class=HTMLResponse)
 def deposit_form(request:Request):
     return templates.TemplateResponse("deposit.html",{"request":request})
@@ -256,10 +245,53 @@ def deposit_form(request:Request):
 @app.post("/deposit")
 def deposit(request:Request, amount:float=Form(...), db:Session=Depends(get_db)):
     uu = get_user_uuid(request)
-    addr = str(uuid4())
-    op = Operation(user_uuid=uu, type="deposit", amount=amount, address=addr, status="pending")
-    db.add(op); db.commit()
-    return RedirectResponse("/profile",302)
+    # Stripe payment session
+    stripe_amount = int(amount * 100)
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[{
+            "price_data": {
+                "currency": "usd",
+                "product_data": {"name": "Пополнение USDT"},
+                "unit_amount": stripe_amount,
+            },
+            "quantity": 1,
+        }],
+        mode="payment",
+        success_url=f"{DOMAIN}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{DOMAIN}/profile",
+    )
+    tx = PaymentTransaction(user_uuid=uu, stripe_session=session.id,
+                            amount=amount, currency="usd", status="created")
+    db.add(tx); db.commit()
+    return JSONResponse({"checkout_url": session.url})
+
+@app.get("/payment/success", response_class=HTMLResponse)
+def payment_success(request:Request):
+    return templates.TemplateResponse("payment_success.html",{"request":request})
+
+@app.get("/payment/cancel", response_class=HTMLResponse)
+def payment_cancel(request:Request):
+    return templates.TemplateResponse("payment_cancel.html",{"request":request})
+
+@app.post("/webhook")
+async def stripe_webhook(request:Request, db:Session=Depends(get_db)):
+    payload    = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, WEBHOOK_SECRET)
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(400,"Invalid signature")
+    if event["type"] == "checkout.session.completed":
+        sess = event["data"]["object"]
+        tx   = db.query(PaymentTransaction).filter_by(stripe_session=sess["id"]).first()
+        if tx and tx.status=="created":
+            tx.status="completed"
+            user = db.query(User).filter(User.uuid==tx.user_uuid).first()
+            if user:
+                user.balance += tx.amount
+            db.commit()
+    return {"status":"success"}
 
 @app.get("/withdraw", response_class=HTMLResponse)
 def withdraw_form(request:Request):
@@ -267,7 +299,7 @@ def withdraw_form(request:Request):
 
 @app.post("/withdraw")
 def withdraw(request:Request, amount:float=Form(...), address:str=Form(...), db:Session=Depends(get_db)):
-    uu = get_user_uuid(request)
+    uu   = get_user_uuid(request)
     user = db.query(User).filter(User.uuid==uu).first()
     if user.balance < amount:
         raise HTTPException(400,"Недостаточно средств")
@@ -276,7 +308,17 @@ def withdraw(request:Request, amount:float=Form(...), address:str=Form(...), db:
     db.add(op); db.commit()
     return RedirectResponse("/profile",302)
 
-# — ADMIN
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request:Request, db:Session=Depends(get_db)):
+    uu    = get_user_uuid(request)
+    buys  = db.query(Trade).filter(Trade.buyer_uuid==uu).all()
+    sells = db.query(Trade).join(Ad).filter(Ad.uuid==uu).all()
+    user  = db.query(User).filter(User.uuid==uu).first()
+    ops   = db.query(Operation).filter(Operation.user_uuid==uu).order_by(Operation.created_at.desc()).all()
+    return templates.TemplateResponse("profile.html", {
+        "request":request, "buys":buys, "sells":sells, "user":user, "ops":ops
+    })
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(request:Request, db:Session=Depends(get_db)):
     uu = get_user_uuid(request)
