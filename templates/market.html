@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}Рынок P2P{% endblock %}
+{% block title %}Рынок{% endblock %}
 
 {% block content %}
   <h1>Рынок P2P</h1>
@@ -10,21 +9,21 @@
     <select name="crypto">
       <option value="">Все крипты</option>
       {% for c in cryptos %}
-        <option value="{{c}}" {% if c==current_crypto %}selected{% endif %}>{{c}}</option>
+        <option value="{{ c }}" {% if c==current_crypto %}selected{% endif %}>{{ c }}</option>
       {% endfor %}
     </select>
 
     <select name="fiat">
       <option value="">Все фиаты</option>
       {% for f in fiats %}
-        <option value="{{f}}" {% if f==current_fiat %}selected{% endif %}>{{f}}</option>
+        <option value="{{ f }}" {% if f==current_fiat %}selected{% endif %}>{{ f }}</option>
       {% endfor %}
     </select>
 
     <select name="payment">
       <option value="">Все способы</option>
       {% for p in payments %}
-        <option value="{{p}}" {% if p==current_payment %}selected{% endif %}>{{p}}</option>
+        <option value="{{ p }}" {% if p==current_payment %}selected{% endif %}>{{ p }}</option>
       {% endfor %}
     </select>
 
